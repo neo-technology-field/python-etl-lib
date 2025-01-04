@@ -9,6 +9,7 @@ neo4j = "*"
 python-dotenv = "*"
 pytest = "*"
 tabulate = "*"
+click = "*"
 
 [dev-packages]
 

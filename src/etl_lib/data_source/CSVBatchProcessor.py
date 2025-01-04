@@ -18,10 +18,10 @@ class CSVBatchProcessor(BatchProcessor):
 
     def read_csv(self, file: Path, batch_size: int, **kwargs):
         if file.suffix == ".gz":
-            with gzip.open(file, "rt") as f:
+            with gzip.open(file, "rt", encoding='utf-8-sig') as f:
                 yield from self.__parse_csv(batch_size, file=f, **kwargs)
         else:
-            with open(file, "rt") as f:
+            with open(file, "rt", encoding='utf-8-sig') as f:
                 yield from self.__parse_csv(batch_size, file=f, **kwargs)
 
     def __parse_csv(self, batch_size, file, **kwargs):

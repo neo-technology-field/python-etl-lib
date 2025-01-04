@@ -14,7 +14,6 @@ from etl_lib.data_source.CSVBatchProcessor import CSVBatchProcessor
 
 
 class CSVLoad2Neo4jTasks(Task):
-    delimiter = ","
 
     def __init__(self, context: ETLContext, model: Type[BaseModel], batch_size: int = 5000, log_indent: int = 1):
         super().__init__(context, log_indent)
@@ -37,8 +36,4 @@ class CSVLoad2Neo4jTasks(Task):
 
     @abc.abstractmethod
     def _query(self):
-        pass
-
-    @abc.abstractmethod
-    def file_prefix(self):
         pass
