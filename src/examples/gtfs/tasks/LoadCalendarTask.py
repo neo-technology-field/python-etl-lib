@@ -1,3 +1,5 @@
+from pathlib import Path
+
 from pydantic import BaseModel, computed_field
 
 from etl_lib.ETLContext import ETLContext
@@ -35,8 +37,8 @@ class LoadCalendarTask(CSVLoad2Neo4jTasks):
                 label_array.append("RUNS_7")
             return label_array
 
-    def __init__(self, context: ETLContext):
-        super().__init__(context, LoadCalendarTask.Calendar)
+    def __init__(self, context: ETLContext, file:Path):
+        super().__init__(context, LoadCalendarTask.Calendar, file)
 
     def _query(self):
         return """UNWIND $batch as row

@@ -1,3 +1,5 @@
+from pathlib import Path
+
 from pydantic import BaseModel
 
 from etl_lib.ETLContext import ETLContext
@@ -12,8 +14,8 @@ class LoadStopTimesTask(CSVLoad2Neo4jTasks):
         departure_time: str
         stop_sequence: int
 
-    def __init__(self, context: ETLContext):
-        super().__init__(context, LoadStopTimesTask.StopTime)
+    def __init__(self, context: ETLContext, file:Path):
+        super().__init__(context, LoadStopTimesTask.StopTime, file)
 
     def _query(self):
         return """UNWIND $batch AS row

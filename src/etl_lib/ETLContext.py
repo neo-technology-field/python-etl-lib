@@ -1,11 +1,17 @@
 import logging
 import os
-from collections import namedtuple
 from pathlib import Path
+from typing import NamedTuple
 
 from neo4j import Driver, GraphDatabase, WRITE_ACCESS, SummaryCounters
 
-QueryResult = namedtuple("query_result", ["data", "summery"])
+
+class QueryResult(NamedTuple):
+    data: []
+    summery: {}
+
+def append_results(r1: QueryResult, r2: QueryResult) -> QueryResult:
+    return QueryResult(r1.data + r2.data, r1.summery + r2.summery)
 
 class Neo4jContext:
     uri: str
@@ -21,7 +27,7 @@ class Neo4jContext:
         self.database = get_database_name(env_vars)
         self.__neo4j_connect()
 
-    def query_database(self, session,  query, **kwargs) -> QueryResult:
+    def query_database(self, session, query, **kwargs) -> QueryResult:
         """
         Executes a Cypher query on the Neo4j database.
         """
@@ -29,7 +35,7 @@ class Neo4jContext:
             results = []
             for single_query in query:
                 result = self.query_database(session, single_query, **kwargs)
-                results.append(result)
+                results = append_results(results, result)
             return results
         else:
             try:
@@ -42,7 +48,8 @@ class Neo4jContext:
                 self.logger.error(e)
                 raise e
 
-    def __counters_2_dict(self, counters: SummaryCounters):
+    @staticmethod
+    def __counters_2_dict(counters: SummaryCounters):
         return {
             "constraints_added": counters.constraints_added,
             "constraints_removed": counters.constraints_removed,
@@ -57,8 +64,6 @@ class Neo4jContext:
             "relationships_deleted": counters.relationships_deleted,
         }
 
-
-
     def session(self):
         return self.driver.session(database=self.database, default_access_mode=WRITE_ACCESS)
 
@@ -69,7 +74,7 @@ class Neo4jContext:
         self.driver = GraphDatabase.driver(uri=self.uri, auth=self.auth,
                                            notifications_min_severity="OFF")
         self.driver.verify_connectivity()
-        self.logger.info(f"driver connected to instance at {self.uri}")
+        self.logger.info(f"driver connected to instance at {self.uri} with username {self.auth[0]}")
 
 
 class ETLContext:

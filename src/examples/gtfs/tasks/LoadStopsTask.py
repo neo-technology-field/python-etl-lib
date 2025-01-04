@@ -1,3 +1,4 @@
+from pathlib import Path
 from typing import Optional
 
 from pydantic import BaseModel, Field
@@ -18,8 +19,8 @@ class LoadStopsTask(CSVLoad2Neo4jTasks):
         timezone: Optional[str] = Field(alias="stop_timezone", default=None)
         code: Optional[str] = Field(alias="stop_code", default=None)
 
-    def __init__(self, context: ETLContext):
-        super().__init__(context, LoadStopsTask.Stop)
+    def __init__(self, context: ETLContext, file:Path):
+        super().__init__(context, LoadStopsTask.Stop, file)
 
     def _query(self):
         return """UNWIND $batch AS row

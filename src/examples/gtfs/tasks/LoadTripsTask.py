@@ -1,3 +1,4 @@
+from pathlib import Path
 from typing import Optional
 
 from pydantic import BaseModel, Field
@@ -19,8 +20,8 @@ class LoadTripsTask(CSVLoad2Neo4jTasks):
         bikesAllowed: Optional[bool] = Field(alias="bikes_allowed", default=None)
         shapeId: str = Field(alias="shape_id")
 
-    def __init__(self, context: ETLContext):
-        super().__init__(context, LoadTripsTask.Trip)
+    def __init__(self, context: ETLContext, file:Path):
+        super().__init__(context, LoadTripsTask.Trip, file)
 
     def _query(self):
         return """ UNWIND $batch AS row

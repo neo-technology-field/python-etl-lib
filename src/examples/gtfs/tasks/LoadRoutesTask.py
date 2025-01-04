@@ -1,3 +1,4 @@
+from pathlib import Path
 from typing import Any
 
 from pydantic import BaseModel, Field, field_validator
@@ -21,8 +22,8 @@ class LoadRoutesTask(CSVLoad2Neo4jTasks):
                 return "Münchner Verkehrsgesellschaft (SWM)"
             return value
 
-    def __init__(self, context: ETLContext):
-        super().__init__(context, LoadRoutesTask.Route)
+    def __init__(self, context: ETLContext, file:Path):
+        super().__init__(context, LoadRoutesTask.Route, file)
 
     def _query(self):
         return """UNWIND $batch as row

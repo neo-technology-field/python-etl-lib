@@ -6,6 +6,8 @@ import click
 from dotenv import load_dotenv
 
 from etl_lib.ETLContext import ETLContext
+from etl_lib.core.Task import TaskGroup
+from examples.gtfs.tasks.CreateSequenceTask import CreateSequenceTask
 from examples.gtfs.tasks.LoadAgenciesTask import LoadAgenciesTask
 from examples.gtfs.tasks.LoadCalendarTask import LoadCalendarTask
 from examples.gtfs.tasks.LoadRoutesTask import LoadRoutesTask
@@ -73,28 +75,28 @@ def main(input_directory, neo4j_uri, neo4j_user, neo4j_password, log_file, datab
     if log_file:
         logging.info(f"Log File: {log_file}")
 
-    # Example processing (replace with actual logic)
     logging.info(f"Connecting to Neo4j at {neo4j_uri} with user {neo4j_user} to access database {database_name}...")
 
     context = ETLContext(env_vars=dict(os.environ))
 
     schema = SchemaTask(context=context)
-    schema.execute()
+    init_group = TaskGroup(context=context, tasks=[schema])
 
     tasks = [
-        LoadAgenciesTask,
-        LoadRoutesTask,
-        LoadStopsTask,
-        LoadTripsTask,
-        LoadCalendarTask,
-        LoadStopTimesTask,
-        LoadTripsTask
+        LoadAgenciesTask(context=context, file=input_directory / LoadAgenciesTask.file_name()),
+        LoadRoutesTask(context=context, file=input_directory / LoadRoutesTask.file_name()),
+        LoadStopsTask(context=context, file=input_directory / LoadStopsTask.file_name()),
+        LoadTripsTask(context=context, file=input_directory / LoadTripsTask.file_name()),
+        LoadCalendarTask(context=context, file=input_directory / LoadCalendarTask.file_name()),
+        LoadStopTimesTask(context=context, file=input_directory / LoadStopTimesTask.file_name()),
+        LoadTripsTask(context=context, file=input_directory / LoadTripsTask.file_name()),
     ]
+    csv_group = TaskGroup(context=context, tasks=tasks)
 
-    for task_def in tasks:
-        task = task_def(context=context)
-        task.execute(file=input_directory / task_def.file_name())
+    post_group = TaskGroup(context=context, tasks=[CreateSequenceTask(context=context)])
 
+    all_group = TaskGroup(context=context, tasks=[init_group, csv_group, post_group])
+    all_group.execute()
 
     logging.info("Processing complete.")
 

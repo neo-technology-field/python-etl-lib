@@ -1,3 +1,5 @@
+from pathlib import Path
+
 from pydantic import BaseModel, Field
 
 from etl_lib.ETLContext import ETLContext
@@ -9,8 +11,8 @@ class LoadTransfersTask(CSVLoad2Neo4jTasks):
         from_stop_id: str
         minTransferTime: int = Field(gt=0, alias="min_transfer_time", default=0)
 
-    def __init__(self, context: ETLContext):
-        super().__init__(context, LoadTransfersTask.Transfer)
+    def __init__(self, context: ETLContext, file:Path):
+        super().__init__(context, LoadTransfersTask.Transfer, file)
 
     def _query(self):
         return """UNWIND $batch AS row

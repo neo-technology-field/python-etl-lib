@@ -3,6 +3,7 @@ import logging
 from collections import Counter
 from collections import namedtuple
 from datetime import datetime
+from typing import override
 
 from tabulate import tabulate
 
@@ -47,7 +48,7 @@ class TaskReturn:
         self.summery = result.summery if result.summery else {}
 
     def pretty_print(self):
-        return (f"\nsuccess: {self.success}, finished in {self.end_time - self.start_time}"
+        return (f"success: {self.success}, finished in {self.end_time - self.start_time}"
                 f"\n{tabulate([self.summery], headers='keys', tablefmt='psql')}")
 
 
@@ -71,7 +72,7 @@ class Task:
         task_return = TaskReturn()
         self.logger.info(f"{self.__indent()}starting {self.__class__.__name__}")
 
-        #TODO handle exceptions on this level
+        # TODO handle exceptions on this level
         result = self.run_internal(**kwargs)
         task_return.mark_ended(result)
 
@@ -106,8 +107,9 @@ class TaskGroup(Task):
     The summery statistic object returned from the group execute method will be a merged/aggregated one.
     """
 
-    def __init__(self, context: ETLContext, log_indent: int = 1):
+    def __init__(self, context: ETLContext, tasks: list[Task], log_indent: int = 1):
         super().__init__(context, log_indent)
+        self.tasks = tasks
 
     @abc.abstractmethod
     def task_definitions(self) -> [Task]:
@@ -122,8 +124,7 @@ class TaskGroup(Task):
 
     def run_internal(self, **kwargs) -> InternalResult:
         summery = {}
-        for definition in self.task_definitions():
-            task = definition(context=self.context, log_indent=self.log_indent + 1)
+        for task in self.tasks:
             ret = task.execute(**kwargs)
             summery = merge_summery(summery, ret.summery)
             if ret.success == False and task.abort_on_fail():
@@ -131,7 +132,7 @@ class TaskGroup(Task):
         return InternalResult(True, summery)
 
     def abort_on_fail(self):
-        for definition in self.task_definitions():
-            task = definition(context=self.context, log_indent=self.log_indent + 1)
+        for task in self.tasks:
             if task.abort_on_fail():
                 return True
+

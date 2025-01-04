@@ -1,3 +1,5 @@
+from pathlib import Path
+
 from pydantic import BaseModel, Field
 
 from etl_lib.ETLContext import ETLContext
@@ -12,8 +14,8 @@ class LoadAgenciesTask(CSVLoad2Neo4jTasks):
         timezone: str = Field(alias="agency_timezone")
         lang: str = Field(alias="agency_lang")
 
-    def __init__(self, context: ETLContext):
-        super().__init__(context, LoadAgenciesTask.Agency)
+    def __init__(self, context: ETLContext, file:Path):
+        super().__init__(context, LoadAgenciesTask.Agency, file)
 
     def _query(self):
         return """ UNWIND $batch AS row
