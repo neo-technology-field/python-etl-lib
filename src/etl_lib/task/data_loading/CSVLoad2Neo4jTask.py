@@ -7,7 +7,7 @@ from pydantic import BaseModel
 
 from etl_lib.ETLContext import ETLContext
 from etl_lib.core.ClosedLoopBatchProcessor import ClosedLoopBatchProcessor
-from etl_lib.core.Task import Task, InternalResult
+from etl_lib.core.Task import Task, TaskReturn
 from etl_lib.core.ValidationBatchProcessor import ValidationBatchProcessor
 from etl_lib.data_sink.CypherBatchProcessor import CypherBatchProcessor
 from etl_lib.data_source.CSVBatchProcessor import CSVBatchProcessor
@@ -22,7 +22,7 @@ class CSVLoad2Neo4jTasks(Task):
         self.logger = logging.getLogger(self.__class__.__name__)
         self.file = file
 
-    def run_internal(self, **kwargs) -> InternalResult:
+    def run_internal(self, **kwargs) -> TaskReturn:
 
         error_file = self.file.with_suffix(".error.json")
 
@@ -32,8 +32,10 @@ class CSVLoad2Neo4jTasks(Task):
         end = ClosedLoopBatchProcessor(cypher)
         result = next(end.get_batch(self.batch_size))
 
-        return InternalResult(True, result.statistics)
+        return TaskReturn(True, result.statistics)
 
+    def __repr__(self):
+        return f"CSVLoad2Neo4jTasks({self.file})"
 
     @abc.abstractmethod
     def _query(self):

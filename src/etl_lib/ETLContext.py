@@ -1,17 +1,21 @@
 import logging
 import os
 from pathlib import Path
-from typing import NamedTuple
+from typing import NamedTuple, Any
 
 from neo4j import Driver, GraphDatabase, WRITE_ACCESS, SummaryCounters
+
+from etl_lib.core.ProgressReporter import get_reporter
 
 
 class QueryResult(NamedTuple):
     data: []
     summery: {}
 
+
 def append_results(r1: QueryResult, r2: QueryResult) -> QueryResult:
     return QueryResult(r1.data + r2.data, r1.summery + r2.summery)
+
 
 class Neo4jContext:
     uri: str
@@ -88,6 +92,11 @@ class ETLContext:
         self.logger = logging.getLogger(self.__class__.__name__)
         self.neo4j = Neo4jContext(env_vars)
         self.__env_vars = env_vars
+        self.reporter = get_reporter(self)
+
+    def env(self, key: str) -> Any:
+        if key in self.__env_vars:
+            return self.__env_vars[key]
 
 
 def get_database_name(env_vars: dict):

@@ -6,6 +6,7 @@ import click
 from dotenv import load_dotenv
 
 from etl_lib.ETLContext import ETLContext
+from etl_lib.core.ProgressReporter import get_reporter
 from etl_lib.core.Task import TaskGroup
 from examples.gtfs.tasks.CreateSequenceTask import CreateSequenceTask
 from examples.gtfs.tasks.LoadAgenciesTask import LoadAgenciesTask
@@ -80,7 +81,7 @@ def main(input_directory, neo4j_uri, neo4j_user, neo4j_password, log_file, datab
     context = ETLContext(env_vars=dict(os.environ))
 
     schema = SchemaTask(context=context)
-    init_group = TaskGroup(context=context, tasks=[schema])
+    init_group = TaskGroup(context=context, tasks=[schema], name="schema-init")
 
     tasks = [
         LoadAgenciesTask(context=context, file=input_directory / LoadAgenciesTask.file_name()),
@@ -91,11 +92,14 @@ def main(input_directory, neo4j_uri, neo4j_user, neo4j_password, log_file, datab
         LoadStopTimesTask(context=context, file=input_directory / LoadStopTimesTask.file_name()),
         LoadTripsTask(context=context, file=input_directory / LoadTripsTask.file_name()),
     ]
-    csv_group = TaskGroup(context=context, tasks=tasks)
+    csv_group = TaskGroup(context=context, tasks=tasks, name="csv-loading")
 
-    post_group = TaskGroup(context=context, tasks=[CreateSequenceTask(context=context)])
+    post_group = TaskGroup(context=context, tasks=[CreateSequenceTask(context=context)], name="post-processing")
 
-    all_group = TaskGroup(context=context, tasks=[init_group, csv_group, post_group])
+    all_group = TaskGroup(context=context, tasks=[init_group, csv_group, post_group], name="main")
+
+    context.reporter.register_tasks(all_group)
+
     all_group.execute()
 
     logging.info("Processing complete.")
