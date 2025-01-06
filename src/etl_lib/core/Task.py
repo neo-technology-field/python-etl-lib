@@ -2,14 +2,7 @@ import abc
 import logging
 import uuid
 
-
-def merge_summery(summery_1: dict, summery_2: dict) -> dict:
-    """
-    Helper function to merge dicts. Assuming that values are numbers.
-    If a key exists in both dicts, then the result will contain a key with the added values.
-    """
-    return {i: summery_1.get(i, 0) + summery_2.get(i, 0)
-            for i in set(summery_1).union(summery_2)}
+from etl_lib.core.utils import merge_summery
 
 
 class TaskReturn:
@@ -28,7 +21,6 @@ class TaskReturn:
         self.error = error
 
 
-
 class Task:
     """
     Main building block. Everything that can be executed should derive from this class.
@@ -36,9 +28,14 @@ class Task:
     """
 
     def __init__(self, context):
+        """
+        Construct a Task object.
+        :param context: `ETLContext` instance.
+        """
         self.context = context
         self.logger = logging.getLogger(self.__class__.__name__)
-        self.uuid=str(uuid.uuid4())
+        self.uuid = str(uuid.uuid4())
+        """Uniquely identified a Task. Needed for for the Reporter mostly."""
         self.addons = {}
         """add anny additional attributes. these will be picked up by the ProgressReporter and stored in the graph. """
 
@@ -46,6 +43,8 @@ class Task:
         """
         Executes the task. Implementations of this Interface should not overwrite this method, but provide the
         Task functionality inside `run_internal` which will be called from here.
+        Will use the `Reporter` from the context to repost status updates.
+        :param kwargs: will be passed to `run_internal`
         """
         self.context.reporter.started_task(self)
 
@@ -62,6 +61,7 @@ class Task:
     def run_internal(self, **kwargs) -> TaskReturn:
         """
         Abstract method that implementations must implement for the actual job of the task.
+        Exceptions should not be captured iby implementations. They will be handled by this class.
         :return: Tuple containing if the success or failure of the Task as well as statistics.
         """
         pass
@@ -75,6 +75,10 @@ class Task:
         return True
 
     def task_name(self) -> str:
+        """
+        Option to overwrite the name of this Task. Name is used in reporting.
+        :return: str describing the task.
+        """
         return self.__class__.__name__
 
     def __repr__(self):
@@ -83,12 +87,19 @@ class Task:
 
 class TaskGroup(Task):
     """
-    Base class to allow wrapping of Task to form a hierarchy.
-    Implementers should only need to provide the Tasks to execute as a block.
+    Base class to allow wrapping of Task or taskGroups to form a hierarchy.
+    Implementers should only need to provide the Tasks to execute as an array.
     The summery statistic object returned from the group execute method will be a merged/aggregated one.
     """
 
     def __init__(self, context, tasks: list[Task], name: str):
+        """
+        Construct a TaskGroup object.
+        :param context: `ETLContext` instance.
+        :param tasks: a list of `Task` instances. These will be executed in the order provided when `run_internal`
+                    is called.
+        :param name: short name of the TaskGroup.
+        """
         super().__init__(context)
         self.tasks = tasks
         self.name = name

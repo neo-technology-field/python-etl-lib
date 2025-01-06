@@ -1,0 +1,190 @@
+{
+  "uuid": "d6e914f2-8037-4450-b584-103bb7c767db",
+  "title": "ETL Pipelines",
+  "version": "2.4",
+  "settings": {
+    "pagenumber": 0,
+    "editable": true,
+    "fullscreenEnabled": false,
+    "parameters": {
+      "neodash_run_id": "3c1ad07b-0a63-4e77-b288-b3325586ebed",
+      "neodash_run_startTime": {
+        "year": {
+          "low": 2025,
+          "high": 0
+        },
+        "month": {
+          "low": 1,
+          "high": 0
+        },
+        "day": {
+          "low": 6,
+          "high": 0
+        },
+        "hour": {
+          "low": 22,
+          "high": 0
+        },
+        "minute": {
+          "low": 11,
+          "high": 0
+        },
+        "second": {
+          "low": 25,
+          "high": 0
+        },
+        "nanosecond": {
+          "low": 154668000,
+          "high": 0
+        }
+      },
+      "neodash_task_id": "4c7a3934-58be-4abc-969b-1e8aac15ca61"
+    },
+    "theme": "light"
+  },
+  "pages": [
+    {
+      "title": "New page",
+      "reports": [
+        {
+          "id": "ba28e804-3f08-4285-a21a-d9af9781435c",
+          "title": "Past ETL Runs",
+          "query": "MATCH (r:ETLRun) \nRETURN r.startTime AS StartTime, \nr.endTime AS EndTime, \nr.status AS Status, r.uuid AS __uuid\n\n\n",
+          "width": 14,
+          "height": 8,
+          "x": 0,
+          "y": 0,
+          "type": "table",
+          "selection": {},
+          "settings": {
+            "actionsRules": [
+              {
+                "condition": "Click",
+                "field": "Status",
+                "value": "__uuid",
+                "customization": "set variable",
+                "customizationValue": "run_id"
+              },
+              {
+                "condition": "Click",
+                "field": "Status",
+                "value": "StartTime",
+                "customization": "set variable",
+                "customizationValue": "run_startTime"
+              }
+            ],
+            "refreshButtonEnabled": true,
+            "styleRules": [
+              {
+                "field": "Status",
+                "condition": "=",
+                "value": "success",
+                "customization": "row color",
+                "customizationValue": "#1DB824"
+              },
+              {
+                "field": "Status",
+                "condition": "=",
+                "value": "failure",
+                "customization": "row color",
+                "customizationValue": "#EA7575"
+              },
+              {
+                "field": "Status",
+                "condition": "=",
+                "value": "running",
+                "customization": "row color",
+                "customizationValue": "#EAE57D"
+              }
+            ]
+          }
+        },
+        {
+          "id": "ccdafd6e-ea82-47b1-8c66-796c4eaa6859",
+          "title": "Overall Stats of seletect run",
+          "query": "MATCH (r:ETLTask {uuid: $neodash_run_id})-[:HAS_STATS]-(stats)\nUNWIND keys(stats) AS propertyKey\nRETURN propertyKey AS StatsName, \nstats[propertyKey] AS StatsValue \nORDER BY StatsName\n\n\n",
+          "width": 9,
+          "height": 8,
+          "x": 14,
+          "y": 0,
+          "type": "table",
+          "selection": {},
+          "settings": {
+            "noDataMessage": "Only available for successfully finished runs"
+          }
+        },
+        {
+          "id": "5629582b-a074-4026-bc9b-d9c3eabc1082",
+          "title": "Sub Tasks of selected Run at $neodash_run_startTime",
+          "query": "MATCH (r:ETLRun:ETLTask {uuid:$neodash_run_id})-[:HAS_SUB_TASK*]->(task) WHERE task.type <> 'TaskGroup'\nWITH task ORDER BY task.order ASC\nRETURN \n  task.name AS TaskName, \n  coalesce(task.error, task.status) AS Status,\n  coalesce(task.batches, '-') + '/' + coalesce(task.expected_batches, '-') AS Progres, \n  duration.inSeconds(task.startTime, coalesce(task.endTime, datetime({timezone:'Europe/Berlin'}))) AS Duration, \n  task.task AS Detail,\n  task.uuid AS __uuid\n\n\n",
+          "width": 23,
+          "height": 6,
+          "x": 0,
+          "y": 8,
+          "type": "table",
+          "selection": {},
+          "settings": {
+            "columnWidths": "[2,1,1,2,4]",
+            "refreshButtonEnabled": true,
+            "refreshRate": 30,
+            "actionsRules": [
+              {
+                "condition": "Click",
+                "field": "TaskName",
+                "value": "__uuid",
+                "customization": "set variable",
+                "customizationValue": "task_id"
+              }
+            ],
+            "styleRules": [
+              {
+                "field": "Status",
+                "condition": "=",
+                "value": "success",
+                "customization": "row color",
+                "customizationValue": "#1DB824"
+              },
+              {
+                "field": "Status",
+                "condition": "=",
+                "value": "open",
+                "customization": "row color",
+                "customizationValue": "#D1ED63"
+              },
+              {
+                "field": "Status",
+                "condition": "=",
+                "value": "running",
+                "customization": "row color",
+                "customizationValue": "#EAE57D"
+              }
+            ]
+          }
+        },
+        {
+          "id": "a280c457-a843-4a34-8c27-d3390b4a5696",
+          "title": "",
+          "query": "MATCH (r:ETLTask {uuid: $neodash_task_id})-[:HAS_STATS]-(stats)\nUNWIND keys(stats) AS propertyKey\nRETURN propertyKey AS StatsName, \nstats[propertyKey] AS StatsValue \nORDER BY StatsName\n\n\n\n\n",
+          "width": 10,
+          "height": 4,
+          "x": 0,
+          "y": 14,
+          "type": "table",
+          "selection": {},
+          "settings": {}
+        }
+      ]
+    }
+  ],
+  "parameters": {},
+  "extensions": {
+    "active": true,
+    "activeReducers": [],
+    "actions": {
+      "active": true
+    },
+    "styling": {
+      "active": true
+    }
+  }
+}

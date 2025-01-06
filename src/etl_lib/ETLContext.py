@@ -9,8 +9,11 @@ from etl_lib.core.ProgressReporter import get_reporter
 
 
 class QueryResult(NamedTuple):
+    """Result of a query against the neo4j database."""
     data: []
+    """Data as returned from the query."""
     summery: {}
+    """Counters as reported by neo4j. Contains entries such as `nodes_created`, `nodes_deleted`, etc."""
 
 
 def append_results(r1: QueryResult, r2: QueryResult) -> QueryResult:
@@ -24,6 +27,16 @@ class Neo4jContext:
     database: str
 
     def __init__(self, env_vars: dict):
+        """
+        Create a new Neo4j context.
+        Reads the following env_vars keys:
+        `NEO4J_URI`, `NEO4J_USERNAME`, `NEO4J_PASSWORD`.
+        If env_vars contains `PYTEST_VERSION` then it will take the database name from `NEO4J_TEST_DATABASE` otherwise
+        it will use the database name from `NEO4J_DATABASE`.
+        This is to allow using a different database for tests.
+        TODO: optional (preferably) use TestContainers..
+        :param env_vars:
+        """
         self.logger = logging.getLogger(self.__class__.__name__)
         self.uri = env_vars["NEO4J_URI"]
         self.auth = (env_vars["NEO4J_USERNAME"],
@@ -74,9 +87,6 @@ class Neo4jContext:
         else:
             return self.driver.session(database=database, default_access_mode=WRITE_ACCESS)
 
-    def set_database_name(self, database_name):
-        self.database = database_name
-
     def __neo4j_connect(self):
         self.driver = GraphDatabase.driver(uri=self.uri, auth=self.auth,
                                            notifications_min_severity="OFF")
@@ -92,12 +102,21 @@ class ETLContext:
     path_processed: Path
 
     def __init__(self, env_vars: dict):
+        """
+        Create a new ETLContext. The context created will contain an `Neo4jContext` and a `ProgressReporter`.
+        See there for keys used from the provided `env_vars` dict.
+        """
         self.logger = logging.getLogger(self.__class__.__name__)
         self.neo4j = Neo4jContext(env_vars)
         self.__env_vars = env_vars
         self.reporter = get_reporter(self)
 
     def env(self, key: str) -> Any:
+        """
+        Returns the value of an entry in the `env_vars` dict.
+        :param key: name of the entry to read.
+        :return: value of the entry, or None if the key is not in the dict.
+        """
         if key in self.__env_vars:
             return self.__env_vars[key]
 

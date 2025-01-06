@@ -13,9 +13,9 @@ The contained blocks have build-in functionality deemed essential for ETL pipeli
 This is currently mostly for Neo4j databases, but if needed can be extended to other sources and sinks.
 It does not provide a cli out of the box, but inspiration can be taken from the example.
 
-The main building blocks:
+== Main Building Blocks
 
-== Task
+=== Task
 
 Pipelines can be built as a series of Task. An example would be loading a CSV file into Neo4j `CSVLoad2Neo4jTask`
 or `ExcecuteCypherTask`.
@@ -25,12 +25,12 @@ They also integrate with the `ProgressReporter`, which optionally writes the sta
 To allow a maximum of flexibility, Tasks can be composed of `BatchProcesors` which allow for quick assembling of
 Tasks out of existing `BatchProcessors`.
 
-== TaskGroups
+=== TaskGroups
 
 Group Tasks together to logical blocks, such as `init`, `loading` and `post-processing`. The provided functionality
 hopefully makes it easy to compose the ETL pipeline while providing the listed features.
 
-== BatchProcessors
+=== BatchProcessors
 
 Composing Tasks out of smaller blocks, such as reading from a source, validation and writing to a sink while streaming
 the data in batches. See `CSVLoad2Neo4jTask` for an example.
@@ -40,7 +40,7 @@ the data in batches. See `CSVLoad2Neo4jTask` for an example.
 Context object to hold information and functionality needed by all other parts. This also holds a `Neo4jContext` with
 provides Neo4j access.
 
-== ProgressReporter
+=== ProgressReporter
 
 The ProgressReporter is responsible for logging the status of the Task as the pipeline progresses.
 If an env variable `REPORTER_DATABASE` is set, then the reporter will also write the status to the database.
@@ -149,3 +149,17 @@ valid_rows:4170
 ----
 
 Task that have SubTask (`TaskGroup` class) will have the aggregated stats of all contained Tasks. Hence, to see the summary of the entire run, only the topmost node `ETLRun` needs to be viewed.
+
+`dashboard.json` contains a simple https://neo4j.com/labs/neodash/[NeoDash] DashBoard.
+
+== Building, Testing, Running
+
+This project is using https://realpython.com/pipenv-guide/[Pipenv]
+
+Activate it via `pipenv shell` and inside the new shell run `pipenv install` to install all dependencies.
+
+Run the gtfs example via `pipenv run src/examples/gtfs/gtfs.py <gtfs input directory>`
+
+Run the tests via `pipenv run pytest`.
+
+Intellij should pick up the pipenv.

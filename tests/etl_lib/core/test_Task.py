@@ -1,4 +1,5 @@
-from etl_lib.core.Task import merge_summery, Task, InternalResult, TaskGroup
+from etl_lib.core.Task import Task, InternalResult, TaskGroup
+from etl_lib.core.utils import merge_summery
 
 
 def test_merge_summery():

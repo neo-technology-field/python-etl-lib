@@ -1,4 +1,3 @@
-import random
 from typing import Generator
 
 from etl_lib.ETLContext import ETLContext
@@ -17,7 +16,5 @@ class CypherBatchProcessor(BatchProcessor):
 
         with self.neo4j.session() as session:
             for batch_result in self.predecessor.get_batch(batch_size):
-                if random.randint(1, 10) == 1:  # 1 in 10 chance
-                    raise Exception("Randomly thrown exception!")
                 result = self.neo4j.query_database(session=session, query=self.query, batch=batch_result.chunk)
                 yield append_result(batch_result, result.summery)
