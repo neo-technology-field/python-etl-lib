@@ -6,8 +6,8 @@ from etl_lib.core.Task import Task, TaskReturn, merge_summery
 
 class ExecuteCypherTask(Task):
 
-    def __init__(self, context: ETLContext, log_indent: int = 1):
-        super().__init__(context, log_indent)
+    def __init__(self, context: ETLContext):
+        super().__init__(context)
         self.context = context
 
     def run_internal(self, **kwargs) -> TaskReturn:

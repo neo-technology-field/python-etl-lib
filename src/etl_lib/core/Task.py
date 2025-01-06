@@ -1,6 +1,5 @@
 import abc
 import logging
-from collections import Counter
 
 
 def merge_summery(summery_1: dict, summery_2: dict) -> dict:
@@ -8,13 +7,14 @@ def merge_summery(summery_1: dict, summery_2: dict) -> dict:
     Helper function to merge dicts. Assuming that values are numbers.
     If a key exists in both dicts, then the result will contain a key with the added values.
     """
-    return dict(Counter(summery_1) + Counter(summery_2))
+    return {i: summery_1.get(i, 0) + summery_2.get(i, 0)
+            for i in set(summery_1).union(summery_2)}
 
 
 class TaskReturn:
     """
     Return object for the Task.execute() function, containing results and timing information.
-    The contained `summery` dict can be used t by tasks to return statistics about the job performed,
+    The contained `summery` dict can be used by tasks to return statistics about the job performed,
     such as rows inserted, updated, ...
     """
     success: bool
@@ -31,17 +31,15 @@ class Task:
     Functionality is limited to some bookkeeping and logging, while allowing easy implementation.
     """
 
-    def __init__(self, context, log_indent: int = 1):
+    def __init__(self, context):
         self.context = context
         self.logger = logging.getLogger(self.__class__.__name__)
-        self.log_indent = log_indent
 
     def execute(self, **kwargs) -> TaskReturn:
         """
         Executes the task. Implementations of this Interface should not overwrite this method, but provide the
         Task functionality inside `run_internal` which will be called from here.
         """
-        task_return = TaskReturn()
         self.context.reporter.started_task(self.task_name())
 
         # TODO handle exceptions on this level
@@ -49,7 +47,7 @@ class Task:
 
         self.context.reporter.finished_task(result.success, result.summery)
 
-        return task_return
+        return TaskReturn(result.success, result.summery)
 
     @abc.abstractmethod
     def run_internal(self, **kwargs) -> TaskReturn:
@@ -58,9 +56,6 @@ class Task:
         :return: Tuple containing if the success or failure of the Task as well as statistics.
         """
         pass
-
-    def __indent(self):
-        return '\t' * self.log_indent
 
     def abort_on_fail(self) -> bool:
         """
@@ -84,8 +79,8 @@ class TaskGroup(Task):
     The summery statistic object returned from the group execute method will be a merged/aggregated one.
     """
 
-    def __init__(self, context, tasks: list[Task], name: str, log_indent: int = 1):
-        super().__init__(context, log_indent)
+    def __init__(self, context, tasks: list[Task], name: str):
+        super().__init__(context)
         self.tasks = tasks
         self.name = name
 
@@ -98,6 +93,7 @@ class TaskGroup(Task):
             ret = task.execute(**kwargs)
             summery = merge_summery(summery, ret.summery)
             if ret.success == False and task.abort_on_fail():
+                self.logger.warning(f"Task {self.task_name()} failed. Aborting execution.")
                 return TaskReturn(False, summery)
         return TaskReturn(True, summery)
 

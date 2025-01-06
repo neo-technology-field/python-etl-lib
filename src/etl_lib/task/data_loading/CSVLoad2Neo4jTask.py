@@ -15,8 +15,8 @@ from etl_lib.data_source.CSVBatchProcessor import CSVBatchProcessor
 
 class CSVLoad2Neo4jTasks(Task):
 
-    def __init__(self, context: ETLContext, model: Type[BaseModel], file: Path, batch_size: int = 5000, log_indent: int = 1):
-        super().__init__(context, log_indent)
+    def __init__(self, context: ETLContext, model: Type[BaseModel], file: Path, batch_size: int = 5000):
+        super().__init__(context)
         self.batch_size = batch_size
         self.model = model
         self.logger = logging.getLogger(self.__class__.__name__)
@@ -35,7 +35,7 @@ class CSVLoad2Neo4jTasks(Task):
         return TaskReturn(True, result.statistics)
 
     def __repr__(self):
-        return f"CSVLoad2Neo4jTasks({self.file})"
+        return f"{self.__class__.__name__}({self.file})"
 
     @abc.abstractmethod
     def _query(self):

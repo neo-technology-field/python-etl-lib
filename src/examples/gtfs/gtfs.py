@@ -6,7 +6,6 @@ import click
 from dotenv import load_dotenv
 
 from etl_lib.ETLContext import ETLContext
-from etl_lib.core.ProgressReporter import get_reporter
 from etl_lib.core.Task import TaskGroup
 from examples.gtfs.tasks.CreateSequenceTask import CreateSequenceTask
 from examples.gtfs.tasks.LoadAgenciesTask import LoadAgenciesTask
@@ -90,7 +89,6 @@ def main(input_directory, neo4j_uri, neo4j_user, neo4j_password, log_file, datab
         LoadTripsTask(context=context, file=input_directory / LoadTripsTask.file_name()),
         LoadCalendarTask(context=context, file=input_directory / LoadCalendarTask.file_name()),
         LoadStopTimesTask(context=context, file=input_directory / LoadStopTimesTask.file_name()),
-        LoadTripsTask(context=context, file=input_directory / LoadTripsTask.file_name()),
     ]
     csv_group = TaskGroup(context=context, tasks=tasks, name="csv-loading")
 
@@ -98,7 +96,7 @@ def main(input_directory, neo4j_uri, neo4j_user, neo4j_password, log_file, datab
 
     all_group = TaskGroup(context=context, tasks=[init_group, csv_group, post_group], name="main")
 
-    context.reporter.register_tasks(all_group)
+    context.reporter.register_tasks(all_group, source=input_directory.name)
 
     all_group.execute()
 

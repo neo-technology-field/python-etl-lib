@@ -26,5 +26,5 @@ class BatchProcessor:
         self.logger = logging.getLogger(self.__class__.__name__)
 
     @abc.abstractmethod
-    def get_batch(self, batch_size: int) -> Generator[BatchResults, None, None]:
+    def get_batch(self, max_batch__size: int) -> Generator[BatchResults, None, None]:
         pass

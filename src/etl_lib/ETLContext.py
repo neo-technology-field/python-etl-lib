@@ -68,8 +68,11 @@ class Neo4jContext:
             "relationships_deleted": counters.relationships_deleted,
         }
 
-    def session(self):
-        return self.driver.session(database=self.database, default_access_mode=WRITE_ACCESS)
+    def session(self, database=None):
+        if database is None:
+            return self.driver.session(database=self.database, default_access_mode=WRITE_ACCESS)
+        else:
+            return self.driver.session(database=database, default_access_mode=WRITE_ACCESS)
 
     def set_database_name(self, database_name):
         self.database = database_name

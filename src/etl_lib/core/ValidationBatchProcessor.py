@@ -15,10 +15,10 @@ class ValidationBatchProcessor(BatchProcessor):
         self.error_file = error_file
         self.model = model
 
-    def get_batch(self, batch_size: int) -> Generator[BatchResults, None, None]:
+    def get_batch(self, max_batch__size: int) -> Generator[BatchResults, None, None]:
         assert self.predecessor is not None
 
-        for batch in self.predecessor.get_batch(batch_size):
+        for batch in self.predecessor.get_batch(max_batch__size):
             valid_rows = []
             invalid_rows = []
 
@@ -45,9 +45,8 @@ class ValidationBatchProcessor(BatchProcessor):
             yield BatchResults(
                 chunk=valid_rows,
                 statistics=merge_summery(batch.statistics,{
-                    "valid_count": len(valid_rows),
-                    "invalid_count": len(invalid_rows),
-                    "batch_size": len(batch.chunk)
+                    "valid_rows": len(valid_rows),
+                    "invalid_rows": len(invalid_rows)
                 }),
                 batch_size=len(batch.chunk)
             )
