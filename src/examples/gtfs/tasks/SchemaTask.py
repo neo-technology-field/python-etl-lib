@@ -1,4 +1,4 @@
-from etl_lib.core.ExecuteCypherTask import ExecuteCypherTask
+from etl_lib.task.ExecuteCypherTask import ExecuteCypherTask
 
 
 class SchemaTask(ExecuteCypherTask):

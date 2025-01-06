@@ -2,6 +2,7 @@ import json
 from pathlib import Path
 from typing import Type, Generator
 
+from etl_lib.ETLContext import ETLContext
 from etl_lib.core.BatchProcessor import BatchProcessor, BatchResults
 from pydantic import BaseModel, ValidationError
 
@@ -10,8 +11,8 @@ from etl_lib.core.Task import merge_summery
 
 class ValidationBatchProcessor(BatchProcessor):
 
-    def __init__(self, predecessor, model: Type[BaseModel], error_file: Path):
-        super().__init__(predecessor)
+    def __init__(self, context: ETLContext, predecessor, model: Type[BaseModel], error_file: Path):
+        super().__init__(context, predecessor)
         self.error_file = error_file
         self.model = model
 

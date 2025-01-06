@@ -19,7 +19,7 @@ class LoadRoutesTask(CSVLoad2Neo4jTasks):
         @classmethod
         def handle_null(cls, value: Any) -> str:
             if value is None:
-                return "Münchner Verkehrsgesellschaft (SWM)"
+                return "generic"
             return value
 
     def __init__(self, context: ETLContext, file:Path):

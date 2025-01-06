@@ -8,7 +8,7 @@ from etl_lib.task.data_loading.CSVLoad2Neo4jTask import CSVLoad2Neo4jTasks
 
 class LoadAgenciesTask(CSVLoad2Neo4jTasks):
     class Agency(BaseModel):
-        id: str = Field(alias="agency_id")
+        id: str = Field(alias="agency_id", default="generic")
         name: str = Field(alias="agency_name")
         url: str = Field(alias="agency_url")
         timezone: str = Field(alias="agency_timezone")

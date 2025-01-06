@@ -1,0 +1,151 @@
+= Python ETL Toolbox
+
+Is this Yet Another Python ETL Tool? Maybe, but the purpose is not to provide a ready-made tool, but a collection of
+building blocks to quickly assemble a ETL pipeline.
+
+The contained blocks have build-in functionality deemed essential for ETL pipelines:
+
+ * logging
+ * error handling
+ * validation (via Pydantic)
+ * batching /  streaming
+
+This is currently mostly for Neo4j databases, but if needed can be extended to other sources and sinks.
+It does not provide a cli out of the box, but inspiration can be taken from the example.
+
+The main building blocks:
+
+== Task
+
+Pipelines can be built as a series of Task. An example would be loading a CSV file into Neo4j `CSVLoad2Neo4jTask`
+or `ExcecuteCypherTask`.
+Tasks do not pass data along, but the `excecute()` function provides status information to the caller.
+They also integrate with the `ProgressReporter`, which optionally writes the status information to a Neo4j database.
+
+To allow a maximum of flexibility, Tasks can be composed of `BatchProcesors` which allow for quick assembling of
+Tasks out of existing `BatchProcessors`.
+
+== TaskGroups
+
+Group Tasks together to logical blocks, such as `init`, `loading` and `post-processing`. The provided functionality
+hopefully makes it easy to compose the ETL pipeline while providing the listed features.
+
+== BatchProcessors
+
+Composing Tasks out of smaller blocks, such as reading from a source, validation and writing to a sink while streaming
+the data in batches. See `CSVLoad2Neo4jTask` for an example.
+
+== ETLContext
+
+Context object to hold information and functionality needed by all other parts. This also holds a `Neo4jContext` with
+provides Neo4j access.
+
+== ProgressReporter
+
+The ProgressReporter is responsible for logging the status of the Task as the pipeline progresses.
+If an env variable `REPORTER_DATABASE` is set, then the reporter will also write the status to the database.
+An NeoDash Dashboard is provided to see information on past incarnations.
+
+Each task will, in addition to success/failure, also provide information on rows read, nodes create, deleted and so on.
+Only stats with an non-zero value are reported through the python logging facilities.
+When reporting to a database, all stats are included.
+
+Logging is using the default Python logging package. The user is responsible to configure as needed.
+See the gtfs example writes the logs to a file and to console. Most logging is done on INFO level.
+
+See below for an example output of the gtfs example:
+
+[source,python,options="nowrap"]
+----
+2025-01-06 18:26:03,507 - INFO - Processing directory: /Users/bert/Downloads/mdb-2333-202412230030
+2025-01-06 18:26:03,507 - INFO - Neo4j URL: neo4j://localhost:7687
+2025-01-06 18:26:03,507 - INFO - Neo4j User: neo4j
+2025-01-06 18:26:03,507 - INFO - Neo4j Database Name: neo4j
+2025-01-06 18:26:03,507 - INFO - Connecting to Neo4j at neo4j://localhost:7687 with user neo4j to access database neo4j...
+2025-01-06 18:26:03,522 - INFO - driver connected to instance at neo4j://localhost:7687 with username neo4j
+2025-01-06 18:26:03,522 - INFO - progress reporting to database: neo4j
+2025-01-06 18:26:03,524 - INFO - the following tasks are registered for execution:
+Node('/main', task=TaskGroup(main))
+├── Node('/main/schema-init', task=TaskGroup(schema-init))
+│   └── Node('/main/schema-init/SchemaTask', task=Task(SchemaTask))
+├── Node('/main/csv-loading', task=TaskGroup(csv-loading))
+│   ├── Node('/main/csv-loading/LoadAgenciesTask', task=LoadAgenciesTask(mdb-2333-202412230030/agency.txt))
+│   ├── Node('/main/csv-loading/LoadRoutesTask', task=LoadRoutesTask(mdb-2333-202412230030/routes.txt))
+│   ├── Node('/main/csv-loading/LoadStopsTask', task=LoadStopsTask(mdb-2333-202412230030/stops.txt))
+│   ├── Node('/main/csv-loading/LoadTripsTask', task=LoadTripsTask(mdb-2333-202412230030/trips.txt))
+│   ├── Node('/main/csv-loading/LoadCalendarTask', task=LoadCalendarTask(mdb-2333-202412230030/calendar.txt))
+│   └── Node('/main/csv-loading/LoadStopTimesTask', task=LoadStopTimesTask(mdb-2333-202412230030/stop_times.txt))
+└── Node('/main/post-processing', task=TaskGroup(post-processing))
+    └── Node('/main/post-processing/CreateSequenceTask', task=Task(CreateSequenceTask))
+2025-01-06 18:26:03,568 - INFO - starting main
+2025-01-06 18:26:03,585 - INFO - 	starting schema-init
+2025-01-06 18:26:03,587 - INFO - 		starting SchemaTask
+2025-01-06 18:26:03,595 - INFO - 		finished SchemaTask with success: True
+2025-01-06 18:26:03,609 - INFO - 	finished schema-init with success: True
+2025-01-06 18:26:03,611 - INFO - 	starting csv-loading
+2025-01-06 18:26:03,612 - INFO - 		starting LoadAgenciesTask
+2025-01-06 18:26:03,624 - INFO - 		finished LoadAgenciesTask with success: True
++------------------+------------------+--------------+
+|   csv_lines_read |   properties_set |   valid_rows |
+|------------------+------------------+--------------|
+|                1 |                4 |            1 |
++------------------+------------------+--------------+
+2025-01-06 18:26:03,626 - INFO - 		starting LoadRoutesTask
+2025-01-06 18:26:03,638 - INFO - 		finished LoadRoutesTask with success: True
++------------------+------------------+--------------+
+|   csv_lines_read |   properties_set |   valid_rows |
+|------------------+------------------+--------------|
+|              299 |              897 |          299 |
++------------------+------------------+--------------+
+2025-01-06 18:26:03,640 - INFO - 		starting LoadStopsTask
+2025-01-06 18:26:03,763 - INFO - 		finished LoadStopsTask with success: True
++------------------+------------------+--------------+
+|   csv_lines_read |   properties_set |   valid_rows |
+|------------------+------------------+--------------|
+|             4170 |            20850 |         4170 |
++------------------+------------------+--------------+
+2025-01-06 18:26:03,765 - INFO - 		starting LoadTripsTask
+2025-01-06 18:26:05,932 - INFO - 		finished LoadTripsTask with success: False, error:
+Randomly thrown exception!
+2025-01-06 18:26:05,948 - WARNING - Task csv-loading failed. Aborting execution.
+2025-01-06 18:26:05,949 - INFO - 	finished csv-loading with success: False
++------------------+------------------+--------------+
+|   csv_lines_read |   properties_set |   valid_rows |
+|------------------+------------------+--------------|
+|             4470 |            21751 |         4470 |
++------------------+------------------+--------------+
+2025-01-06 18:26:05,950 - WARNING - Task main failed. Aborting execution.
+2025-01-06 18:26:05,950 - INFO - finished main with success: False
++------------------+------------------+--------------+
+|   csv_lines_read |   properties_set |   valid_rows |
+|------------------+------------------+--------------|
+|             4470 |            21751 |         4470 |
++------------------+------------------+--------------+
+2025-01-06 18:26:05,952 - INFO - Processing complete.
+----
+
+If reporting to a Neo4j database is enabled, each ETL run will result in tree structure as shown (example structure for the gtfs example):
+
+image::documentation/schema.png[Schema]
+
+Each ETLTask node, once it has been completed, will have an attached `ETLStats` node with properties such as below. The stats reported here depend on the task(s) involved.
+
+[code]
+----
+csv_lines_read:4170,
+labels_removed:0,
+indexes_removed:0,
+constraints_added:0,
+relationships_created:0,
+nodes_deleted:0,
+indexes_added:0,
+relationships_deleted:0,
+properties_set:20850,
+invalid_rows:0,
+constraints_removed:0,
+labels_added:0,
+nodes_created:0,
+valid_rows:4170
+----
+
+Task that have SubTask (`TaskGroup` class) will have the aggregated stats of all contained Tasks. Hence, to see the summary of the entire run, only the topmost node `ETLRun` needs to be viewed.

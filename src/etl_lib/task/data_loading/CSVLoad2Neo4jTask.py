@@ -21,15 +21,15 @@ class CSVLoad2Neo4jTasks(Task):
         self.model = model
         self.logger = logging.getLogger(self.__class__.__name__)
         self.file = file
+        self.addons["batch_size"] = batch_size
 
     def run_internal(self, **kwargs) -> TaskReturn:
-
         error_file = self.file.with_suffix(".error.json")
 
-        csv = CSVBatchProcessor(self.file)
-        validator = ValidationBatchProcessor(csv, self.model, error_file)
-        cypher = CypherBatchProcessor(validator, self.context.neo4j, self._query())
-        end = ClosedLoopBatchProcessor(cypher)
+        csv = CSVBatchProcessor(self.file, self.context)
+        validator = ValidationBatchProcessor(self.context, csv, self.model, error_file)
+        cypher = CypherBatchProcessor(self.context, validator, self._query())
+        end = ClosedLoopBatchProcessor(self.context, cypher)
         result = next(end.get_batch(self.batch_size))
 
         return TaskReturn(True, result.statistics)

@@ -2,13 +2,14 @@ import csv
 import gzip
 from pathlib import Path
 
+from etl_lib.ETLContext import ETLContext
 from etl_lib.core.BatchProcessor import BatchProcessor, BatchResults
 
 
 class CSVBatchProcessor(BatchProcessor):
 
-    def __init__(self, csv_file: Path, **kwargs):
-        BatchProcessor.__init__(self, None)
+    def __init__(self, csv_file: Path, context: ETLContext, **kwargs):
+        super().__init__(context)
         self.csv_file = csv_file
         self.kwargs = kwargs
 

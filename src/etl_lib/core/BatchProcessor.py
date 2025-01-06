@@ -4,6 +4,7 @@ import sys
 from dataclasses import dataclass, field
 from typing import Generator
 
+from etl_lib.ETLContext import ETLContext
 from etl_lib.core.Task import merge_summery
 
 
@@ -21,7 +22,8 @@ def append_result(org: BatchResults, stats: dict) -> BatchResults:
 
 class BatchProcessor:
 
-    def __init__(self, predecessor):
+    def __init__(self, context: ETLContext, predecessor=None):
+        self.context = context
         self.predecessor = predecessor
         self.logger = logging.getLogger(self.__class__.__name__)
 

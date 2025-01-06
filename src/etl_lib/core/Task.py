@@ -1,5 +1,6 @@
 import abc
 import logging
+import uuid
 
 
 def merge_summery(summery_1: dict, summery_2: dict) -> dict:
@@ -19,10 +20,13 @@ class TaskReturn:
     """
     success: bool
     summery: dict
+    error: str
 
-    def __init__(self, success: bool = True, summery: dict = None):
+    def __init__(self, success: bool = True, summery: dict = None, error: str = None):
         self.success = success
         self.summery = summery if summery else {}
+        self.error = error
+
 
 
 class Task:
@@ -34,20 +38,25 @@ class Task:
     def __init__(self, context):
         self.context = context
         self.logger = logging.getLogger(self.__class__.__name__)
+        self.uuid=str(uuid.uuid4())
+        self.addons = {}
+        """add anny additional attributes. these will be picked up by the ProgressReporter and stored in the graph. """
 
     def execute(self, **kwargs) -> TaskReturn:
         """
         Executes the task. Implementations of this Interface should not overwrite this method, but provide the
         Task functionality inside `run_internal` which will be called from here.
         """
-        self.context.reporter.started_task(self.task_name())
+        self.context.reporter.started_task(self)
 
-        # TODO handle exceptions on this level
-        result = self.run_internal(**kwargs)
+        try:
+            result = self.run_internal(**kwargs)
+        except Exception as e:
+            result = TaskReturn(success=False, summery={}, error=str(e))
 
-        self.context.reporter.finished_task(result.success, result.summery)
+        self.context.reporter.finished_task(result.success, result.summery, result.error)
 
-        return TaskReturn(result.success, result.summery)
+        return result
 
     @abc.abstractmethod
     def run_internal(self, **kwargs) -> TaskReturn:
