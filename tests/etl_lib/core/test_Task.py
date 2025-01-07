@@ -1,5 +1,6 @@
-from etl_lib.core.Task import Task, InternalResult, TaskGroup
+from etl_lib.core.Task import Task, TaskReturn, TaskGroup
 from etl_lib.core.utils import merge_summery
+from test_utils.utils import DummyContext
 
 
 def test_merge_summery():
@@ -9,12 +10,11 @@ def test_merge_summery():
 
 
 def test_simple_task():
-
     class DummyTask(Task):
         def run_internal(self, *args, **kwargs):
-            return InternalResult(success=False, summery={"rows inserted": 21, "labels created": 2})
+            return TaskReturn(success=False, summery={"rows inserted": 21, "labels created": 2})
 
-    task = DummyTask(None)
+    task = DummyTask(DummyContext())
     ret = task.execute()
     assert ret.success == False
     assert ret.summery == {'labels created': 2, 'rows inserted': 21}
@@ -23,19 +23,16 @@ def test_simple_task():
 def test_task_group():
     class DummyTask1(Task):
         def run_internal(self, *args, **kwargs):
-            return InternalResult(success=False, summery={"rows inserted": 2, "labels created": 2})
+            return TaskReturn(success=False, summery={"rows inserted": 2, "labels created": 2})
+
         def abort_on_fail(self) -> bool:
             return False
 
     class DummyTask2(Task):
         def run_internal(self, *args, **kwargs):
-            return InternalResult(success=True, summery={"rows inserted": 3, "labels created": 3, "foo": 4})
+            return TaskReturn(success=True, summery={"rows inserted": 3, "labels created": 3, "foo": 4})
 
-    class DummyGroup(TaskGroup):
-        def task_definitions(self):
-            return [DummyTask1, DummyTask2]
-
-    group = DummyGroup(None)
+    group = TaskGroup(DummyContext(), [DummyTask1(DummyContext()), DummyTask2(DummyContext())], "rest-group")
     ret = group.execute()
 
     assert ret.success == True

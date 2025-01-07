@@ -7,6 +7,7 @@ from pydantic import BaseModel, field_validator, Field
 
 from etl_lib.core.BatchProcessor import BatchProcessor, BatchResults
 from etl_lib.core.ValidationBatchProcessor import ValidationBatchProcessor
+from test_utils.utils import DummyContext
 
 
 class DataGenerator(BatchProcessor):
@@ -37,7 +38,7 @@ class RowModel(BaseModel):
 class WrapperValidationBatchProcessor(ValidationBatchProcessor):
 
     def __init__(self, predecessor, tmp_path: Path):
-        super().__init__(predecessor, RowModel, tmp_path / "invalid_rows.log")
+        super().__init__(DummyContext(), predecessor, RowModel, tmp_path / "invalid_rows.log")
 
 
 def test_valid_batch(tmp_path):
@@ -47,8 +48,8 @@ def test_valid_batch(tmp_path):
 
     result = next(processor.get_batch(1))
 
-    assert result.statistics["valid_count"] == 1
-    assert result.statistics["invalid_count"] == 0
+    assert result.statistics["valid_rows"] == 1
+    assert result.statistics["invalid_rows"] == 0
     assert len(result.chunk) == 1
     assert result.chunk[0]["alias_test"] == True
     assert result.chunk[0]["validation_alias"] == "bar"
@@ -65,8 +66,8 @@ def test_invalid_batch(tmp_path):
 
     result = next(processor.get_batch(1))
 
-    assert result.statistics["valid_count"] == 1
-    assert result.statistics["invalid_count"] == 1
+    assert result.statistics["valid_rows"] == 1
+    assert result.statistics["invalid_rows"] == 1
     assert len(result.chunk) == 1
     assert result.chunk[0]["alias_test"] == True
     assert result.chunk[0]["validation_alias"] == "bar"

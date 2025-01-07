@@ -42,7 +42,7 @@ class Customer(BaseModel):
 class CustomerLoadTask(CSVLoad2Neo4jTasks):
 
     def __init__(self, context):
-        super().__init__(context, Customer, batch_size=20)
+        super().__init__(context, Customer, file=get_test_file("customers.csv"), batch_size=20)
 
     def _query(self):
         return """
@@ -73,4 +73,5 @@ class CustomerLoadTask(CSVLoad2Neo4jTasks):
 
 def test_load(etl_context):
     task = CustomerLoadTask(etl_context)
-    task.execute(file=get_test_file("customers.csv"))
+    etl_context.reporter.register_tasks(task)
+    task.execute()
