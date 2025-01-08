@@ -96,7 +96,7 @@ def main(input_directory, neo4j_uri, neo4j_user, neo4j_password, log_file, datab
 
     all_group = TaskGroup(context=context, tasks=[init_group, csv_group, post_group], name="main")
 
-    context.reporter.register_tasks(all_group, source=input_directory.name)
+    context.reporter.register_tasks(all_group)
 
     all_group.execute()
 

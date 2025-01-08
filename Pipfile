@@ -13,6 +13,7 @@ click = "*"
 anytree = "*"
 
 [dev-packages]
+testcontainers = {extras = ["neo4j"], version = "*"}
 
 [requires]
 python_version = "3.13"

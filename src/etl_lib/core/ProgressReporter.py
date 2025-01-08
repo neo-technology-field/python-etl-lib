@@ -8,6 +8,9 @@ from etl_lib.core.Task import Task, TaskGroup
 
 
 class ProgressReporter:
+    """
+    ProgressReporter that reports status updates from the tasks through the python `logging` package.
+    """
     start_time: datetime
     end_time: datetime
     root_task: Node
@@ -18,6 +21,12 @@ class ProgressReporter:
         self.logger = logging.getLogger(self.__class__.__name__)
 
     def register_tasks(self, main: Task):
+        """
+        Registers Tasks with this reporter, such that later `started_task()` and `finished_task()` calls are handled
+        correctly.
+        Tasks need to contain an `uuid` member to uniquely identify a task in the tree.
+        :param main: Root of the task tree.
+        """
         self.root_task = Node(name=main.task_name(), task=main, uuid=main.uuid)
         self.current_task = self.root_task
 
@@ -27,6 +36,12 @@ class ProgressReporter:
             f"the following tasks are registered for execution:\n{RenderTree(self.root_task, style=ContStyle())}")
 
     def started_task(self, task: Task) -> Node:
+        """
+        Marks the task as started. Start the time keeping for this task.
+        Task must be a child of the last started task or the root task.
+        :param task: Task tobe marked as started.
+        :return: The current task that was started.
+        """
         if self.current_task.name != task.task_name():
             resolver = Resolver('uuid')
             self.current_task = resolver.get(self.current_task, task.uuid)
@@ -36,6 +51,14 @@ class ProgressReporter:
         return self.current_task
 
     def finished_task(self, success: bool, summery: dict, error: str = None) -> Node:
+        """
+        Marks the task as finished. Finish the time keeping for this task.
+        This does not change the current task.
+        :param success: True if the task was successfully finished.
+        :param summery: dict of statistics for this task (such as `nodes_created`)
+        :param error: If an exception occurred, the exception test should be provided here.
+        :return: The current task that was finished.
+        """
         task = self.current_task
         task.end_time = datetime.now()
         task.success = success
@@ -54,6 +77,13 @@ class ProgressReporter:
         return task
 
     def report_progress(self, batches: int, expected_batches: int, stats: dict) -> None:
+        """
+        Optionally provide updates during execution of a task, most likely at the end of each batch.
+        :param batches: Number of batches processed so far.
+        :param expected_batches: Number of expected batches. Can be `None` if the overall number of
+                batches is not know before execution.
+        :param stats: dict of statistics so far (such as `nodes_created`)
+        """
         pass
 
     def __add_subtree(self, parent: Node, children: list[Task | TaskGroup]):
@@ -64,8 +94,16 @@ class ProgressReporter:
 
 
 class Neo4jProgressReporter(ProgressReporter):
+    """
+    Extends the ProgressReporter to additionally write the status updates from the tasks to a Neo4j database.
+    """
 
     def __init__(self, context, database: str):
+        """
+        Creates a new Neo4j progress reporter.
+        :param context: ETLContext containing a Neo4jConnection instance.
+        :param database: Name of the database to write the status updates to.
+        """
         super().__init__(context)
         self.database = database
         self.logger.info(f"progress reporting to database: {self.database}")

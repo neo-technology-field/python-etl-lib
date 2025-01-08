@@ -1,5 +1,4 @@
 import logging
-import os
 from pathlib import Path
 from typing import NamedTuple, Any
 
@@ -30,18 +29,15 @@ class Neo4jContext:
         """
         Create a new Neo4j context.
         Reads the following env_vars keys:
-        `NEO4J_URI`, `NEO4J_USERNAME`, `NEO4J_PASSWORD`.
-        If env_vars contains `PYTEST_VERSION` then it will take the database name from `NEO4J_TEST_DATABASE` otherwise
-        it will use the database name from `NEO4J_DATABASE`.
-        This is to allow using a different database for tests.
-        TODO: optional (preferably) use TestContainers..
-        :param env_vars:
+        - `NEO4J_URI`,
+        - `NEO4J_USERNAME`,
+        - `NEO4J_PASSWORD`.
         """
         self.logger = logging.getLogger(self.__class__.__name__)
         self.uri = env_vars["NEO4J_URI"]
         self.auth = (env_vars["NEO4J_USERNAME"],
                      env_vars["NEO4J_PASSWORD"])
-        self.database = get_database_name(env_vars)
+        self.database = env_vars["NEO4J_DATABASE"]
         self.__neo4j_connect()
 
     def query_database(self, session, query, **kwargs) -> QueryResult:
@@ -91,7 +87,8 @@ class Neo4jContext:
         self.driver = GraphDatabase.driver(uri=self.uri, auth=self.auth,
                                            notifications_min_severity="OFF")
         self.driver.verify_connectivity()
-        self.logger.info(f"driver connected to instance at {self.uri} with username {self.auth[0]}")
+        self.logger.info(
+            f"driver connected to instance at {self.uri} with username {self.auth[0]} and database {self.database}")
 
 
 class ETLContext:
@@ -119,20 +116,3 @@ class ETLContext:
         """
         if key in self.__env_vars:
             return self.__env_vars[key]
-
-
-def get_database_name(env_vars: dict):
-    """
-    Returns the name of the database. If running inside pytest, the name is taken from the NEO4J_TEST_DATABASE
-    environment variable. Otherwise, from NEO4J_DATABASE.
-    :return:
-    """
-    if "PYTEST_VERSION" in env_vars:
-        # we are running inside a test env...
-        if "NEO4J_TEST_DATABASE" in env_vars:
-            database_name = env_vars["NEO4J_TEST_DATABASE"]
-        else:
-            raise Exception("define NEO4J_TEST_DATABASE environment variable")
-    else:
-        database_name = os.getenv('NEO4J_DATABASE')
-    return database_name
