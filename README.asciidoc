@@ -1,59 +1,49 @@
 = Python ETL Toolbox
 
-Is this Yet Another Python ETL Tool? Maybe, but the purpose is not to provide a ready-made tool, but a collection of
-building blocks to quickly assemble a ETL pipeline.
+Is this yet another Python ETL tool? Perhaps, but the purpose here is not to offer a ready-made solution. Instead, this library provides a collection of building blocks designed to help developers quickly assemble an ETL pipeline.
 
-The contained blocks have build-in functionality deemed essential for ETL pipelines:
+The included components offer built-in functionality deemed essential for ETL pipelines, such as:
 
- * logging
- * error handling
- * validation (via Pydantic)
- * batching /  streaming
+* logging
+* error handling
+* validation (via Pydantic)
+* batching and streaming
 
-This is currently mostly for Neo4j databases, but if needed can be extended to other sources and sinks.
-It does not provide a cli out of the box, but inspiration can be taken from the example.
+While this library currently focuses on Neo4j databases, it can be extended to other sources and sinks as needed. It does not provide a CLI out of the box, but the example usage offers inspiration for customization.
 
 == Main Building Blocks
 
 === Task
 
-Pipelines can be built as a series of Task. An example would be loading a CSV file into Neo4j `CSVLoad2Neo4jTask`
-or `ExcecuteCypherTask`.
-Tasks do not pass data along, but the `excecute()` function provides status information to the caller.
-They also integrate with the `ProgressReporter`, which optionally writes the status information to a Neo4j database.
+Pipelines can be built as a series of Tasks. For example, loading a CSV file into Neo4j can be implemented using `CSVLoad2Neo4jTask` or `ExecuteCypherTask`. Tasks do not pass data directly between one another; instead, the `execute()` function provides status information to the caller.
 
-To allow a maximum of flexibility, Tasks can be composed of `BatchProcesors` which allow for quick assembling of
-Tasks out of existing `BatchProcessors`.
+Tasks integrate seamlessly with the `ProgressReporter`, which can optionally log status information to a Neo4j database.
+
+To maximize flexibility, Tasks can be composed of `BatchProcessor`s, allowing developers to quickly assemble Tasks from existing building blocks.
 
 === TaskGroups
 
-Group Tasks together to logical blocks, such as `init`, `loading` and `post-processing`. The provided functionality
-hopefully makes it easy to compose the ETL pipeline while providing the listed features.
+Tasks can be grouped into logical blocks, such as init, loading, and post-processing. The provided functionality is designed to simplify the composition of ETL pipelines while supporting logging, error handling, and other key features.
 
 === BatchProcessors
 
-Composing Tasks out of smaller blocks, such as reading from a source, validation and writing to a sink while streaming
-the data in batches. See `CSVLoad2Neo4jTask` for an example.
+``BatchProcessor``s allow the creation of Tasks by chaining smaller components, such as reading data from a source, validating it, and writing it to a sink—all while processing data in batches. Refer to `CSVLoad2Neo4jTask` for an example implementation.
 
 == ETLContext
 
-Context object to hold information and functionality needed by all other parts. This also holds a `Neo4jContext` with
-provides Neo4j access.
+The ETLContext object holds shared information and functionality required by all components of the pipeline. It also contains a `Neo4jContext` for Neo4j-specific operations.
 
 === ProgressReporter
 
-The ProgressReporter is responsible for logging the status of the Task as the pipeline progresses.
-If an env variable `REPORTER_DATABASE` is set, then the reporter will also write the status to the database.
-An NeoDash Dashboard is provided to see information on past incarnations.
+The `ProgressReporter` is responsible for logging Task progress as the pipeline executes. If the `REPORTER_DATABASE` environment variable is set, the reporter will log progress information to a Neo4j database.
 
-Each task will, in addition to success/failure, also provide information on rows read, nodes create, deleted and so on.
-Only stats with an non-zero value are reported through the python logging facilities.
-When reporting to a database, all stats are included.
+A NeoDash dashboard is provided to visualize information about previous ETL runs.
 
-Logging is using the default Python logging package. The user is responsible to configure as needed.
-See the gtfs example writes the logs to a file and to console. Most logging is done on INFO level.
+Each Task provides details such as rows read, nodes created, and nodes deleted. Only non-zero statistics are logged through Python's logging module. When reporting to a database, all statistics are included.
 
-See below for an example output of the gtfs example:
+Logging is implemented using Python's standard logging package. Users are responsible for configuring logging as required. The GTFS example demonstrates logging to both a file and the console, with most messages logged at the INFO level.
+
+Example output from the GTFS example is shown below:
 
 [source,python,options="nowrap"]
 ----
@@ -124,11 +114,11 @@ Randomly thrown exception!
 2025-01-06 18:26:05,952 - INFO - Processing complete.
 ----
 
-If reporting to a Neo4j database is enabled, each ETL run will result in tree structure as shown (example structure for the gtfs example):
+When reporting to a Neo4j database, each ETL run results in a tree structure like the one shown below (example from the GTFS example):
 
 image::documentation/schema.png[Schema]
 
-Each ETLTask node, once it has been completed, will have an attached `ETLStats` node with properties such as below. The stats reported here depend on the task(s) involved.
+Each ETLTask node, once the associated task has been completed, will have an attached `ETLStats` node with properties such as below. The stats reported here depend on the task(s) involved.
 
 [code]
 ----
@@ -148,18 +138,32 @@ nodes_created:0,
 valid_rows:4170
 ----
 
-Task that have SubTask (`TaskGroup` class) will have the aggregated stats of all contained Tasks. Hence, to see the summary of the entire run, only the topmost node `ETLRun` needs to be viewed.
+Tasks with SubTasks (defined as `TaskGroup`) aggregate statistics from all their child Tasks. Therefore, viewing the top-level `ETLRun` node provides a summary of the entire pipeline.
 
-`dashboard.json` contains a simple https://neo4j.com/labs/neodash/[NeoDash] DashBoard.
+A simple NeoDash dashboard configuration is provided in the `dashboard.json` file. For more information, visit the https://neo4j.com/labs/neodash/[NeoDash documentation].
 
 == Building, Testing, Running
 
-This project is using https://realpython.com/pipenv-guide/[Pipenv]
+This project uses https://realpython.com/pipenv-guide/[Pipenv].
 
-Activate it via `pipenv shell` and inside the new shell run `pipenv install` to install all dependencies.
+To set up, activate the environment with `pipenv shell` and then `run pipenv install` to install all dependencies.
 
-Run the gtfs example via `pipenv run src/examples/gtfs/gtfs.py <gtfs input directory>`
+Run the GTFS example using the following command:
+----
+pipenv run src/examples/gtfs/gtfs.py <gtfs input directory>
+----
+
+=== Tests
+
+Most tests need a Neo4j database. 2 options exists:
+
+. Use en existing running database. Provide the following env variables:
+* `NEO4J_URI`
+* `NEO4J_USERNAME`
+* `NEO4J_PASSWORD`
+* `NEO4J_TEST_DATABASE`
+. Use testcontainers to start and stop a Neo4j database.
+This option is activated when the env variable `NEO4J_TEST_CONTAINER` is detected. This variable determines which docker image to run. In this case, the variables from option1 are ignored.
 
 Run the tests via `pipenv run pytest`.
 
-Intellij should pick up the pipenv.

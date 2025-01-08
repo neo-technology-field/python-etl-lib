@@ -7,8 +7,20 @@ from etl_lib.core.BatchProcessor import BatchProcessor, BatchResults
 
 
 class CSVBatchProcessor(BatchProcessor):
-
+    """
+    BatchProcessor that reads a CSV file using the `csv` package.
+    File can optionally be gzipped.
+    The returned batch of rows will have an additional `_row` column, containing the source row of the data,
+        starting with 0
+    """
     def __init__(self, csv_file: Path, context: ETLContext, **kwargs):
+        """
+        Reads a CSV file in batches, optionally unzipping on the fly.
+        :param csv_file: Path to the CSV file.
+        :param context: `ETLContext` instance.
+        :param kwargs: Will be passed on to the `csv.DictReader providing a way to customise the reading to different
+                csv formats
+        """
         super().__init__(context)
         self.csv_file = csv_file
         self.kwargs = kwargs

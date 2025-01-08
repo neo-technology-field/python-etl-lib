@@ -4,8 +4,7 @@ from neo4j.spatial import WGS84Point
 from pydantic import BaseModel, Field, field_validator
 
 from etl_lib.task.data_loading.CSVLoad2Neo4jTask import CSVLoad2Neo4jTasks
-from test_utils.fixtures import etl_context
-from test_utils.utils import get_test_file
+from test_utils.utils import get_test_file, get_node_count
 
 
 def convert_geo(geo_string) -> WGS84Point:
@@ -71,7 +70,30 @@ class CustomerLoadTask(CSVLoad2Neo4jTasks):
         pass
 
 
-def test_load(etl_context):
+def test_load(etl_context, neo4j_driver):
     task = CustomerLoadTask(etl_context)
     etl_context.reporter.register_tasks(task)
-    task.execute()
+    result = task.execute()
+
+    assert result is not None
+    assert result.success is True
+    assert result.error is None
+    assert result.summery == {'constraints_added': 0,
+                              'constraints_removed': 0,
+                              'indexes_added': 0,
+                              'indexes_removed': 0,
+                              'csv_lines_read': 60,
+                              'valid_rows': 59,
+                              'invalid_rows': 1,
+                              'labels_added': 343,
+                              'labels_removed': 0,
+                              'nodes_created': 343,
+                              'nodes_deleted': 0,
+                              'properties_set': 579,
+                              'relationships_created': 293,
+                              'relationships_deleted': 0
+                              }
+
+    # one of the 60 customers is not valid
+    assert 59 == get_node_count(neo4j_driver, 'Customer')
+    assert 58 == get_node_count(neo4j_driver, 'City')

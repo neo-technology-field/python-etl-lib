@@ -20,6 +20,9 @@ class TaskReturn:
         self.summery = summery if summery else {}
         self.error = error
 
+    def __repr__(self):
+        return f"TaskReturn({self.success=}, {self.summery=}, {self.error=})"
+
 
 class Task:
     """
