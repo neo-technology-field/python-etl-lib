@@ -1,5 +1,7 @@
 name: Project Tests
 on: [push]
+env:
+  NEO4J_TEST_CONTAINER: 'neo4j:5.26.0-enterprise'
 
 jobs:
   build:
