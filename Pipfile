@@ -7,13 +7,14 @@ name = "pypi"
 pydantic = "*"
 neo4j = "*"
 python-dotenv = "*"
-pytest = "*"
+
 tabulate = "*"
 click = "*"
 anytree = "*"
 
 [dev-packages]
 testcontainers = {extras = ["neo4j"], version = "*"}
+pytest = "*"
 
 [requires]
 python_version = "3.13"
