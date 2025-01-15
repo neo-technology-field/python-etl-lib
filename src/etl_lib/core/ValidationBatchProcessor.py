@@ -2,7 +2,7 @@ import json
 from pathlib import Path
 from typing import Type, Generator
 
-from etl_lib.ETLContext import ETLContext
+from etl_lib.core.ETLContext import ETLContext
 from etl_lib.core.BatchProcessor import BatchProcessor, BatchResults
 from pydantic import BaseModel, ValidationError
 

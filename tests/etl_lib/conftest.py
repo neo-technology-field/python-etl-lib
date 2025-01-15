@@ -7,7 +7,7 @@ import pytest
 from dotenv import load_dotenv
 from neo4j import GraphDatabase, WRITE_ACCESS, Driver
 
-from etl_lib.ETLContext import ETLContext, Neo4jContext
+from etl_lib.core.ETLContext import ETLContext, Neo4jContext
 from test_utils.utils import DummyReporter, get_database_name
 
 test_env = Path(__file__).parent / "../../.env"

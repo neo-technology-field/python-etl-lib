@@ -2,6 +2,7 @@ import logging
 from pathlib import Path
 from typing import NamedTuple, Any
 
+from graphdatascience import GraphDataScience
 from neo4j import Driver, GraphDatabase, WRITE_ACCESS, SummaryCounters
 
 from etl_lib.core.ProgressReporter import get_reporter
@@ -82,6 +83,12 @@ class Neo4jContext:
             return self.driver.session(database=self.database, default_access_mode=WRITE_ACCESS)
         else:
             return self.driver.session(database=database, default_access_mode=WRITE_ACCESS)
+
+    def gds(self, database=None) -> GraphDataScience:
+        if database is None:
+            return GraphDataScience.from_neo4j_driver(driver=self.driver, database=self.database)
+        else:
+            return GraphDataScience.from_neo4j_driver(driver=self.driver, database=database)
 
     def __neo4j_connect(self):
         self.driver = GraphDatabase.driver(uri=self.uri, auth=self.auth,

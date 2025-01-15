@@ -1,6 +1,6 @@
 from typing import Generator
 
-from etl_lib.ETLContext import ETLContext
+from etl_lib.core.ETLContext import ETLContext
 from etl_lib.core.BatchProcessor import BatchProcessor, BatchResults, append_result
 
 

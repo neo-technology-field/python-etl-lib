@@ -1,6 +1,6 @@
 import abc
 
-from etl_lib.ETLContext import ETLContext
+from etl_lib.core.ETLContext import ETLContext
 from etl_lib.core.Task import Task, TaskReturn
 from etl_lib.core.utils import merge_summery
 

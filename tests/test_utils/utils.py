@@ -5,7 +5,7 @@ from typing import Any
 from anytree import Node
 from neo4j.time import Date
 
-from etl_lib.ETLContext import QueryResult
+from etl_lib.core.ETLContext import QueryResult
 from etl_lib.core.Task import Task
 
 

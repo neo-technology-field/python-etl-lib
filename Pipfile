@@ -7,10 +7,10 @@ name = "pypi"
 pydantic = "*"
 neo4j = "*"
 python-dotenv = "*"
-
 tabulate = "*"
 click = "*"
 anytree = "*"
+graphdatascience = "*"
 
 [dev-packages]
 testcontainers = {extras = ["neo4j"], version = "*"}
