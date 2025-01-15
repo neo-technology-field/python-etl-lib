@@ -2,7 +2,7 @@ import csv
 import gzip
 from pathlib import Path
 
-from etl_lib.ETLContext import ETLContext
+from etl_lib.core.ETLContext import ETLContext
 from etl_lib.core.BatchProcessor import BatchProcessor, BatchResults
 
 

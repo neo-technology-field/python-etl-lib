@@ -2,7 +2,7 @@ from pathlib import Path
 
 from pydantic import BaseModel, computed_field
 
-from etl_lib.ETLContext import ETLContext
+from etl_lib.core.ETLContext import ETLContext
 from etl_lib.task.data_loading.CSVLoad2Neo4jTask import CSVLoad2Neo4jTasks
 
 

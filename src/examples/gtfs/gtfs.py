@@ -5,7 +5,7 @@ from pathlib import Path
 import click
 from dotenv import load_dotenv
 
-from etl_lib.ETLContext import ETLContext
+from etl_lib.core.ETLContext import ETLContext
 from etl_lib.core.Task import TaskGroup
 from examples.gtfs.tasks.CreateSequenceTask import CreateSequenceTask
 from examples.gtfs.tasks.LoadAgenciesTask import LoadAgenciesTask

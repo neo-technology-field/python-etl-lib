@@ -4,7 +4,7 @@ import sys
 from dataclasses import dataclass, field
 from typing import Generator
 
-from etl_lib.ETLContext import ETLContext
+from etl_lib.core.ETLContext import ETLContext
 from etl_lib.core.utils import merge_summery
 
 

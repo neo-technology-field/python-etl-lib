@@ -7,7 +7,7 @@ import pytest
 from dotenv import load_dotenv
 from neo4j import GraphDatabase, WRITE_ACCESS, Driver
 
-from etl_lib.ETLContext import ETLContext, Neo4jContext
+from etl_lib.core.ETLContext import ETLContext, Neo4jContext
 from test_utils.utils import DummyReporter, get_database_name
 
 test_env = Path(__file__).parent / "../../.env"
@@ -52,7 +52,7 @@ def neo4j_driver():
                 image=neo4j_container,
                 username="neo4j",
                 password=str(uuid.uuid4()))
-                      .with_env("NEO4J_PLUGINS", "[\"apoc\"],")
+                      .with_env("NEO4J_PLUGINS", "[\"apoc\", \"graph-data-science\"],")
                       .with_env("NEO4J_ACCEPT_LICENSE_AGREEMENT", "yes") as neo4j):
             driver = neo4j.get_driver()
             yield driver
