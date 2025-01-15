@@ -36,6 +36,15 @@ def get_relationship_count(driver, rel_type: str) -> int:
         result = session.run(query)
         return result.single()["count"]
 
+def check_property_exists(driver, label: str, property_name: str) -> bool:
+    """
+    Checks if all nodes with the given label have the given property.
+    :return:
+    """
+    with driver.session(database=get_database_name()) as session:
+        result = session.run(f"MATCH (n:{label}) WHERE n.{property_name} IS NULL"
+                             f" RETURN COUNT(n) = 0 AS exists")
+        return result.single()["exists"]
 
 def get_graph(driver):
     """
