@@ -20,8 +20,11 @@ class LoadTripsTask(CSVLoad2Neo4jTasks):
         bikesAllowed: Optional[bool] = Field(alias="bikes_allowed", default=None)
         shapeId: str = Field(alias="shape_id")
 
-    def __init__(self, context: ETLContext, file:Path):
+    def __init__(self, context: ETLContext, file: Path):
         super().__init__(context, LoadTripsTask.Trip, file)
+
+    def task_name(self) -> str:
+        return f"{self.__class__.__name__}('{self.file}')"
 
     def _query(self):
         return """ UNWIND $batch AS row

@@ -6,13 +6,14 @@ from etl_lib.core.ETLContext import ETLContext
 from etl_lib.core.BatchProcessor import BatchProcessor, BatchResults
 from pydantic import BaseModel, ValidationError
 
+from etl_lib.core.Task import Task
 from etl_lib.core.utils import merge_summery
 
 
 class ValidationBatchProcessor(BatchProcessor):
 
-    def __init__(self, context: ETLContext, predecessor, model: Type[BaseModel], error_file: Path):
-        super().__init__(context, predecessor)
+    def __init__(self, context: ETLContext, task: Task, predecessor, model: Type[BaseModel], error_file: Path):
+        super().__init__(context, task, predecessor)
         self.error_file = error_file
         self.model = model
 

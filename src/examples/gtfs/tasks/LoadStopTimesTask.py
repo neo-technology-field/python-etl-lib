@@ -14,8 +14,11 @@ class LoadStopTimesTask(CSVLoad2Neo4jTasks):
         departure_time: str
         stop_sequence: int
 
-    def __init__(self, context: ETLContext, file:Path):
+    def __init__(self, context: ETLContext, file: Path):
         super().__init__(context, LoadStopTimesTask.StopTime, file)
+
+    def task_name(self) -> str:
+        return f"{self.__class__.__name__}('{self.file}')"
 
     def _query(self):
         return """UNWIND $batch AS row

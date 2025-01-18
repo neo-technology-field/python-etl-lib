@@ -5,6 +5,7 @@ from dataclasses import dataclass, field
 from typing import Generator
 
 from etl_lib.core.ETLContext import ETLContext
+from etl_lib.core.Task import Task
 from etl_lib.core.utils import merge_summery
 
 
@@ -34,10 +35,11 @@ class BatchProcessor:
     BatchProcessors process data in batches. A batch of data is requested from the provided predecessor
     and returned in batches to the caller. Usage of `Generators` ensure that not all data must be loaded at once.
     """
-    def __init__(self, context: ETLContext, predecessor=None):
+    def __init__(self, context: ETLContext, task:Task, predecessor=None):
         self.context = context
         self.predecessor = predecessor
         self.logger = logging.getLogger(self.__class__.__name__)
+        self.task = task
 
     @abc.abstractmethod
     def get_batch(self, max_batch__size: int) -> Generator[BatchResults, None, None]:

@@ -2,6 +2,7 @@ from typing import Generator
 
 from etl_lib.core.ETLContext import ETLContext
 from etl_lib.core.BatchProcessor import BatchProcessor, BatchResults, append_result
+from etl_lib.core.Task import Task
 
 
 class CypherBatchProcessor(BatchProcessor):
@@ -9,7 +10,7 @@ class CypherBatchProcessor(BatchProcessor):
     BatchProcessor to write batches of data to a Neo4j database.
     """
 
-    def __init__(self, context: ETLContext, predecessor: BatchProcessor, query: str):
+    def __init__(self, context: ETLContext, task: Task, predecessor: BatchProcessor, query: str):
         """
         Constructs a new CypherBatchProcessor.
         :param context: `ETLContext` instance.
@@ -17,7 +18,7 @@ class CypherBatchProcessor(BatchProcessor):
         :param query: Cypher to write the query to Neo4j. Data will be passed as `batch` parameter.
             Therefor, the query should start with a `UNWIND $batch AS row`.
         """
-        super().__init__(context, predecessor)
+        super().__init__(context, task, predecessor)
         self.query = query
         self.neo4j = context.neo4j
 

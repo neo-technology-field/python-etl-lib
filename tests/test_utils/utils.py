@@ -1,11 +1,13 @@
+import logging
 import os
 from pathlib import Path
 from typing import Any
 
-from anytree import Node
+
+from neo4j import Driver
 from neo4j.time import Date
 
-from etl_lib.core.ETLContext import QueryResult
+from etl_lib.core.ETLContext import QueryResult, Neo4jContext, ETLContext
 from etl_lib.core.Task import Task
 
 
@@ -36,6 +38,7 @@ def get_relationship_count(driver, rel_type: str) -> int:
         result = session.run(query)
         return result.single()["count"]
 
+
 def check_property_exists(driver, label: str, property_name: str) -> bool:
     """
     Checks if all nodes with the given label have the given property.
@@ -45,6 +48,7 @@ def check_property_exists(driver, label: str, property_name: str) -> bool:
         result = session.run(f"MATCH (n:{label}) WHERE n.{property_name} IS NULL"
                              f" RETURN COUNT(n) = 0 AS exists")
         return result.single()["exists"]
+
 
 def get_graph(driver):
     """
@@ -89,7 +93,6 @@ def convert_neo4j_date_to_string(data, date_format):
         return data
 
 
-
 def get_database_name():
     if os.getenv("NEO4J_TEST_CONTAINER") is None:
         # not running with test containers. expect test db to be set
@@ -99,18 +102,34 @@ def get_database_name():
             raise Exception("define NEO4J_TEST_DATABASE environment variable")
 
 
+class TestNeo4jContext(Neo4jContext):
+
+    def __init__(self, driver: Driver):
+        self.driver = driver
+        self.database = get_database_name()
+
+
+class TestETLContext(ETLContext):
+
+    def __init__(self, driver: Driver):
+        self.logger = logging.getLogger(self.__class__.__name__)
+        self.__env_vars = {}
+        self.neo4j = TestNeo4jContext(driver)
+        self.reporter = DummyReporter()
+
+
 class DummyReporter:
 
     def register_tasks(self, main: Task):
         pass
 
-    def started_task(self, task: Task) -> Node:
+    def started_task(self, task: Task) -> Task:
         pass
 
-    def finished_task(self, success: bool, summery: dict, error: str = None) -> Node:
+    def finished_task(self, task, success: bool, summery: dict, error: str = None) -> Task:
         pass
 
-    def report_progress(self, batches: int, expected_batches: int, stats: dict) -> None:
+    def report_progress(self, task, batches: int, expected_batches: int, stats: dict) -> None:
         pass
 
 

@@ -17,6 +17,9 @@ class LoadAgenciesTask(CSVLoad2Neo4jTasks):
     def __init__(self, context: ETLContext, file:Path):
         super().__init__(context, LoadAgenciesTask.Agency, file)
 
+    def task_name(self) -> str:
+        return f"{self.__class__.__name__}('{self.file}')"
+
     def _query(self):
         return """ UNWIND $batch AS row
         MERGE (a:Agency {id: row.id})

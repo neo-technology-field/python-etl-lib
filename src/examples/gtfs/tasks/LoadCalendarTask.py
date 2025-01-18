@@ -37,8 +37,11 @@ class LoadCalendarTask(CSVLoad2Neo4jTasks):
                 label_array.append("RUNS_7")
             return label_array
 
-    def __init__(self, context: ETLContext, file:Path):
+    def __init__(self, context: ETLContext, file: Path):
         super().__init__(context, LoadCalendarTask.Calendar, file)
+
+    def task_name(self) -> str:
+        return f"{self.__class__.__name__}('{self.file}')"
 
     def _query(self):
         return """UNWIND $batch as row

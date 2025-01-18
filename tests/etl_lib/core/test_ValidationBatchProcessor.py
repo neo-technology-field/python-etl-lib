@@ -13,7 +13,7 @@ from test_utils.utils import DummyContext
 class DataGenerator(BatchProcessor):
 
     def __init__(self, data: [{}]):
-        super().__init__(None)
+        super().__init__(None, None)
         self.data = data
 
     def get_batch(self, batch_size: int) -> Generator[BatchResults, None, None]:
@@ -38,7 +38,7 @@ class RowModel(BaseModel):
 class WrapperValidationBatchProcessor(ValidationBatchProcessor):
 
     def __init__(self, predecessor, tmp_path: Path):
-        super().__init__(DummyContext(), predecessor, RowModel, tmp_path / "invalid_rows.log")
+        super().__init__(DummyContext(), None,predecessor, RowModel, tmp_path / "invalid_rows.log")
 
 
 def test_valid_batch(tmp_path):

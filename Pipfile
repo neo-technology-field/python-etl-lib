@@ -9,7 +9,6 @@ neo4j = "*"
 python-dotenv = "*"
 tabulate = "*"
 click = "*"
-anytree = "*"
 graphdatascience = "*"
 
 [dev-packages]

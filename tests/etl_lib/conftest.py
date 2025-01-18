@@ -1,33 +1,16 @@
-import logging
 import os
 import uuid
 from pathlib import Path
 
 import pytest
 from dotenv import load_dotenv
-from neo4j import GraphDatabase, WRITE_ACCESS, Driver
+from neo4j import GraphDatabase, WRITE_ACCESS
 
-from etl_lib.core.ETLContext import ETLContext, Neo4jContext
-from test_utils.utils import DummyReporter, get_database_name
+from etl_lib.core.ETLContext import ETLContext
+from test_utils.utils import get_database_name, TestETLContext
 
 test_env = Path(__file__).parent / "../../.env"
 load_dotenv(test_env)
-
-
-class TestNeo4jContext(Neo4jContext):
-
-    def __init__(self, driver: Driver):
-        self.driver = driver
-        self.database = get_database_name()
-
-
-class TestETLContext(ETLContext):
-
-    def __init__(self, driver: Driver):
-        self.logger = logging.getLogger(self.__class__.__name__)
-        self.__env_vars = {}
-        self.neo4j = TestNeo4jContext(driver)
-        self.reporter = DummyReporter()
 
 
 @pytest.fixture(scope="session")

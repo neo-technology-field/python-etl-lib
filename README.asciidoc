@@ -47,71 +47,101 @@ Example output from the GTFS example is shown below:
 
 [source,python,options="nowrap"]
 ----
-2025-01-06 18:26:03,507 - INFO - Processing directory: /Users/bert/Downloads/mdb-2333-202412230030
-2025-01-06 18:26:03,507 - INFO - Neo4j URL: neo4j://localhost:7687
-2025-01-06 18:26:03,507 - INFO - Neo4j User: neo4j
-2025-01-06 18:26:03,507 - INFO - Neo4j Database Name: neo4j
-2025-01-06 18:26:03,507 - INFO - Connecting to Neo4j at neo4j://localhost:7687 with user neo4j to access database neo4j...
-2025-01-06 18:26:03,522 - INFO - driver connected to instance at neo4j://localhost:7687 with username neo4j
-2025-01-06 18:26:03,522 - INFO - progress reporting to database: neo4j
-2025-01-06 18:26:03,524 - INFO - the following tasks are registered for execution:
-Node('/main', task=TaskGroup(main))
-├── Node('/main/schema-init', task=TaskGroup(schema-init))
-│   └── Node('/main/schema-init/SchemaTask', task=Task(SchemaTask))
-├── Node('/main/csv-loading', task=TaskGroup(csv-loading))
-│   ├── Node('/main/csv-loading/LoadAgenciesTask', task=LoadAgenciesTask(mdb-2333-202412230030/agency.txt))
-│   ├── Node('/main/csv-loading/LoadRoutesTask', task=LoadRoutesTask(mdb-2333-202412230030/routes.txt))
-│   ├── Node('/main/csv-loading/LoadStopsTask', task=LoadStopsTask(mdb-2333-202412230030/stops.txt))
-│   ├── Node('/main/csv-loading/LoadTripsTask', task=LoadTripsTask(mdb-2333-202412230030/trips.txt))
-│   ├── Node('/main/csv-loading/LoadCalendarTask', task=LoadCalendarTask(mdb-2333-202412230030/calendar.txt))
-│   └── Node('/main/csv-loading/LoadStopTimesTask', task=LoadStopTimesTask(mdb-2333-202412230030/stop_times.txt))
-└── Node('/main/post-processing', task=TaskGroup(post-processing))
-    └── Node('/main/post-processing/CreateSequenceTask', task=Task(CreateSequenceTask))
-2025-01-06 18:26:03,568 - INFO - starting main
-2025-01-06 18:26:03,585 - INFO - 	starting schema-init
-2025-01-06 18:26:03,587 - INFO - 		starting SchemaTask
-2025-01-06 18:26:03,595 - INFO - 		finished SchemaTask with success: True
-2025-01-06 18:26:03,609 - INFO - 	finished schema-init with success: True
-2025-01-06 18:26:03,611 - INFO - 	starting csv-loading
-2025-01-06 18:26:03,612 - INFO - 		starting LoadAgenciesTask
-2025-01-06 18:26:03,624 - INFO - 		finished LoadAgenciesTask with success: True
-+------------------+------------------+--------------+
-|   csv_lines_read |   properties_set |   valid_rows |
-|------------------+------------------+--------------|
-|                1 |                4 |            1 |
-+------------------+------------------+--------------+
-2025-01-06 18:26:03,626 - INFO - 		starting LoadRoutesTask
-2025-01-06 18:26:03,638 - INFO - 		finished LoadRoutesTask with success: True
-+------------------+------------------+--------------+
-|   csv_lines_read |   properties_set |   valid_rows |
-|------------------+------------------+--------------|
-|              299 |              897 |          299 |
-+------------------+------------------+--------------+
-2025-01-06 18:26:03,640 - INFO - 		starting LoadStopsTask
-2025-01-06 18:26:03,763 - INFO - 		finished LoadStopsTask with success: True
-+------------------+------------------+--------------+
-|   csv_lines_read |   properties_set |   valid_rows |
-|------------------+------------------+--------------|
-|             4170 |            20850 |         4170 |
-+------------------+------------------+--------------+
-2025-01-06 18:26:03,765 - INFO - 		starting LoadTripsTask
-2025-01-06 18:26:05,932 - INFO - 		finished LoadTripsTask with success: False, error:
-Randomly thrown exception!
-2025-01-06 18:26:05,948 - WARNING - Task csv-loading failed. Aborting execution.
-2025-01-06 18:26:05,949 - INFO - 	finished csv-loading with success: False
-+------------------+------------------+--------------+
-|   csv_lines_read |   properties_set |   valid_rows |
-|------------------+------------------+--------------|
-|             4470 |            21751 |         4470 |
-+------------------+------------------+--------------+
-2025-01-06 18:26:05,950 - WARNING - Task main failed. Aborting execution.
-2025-01-06 18:26:05,950 - INFO - finished main with success: False
-+------------------+------------------+--------------+
-|   csv_lines_read |   properties_set |   valid_rows |
-|------------------+------------------+--------------|
-|             4470 |            21751 |         4470 |
-+------------------+------------------+--------------+
-2025-01-06 18:26:05,952 - INFO - Processing complete.
+025-01-18 18:44:45,214 - INFO - Processing directory: /Users/bert/Downloads/mdb-2333-202412230030
+2025-01-18 18:44:45,214 - INFO - Neo4j URL: neo4j://localhost:7687
+2025-01-18 18:44:45,214 - INFO - Neo4j User: neo4j
+2025-01-18 18:44:45,214 - INFO - Neo4j Database Name: neo4j
+2025-01-18 18:44:45,214 - INFO - Connecting to Neo4j at neo4j://localhost:7687 with user neo4j to access database neo4j...
+2025-01-18 18:44:45,239 - INFO - driver connected to instance at neo4j://localhost:7687 with username neo4j and database neo4j
+2025-01-18 18:44:45,239 - INFO - progress reporting to database: neo4j
+└──main
+   ├──schema-init
+   │  └──SchemaTask
+   ├──csv-loading
+   │  ├──LoadAgenciesTask('/Users/bert/Downloads/mdb-2333-202412230030/agency.txt')
+   │  ├──LoadRoutesTask('/Users/bert/Downloads/mdb-2333-202412230030/routes.txt')
+   │  ├──LoadStopsTask('/Users/bert/Downloads/mdb-2333-202412230030/stops.txt')
+   │  ├──LoadTripsTask('/Users/bert/Downloads/mdb-2333-202412230030/trips.txt')
+   │  ├──LoadCalendarTask('/Users/bert/Downloads/mdb-2333-202412230030/calendar.txt')
+   │  └──LoadStopTimesTask('/Users/bert/Downloads/mdb-2333-202412230030/stop_times.txt')
+   └──post-processing
+      └──CreateSequenceTask
+
+2025-01-18 18:44:45,715 - INFO - starting main
+2025-01-18 18:44:45,752 - INFO - starting schema-init
+2025-01-18 18:44:45,757 - INFO - starting SchemaTask
+2025-01-18 18:44:45,871 - INFO - finished SchemaTask with success: True
++-----------------+---------------------+
+|   indexes_added |   constraints_added |
+|-----------------+---------------------|
+|               3 |                   4 |
++-----------------+---------------------+
+2025-01-18 18:44:46,017 - INFO - finished schema-init with success: True
++---------------------+-----------------+
+|   constraints_added |   indexes_added |
+|---------------------+-----------------|
+|                   4 |               3 |
++---------------------+-----------------+
+2025-01-18 18:44:46,024 - INFO - starting csv-loading
+2025-01-18 18:44:46,048 - INFO - starting LoadAgenciesTask('/Users/bert/Downloads/mdb-2333-202412230030/agency.txt')
+2025-01-18 18:44:46,178 - INFO - finished LoadAgenciesTask('/Users/bert/Downloads/mdb-2333-202412230030/agency.txt') with success: True
++----------------+-----------------+------------------+--------------+------------------+
+|   labels_added |   nodes_created |   properties_set |   valid_rows |   csv_lines_read |
+|----------------+-----------------+------------------+--------------+------------------|
+|              1 |               1 |                5 |            1 |                1 |
++----------------+-----------------+------------------+--------------+------------------+
+2025-01-18 18:44:46,184 - INFO - starting LoadRoutesTask('/Users/bert/Downloads/mdb-2333-202412230030/routes.txt')
+2025-01-18 18:44:46,417 - INFO - finished LoadRoutesTask('/Users/bert/Downloads/mdb-2333-202412230030/routes.txt') with success: True
++----------------+-----------------+------------------+--------------+------------------+-------------------------+
+|   labels_added |   nodes_created |   properties_set |   valid_rows |   csv_lines_read |   relationships_created |
+|----------------+-----------------+------------------+--------------+------------------+-------------------------|
+|            299 |             299 |             1196 |          299 |              299 |                     299 |
++----------------+-----------------+------------------+--------------+------------------+-------------------------+
+2025-01-18 18:44:46,423 - INFO - starting LoadStopsTask('/Users/bert/Downloads/mdb-2333-202412230030/stops.txt')
+2025-01-18 18:44:46,870 - INFO - finished LoadStopsTask('/Users/bert/Downloads/mdb-2333-202412230030/stops.txt') with success: True
++----------------+-----------------+------------------+--------------+------------------+
+|   labels_added |   nodes_created |   properties_set |   valid_rows |   csv_lines_read |
+|----------------+-----------------+------------------+--------------+------------------|
+|           4170 |            4170 |            25019 |         4170 |             4170 |
++----------------+-----------------+------------------+--------------+------------------+
+2025-01-18 18:44:46,875 - INFO - starting LoadTripsTask('/Users/bert/Downloads/mdb-2333-202412230030/trips.txt')
+2025-01-18 18:44:51,782 - INFO - finished LoadTripsTask('/Users/bert/Downloads/mdb-2333-202412230030/trips.txt') with success: True
++------------------+-------------------------+----------------+-----------------+--------------+------------------+
+|   properties_set |   relationships_created |   labels_added |   nodes_created |   valid_rows |   csv_lines_read |
+|------------------+-------------------------+----------------+-----------------+--------------+------------------|
+|           614069 |                   91694 |          91694 |           91694 |        91694 |            91694 |
++------------------+-------------------------+----------------+-----------------+--------------+------------------+
+2025-01-18 18:44:51,786 - INFO - starting LoadCalendarTask('/Users/bert/Downloads/mdb-2333-202412230030/calendar.txt')
+2025-01-18 18:44:52,262 - INFO - finished LoadCalendarTask('/Users/bert/Downloads/mdb-2333-202412230030/calendar.txt') with success: True
++----------------+--------------+------------------+
+|   labels_added |   valid_rows |   csv_lines_read |
+|----------------+--------------+------------------|
+|         198095 |          212 |              212 |
++----------------+--------------+------------------+
+2025-01-18 18:44:52,266 - INFO - starting LoadStopTimesTask('/Users/bert/Downloads/mdb-2333-202412230030/stop_times.txt')
+2025-01-18 18:46:22,633 - INFO - finished LoadStopTimesTask('/Users/bert/Downloads/mdb-2333-202412230030/stop_times.txt') with success: True
++------------------+-------------------------+----------------+-----------------+--------------+------------------+
+|   properties_set |   relationships_created |   labels_added |   nodes_created |   valid_rows |   csv_lines_read |
+|------------------+-------------------------+----------------+-----------------+--------------+------------------|
+|          9494080 |                 3797632 |        1898816 |         1898816 |      1898816 |          1898816 |
++------------------+-------------------------+----------------+-----------------+--------------+------------------+
+2025-01-18 18:46:22,653 - INFO - finished csv-loading with success: True
++------------------+-------------------------+----------------+-----------------+--------------+------------------+
+|   properties_set |   relationships_created |   labels_added |   nodes_created |   valid_rows |   csv_lines_read |
+|------------------+-------------------------+----------------+-----------------+--------------+------------------|
+|         10134369 |                 3889625 |        2193075 |         1994980 |      1995192 |          1995192 |
++------------------+-------------------------+----------------+-----------------+--------------+------------------+
+2025-01-18 18:46:22,655 - INFO - starting post-processing
+2025-01-18 18:46:22,668 - INFO - starting CreateSequenceTask
+2025-01-18 18:46:32,888 - INFO - finished CreateSequenceTask with success: True
+2025-01-18 18:46:32,892 - INFO - finished post-processing with success: True
+2025-01-18 18:46:32,894 - INFO - finished main with success: True
++------------------+-----------------+-------------------------+----------------+-----------------+---------------------+--------------+------------------+
+|   properties_set |   indexes_added |   relationships_created |   labels_added |   nodes_created |   constraints_added |   valid_rows |   csv_lines_read |
+|------------------+-----------------+-------------------------+----------------+-----------------+---------------------+--------------+------------------|
+|         10134369 |               3 |                 3889625 |        2193075 |         1994980 |                   4 |      1995192 |          1995192 |
++------------------+-----------------+-------------------------+----------------+-----------------+---------------------+--------------+------------------+
+2025-01-18 18:46:32,897 - INFO - Processing complete.
 ----
 
 When reporting to a Neo4j database, each ETL run results in a tree structure like the one shown below (example from the GTFS example):

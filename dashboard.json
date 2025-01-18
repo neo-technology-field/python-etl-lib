@@ -101,7 +101,7 @@
         },
         {
           "id": "ccdafd6e-ea82-47b1-8c66-796c4eaa6859",
-          "title": "Overall Stats of seletect run",
+          "title": "Overall Stats of select run",
           "query": "MATCH (r:ETLTask {uuid: $neodash_run_id})-[:HAS_STATS]-(stats)\nUNWIND keys(stats) AS propertyKey\nRETURN propertyKey AS StatsName, \nstats[propertyKey] AS StatsValue \nORDER BY StatsName\n\n\n",
           "width": 9,
           "height": 8,
@@ -116,7 +116,7 @@
         {
           "id": "5629582b-a074-4026-bc9b-d9c3eabc1082",
           "title": "Sub Tasks of selected Run at $neodash_run_startTime",
-          "query": "MATCH (r:ETLRun:ETLTask {uuid:$neodash_run_id})-[:HAS_SUB_TASK*]->(task) WHERE task.type <> 'TaskGroup'\nWITH task ORDER BY task.order ASC\nRETURN \n  task.name AS TaskName, \n  coalesce(task.error, task.status) AS Status,\n  coalesce(task.batches, '-') + '/' + coalesce(task.expected_batches, '-') AS Progres, \n  duration.inSeconds(task.startTime, coalesce(task.endTime, datetime({timezone:'Europe/Berlin'}))) AS Duration, \n  task.task AS Detail,\n  task.uuid AS __uuid\n\n\n",
+          "query": "MATCH (r:ETLRun:ETLTask {uuid:$neodash_run_id})-[:HAS_SUB_TASK*]->(task)\nWITH task ORDER BY task.order ASC\nRETURN \n  task.name AS TaskName, \n  coalesce(task.error, task.status) AS Status,\n  coalesce(task.batches, '-') + '/' + coalesce(task.expected_batches, '-') AS Progres, \n  duration.inSeconds(task.startTime, coalesce(task.endTime, datetime({timezone:'Europe/Berlin'}))) AS Duration, \n  task.task AS Detail,\n  task.uuid AS __uuid\n\n\n",
           "width": 23,
           "height": 6,
           "x": 0,

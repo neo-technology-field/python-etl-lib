@@ -4,6 +4,7 @@ from pathlib import Path
 
 from etl_lib.core.ETLContext import ETLContext
 from etl_lib.core.BatchProcessor import BatchProcessor, BatchResults
+from etl_lib.core.Task import Task
 
 
 class CSVBatchProcessor(BatchProcessor):
@@ -13,7 +14,7 @@ class CSVBatchProcessor(BatchProcessor):
     The returned batch of rows will have an additional `_row` column, containing the source row of the data,
         starting with 0
     """
-    def __init__(self, csv_file: Path, context: ETLContext, **kwargs):
+    def __init__(self, csv_file: Path, context: ETLContext, task: Task, **kwargs):
         """
         Reads a CSV file in batches, optionally unzipping on the fly.
         :param csv_file: Path to the CSV file.
@@ -21,7 +22,7 @@ class CSVBatchProcessor(BatchProcessor):
         :param kwargs: Will be passed on to the `csv.DictReader providing a way to customise the reading to different
                 csv formats
         """
-        super().__init__(context)
+        super().__init__(context, task)
         self.csv_file = csv_file
         self.kwargs = kwargs
 

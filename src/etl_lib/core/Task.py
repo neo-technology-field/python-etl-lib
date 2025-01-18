@@ -1,6 +1,7 @@
 import abc
 import logging
 import uuid
+from datetime import datetime
 
 from etl_lib.core.utils import merge_summery
 
@@ -41,6 +42,12 @@ class Task:
         """Uniquely identified a Task. Needed for for the Reporter mostly."""
         self.addons = {}
         """add anny additional attributes. these will be picked up by the ProgressReporter and stored in the graph. """
+        self.start_time: datetime
+        self.end_time: datetime
+        self.success: bool
+        self.summery: dict
+        self.error: str
+        self.depth: int = 0
 
     def execute(self, **kwargs) -> TaskReturn:
         """
@@ -56,7 +63,7 @@ class Task:
         except Exception as e:
             result = TaskReturn(success=False, summery={}, error=str(e))
 
-        self.context.reporter.finished_task(result.success, result.summery, result.error)
+        self.context.reporter.finished_task(task=self, success=result.success, summery=result.summery, error=result.error)
 
         return result
 

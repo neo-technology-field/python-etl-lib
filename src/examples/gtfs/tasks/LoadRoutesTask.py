@@ -22,8 +22,11 @@ class LoadRoutesTask(CSVLoad2Neo4jTasks):
                 return "generic"
             return value
 
-    def __init__(self, context: ETLContext, file:Path):
+    def __init__(self, context: ETLContext, file: Path):
         super().__init__(context, LoadRoutesTask.Route, file)
+
+    def task_name(self) -> str:
+        return f"{self.__class__.__name__}('{self.file}')"
 
     def _query(self):
         return """UNWIND $batch as row
@@ -34,6 +37,7 @@ class LoadRoutesTask(CSVLoad2Neo4jTasks):
                     r.type= row.type
             MERGE (a)-[:OPERATES]->(r)
             """
+
     @classmethod
     def file_name(cls):
         return "routes.txt"

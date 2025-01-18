@@ -13,14 +13,17 @@ class LoadStopsTask(CSVLoad2Neo4jTasks):
         name: str = Field(alias="stop_name")
         latitude: float = Field(alias="stop_lat")
         longitude: float = Field(alias="stop_lon")
-        platform_code: Optional[str]=None
-        parent_station: Optional[str]=None
+        platform_code: Optional[str] = None
+        parent_station: Optional[str] = None
         type: Optional[str] = Field(alias="location_type", default=None)
         timezone: Optional[str] = Field(alias="stop_timezone", default=None)
         code: Optional[str] = Field(alias="stop_code", default=None)
 
-    def __init__(self, context: ETLContext, file:Path):
+    def __init__(self, context: ETLContext, file: Path):
         super().__init__(context, LoadStopsTask.Stop, file)
+
+    def task_name(self) -> str:
+        return f"{self.__class__.__name__}('{self.file}')"
 
     def _query(self):
         return """UNWIND $batch AS row
