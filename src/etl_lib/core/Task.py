@@ -1,9 +1,8 @@
 import abc
 import logging
 import uuid
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime
-
-from etl_lib.core.utils import merge_summery
 
 
 class TaskReturn:
@@ -23,6 +22,21 @@ class TaskReturn:
 
     def __repr__(self):
         return f"TaskReturn({self.success=}, {self.summery=}, {self.error=})"
+
+    def __add__(self, other):
+        if not isinstance(other, TaskReturn):
+            return NotImplemented
+
+        # Merge the summery dictionaries by summing their values
+        merged_summery = self.summery.copy()
+        for key, value in other.summery.items():
+            merged_summery[key] = merged_summery.get(key, 0) + value
+
+        # Combine success values and errors
+        combined_success = self.success and other.success
+        combined_error = f"{self.error or ''} | {other.error or ''}".strip(" |")
+
+        return TaskReturn(success=combined_success, summery=merged_summery, error=combined_error)
 
 
 class Task:
@@ -63,7 +77,8 @@ class Task:
         except Exception as e:
             result = TaskReturn(success=False, summery={}, error=str(e))
 
-        self.context.reporter.finished_task(task=self, success=result.success, summery=result.summery, error=result.error)
+        self.context.reporter.finished_task(task=self, success=result.success, summery=result.summery,
+                                            error=result.error)
 
         return result
 
@@ -118,14 +133,13 @@ class TaskGroup(Task):
         return self.tasks
 
     def run_internal(self, **kwargs) -> TaskReturn:
-        summery = {}
+        ret = TaskReturn()
         for task in self.tasks:
-            ret = task.execute(**kwargs)
-            summery = merge_summery(summery, ret.summery)
+            ret = ret + task.execute(**kwargs)
             if ret.success == False and task.abort_on_fail():
                 self.logger.warning(f"Task {self.task_name()} failed. Aborting execution.")
-                return TaskReturn(False, summery)
-        return TaskReturn(True, summery)
+                return ret
+        return ret
 
     def abort_on_fail(self):
         for task in self.tasks:
@@ -137,3 +151,57 @@ class TaskGroup(Task):
 
     def __repr__(self):
         return f"TaskGroup({self.task_name()})"
+
+
+class ParallelTaskGroup(TaskGroup):
+
+    def __init__(self, context, tasks: list[Task], name: str):
+        """
+        Construct a TaskGroup object.
+        :param context: `ETLContext` instance.
+        :param tasks: a list of `Task` instances. These will be executed in parallel when `run_internal`
+                    is called.
+        :param name: short name of the TaskGroup.
+        """
+        super().__init__(context, tasks, name)
+
+    def run_internal(self, **kwargs) -> TaskReturn:
+        combined_result = TaskReturn()
+
+        with ThreadPoolExecutor() as executor:
+            future_to_task = {executor.submit(task.execute, **kwargs): task for task in self.tasks}
+
+            for future in as_completed(future_to_task):
+                task = future_to_task[future]
+                try:
+                    result = future.result()
+                    combined_result += result
+
+                    # If a task fails and it has abort_on_fail set, stop further execution
+                    if not result.success and task.abort_on_fail():
+                        self.logger.warning(
+                            f"Task {task.task_name()} failed. Aborting execution of TaskGroup {self.task_name()}."
+                        )
+                        # Cancel any pending tasks
+                        for f in future_to_task:
+                            if not f.done():
+                                f.cancel()
+                        return combined_result
+
+                except Exception as e:
+                    self.logger.error(f"Task {task.task_name()} encountered an error: {str(e)}")
+                    error_result = TaskReturn(success=False, summery={}, error=str(e))
+                    combined_result += error_result
+
+                    # Handle abort logic for unexpected exceptions
+                    if task.abort_on_fail():
+                        self.logger.warning(
+                            f"Unexpected failure in {task.task_name()}. Aborting execution of TaskGroup {self.task_name()}."
+                        )
+                        # Cancel any pending tasks
+                        for f in future_to_task:
+                            if not f.done():
+                                f.cancel()
+                        return combined_result
+
+        return combined_result

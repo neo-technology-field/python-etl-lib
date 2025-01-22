@@ -105,6 +105,7 @@ def get_database_name():
 class TestNeo4jContext(Neo4jContext):
 
     def __init__(self, driver: Driver):
+        self.logger = logging.getLogger(self.__class__.__name__)
         self.driver = driver
         self.database = get_database_name()
 
