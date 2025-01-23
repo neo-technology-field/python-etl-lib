@@ -35,10 +35,10 @@ def test_task_group():
         def run_internal(self, *args, **kwargs):
             return TaskReturn(success=True, summery={"rows inserted": 3, "labels created": 3, "foo": 4})
 
-    group = TaskGroup(DummyContext(), [DummyTask1(DummyContext()), DummyTask2(DummyContext())], "rest-group")
+    group = TaskGroup(DummyContext(), [DummyTask1(DummyContext()), DummyTask2(DummyContext())], "test-group")
     ret = group.execute()
 
-    assert ret.success == True
+    assert ret.success == False
     assert ret.summery == {"foo": 4, "rows inserted": 5, "labels created": 5}
 
 

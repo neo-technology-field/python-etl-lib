@@ -135,10 +135,11 @@ class TaskGroup(Task):
     def run_internal(self, **kwargs) -> TaskReturn:
         ret = TaskReturn()
         for task in self.tasks:
-            ret = ret + task.execute(**kwargs)
-            if ret.success == False and task.abort_on_fail():
+            task_ret = task.execute(**kwargs)
+            if task_ret == False and task.abort_on_fail():
                 self.logger.warning(f"Task {self.task_name()} failed. Aborting execution.")
-                return ret
+                return task_ret
+            ret = ret + task_ret
         return ret
 
     def abort_on_fail(self):

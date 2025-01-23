@@ -23,7 +23,7 @@ class ProgressReporter:
         Tasks need to contain an `uuid` member to uniquely identify a task in the tree.
         :param main: Root of the task tree.
         """
-        print(self.print_tree(main))
+        self.logger.info("\n" + self.print_tree(main))
 
     def started_task(self, task: Task) -> Task:
         """
