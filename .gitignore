@@ -4,3 +4,4 @@
 **/.env
 /requirements.txt
 /dist/
+/.idea/workspace.xml
