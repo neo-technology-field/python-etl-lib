@@ -3,3 +3,4 @@
 **/__pycache__/
 **/.env
 /.idea/inspectionProfiles/Project_Default.xml
+/requirements.txt

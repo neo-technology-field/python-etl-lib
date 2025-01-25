@@ -21,7 +21,6 @@ class CSVLoad2Neo4jTasks(Task):
         self.model = model
         self.logger = logging.getLogger(self.__class__.__name__)
         self.file = file
-        self.addons["batch_size"] = batch_size
 
     def run_internal(self, **kwargs) -> TaskReturn:
         error_file = self.file.with_suffix(".error.json")
