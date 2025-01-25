@@ -4,3 +4,5 @@
 **/.env
 /.idea/inspectionProfiles/Project_Default.xml
 /requirements.txt
+/.idea/
+/dist/
