@@ -94,3 +94,24 @@ def test_parallel_task_group(etl_context):
     assert task1.end_time > task2.start_time
 
     etl_context.reporter = DummyReporter()
+
+
+def test_kwargs_passing():
+    class DummyTask(Task):
+        def __init__(self, context):
+            super().__init__(context)
+            self.test = {}
+
+        def run_internal(self, *args, **kwargs):
+            self.test = kwargs
+            return TaskReturn(success=False, summery=kwargs)
+
+    expected = {"a": 2, "b": 3, "c": 4}
+    d1 = DummyTask(DummyContext())
+    d1.execute(**expected)
+    assert d1.test == expected
+
+    d2 = DummyTask(DummyContext())
+    g = TaskGroup(DummyContext(), [d2], "test-group")
+    ret = g.execute(**expected)
+    assert d2.test == expected

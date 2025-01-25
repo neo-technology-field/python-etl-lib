@@ -54,8 +54,6 @@ class Task:
         self.logger = logging.getLogger(self.__class__.__name__)
         self.uuid = str(uuid.uuid4())
         """Uniquely identified a Task. Needed for for the Reporter mostly."""
-        self.addons = {}
-        """add anny additional attributes. these will be picked up by the ProgressReporter and stored in the graph. """
         self.start_time: datetime
         self.end_time: datetime
         self.success: bool
