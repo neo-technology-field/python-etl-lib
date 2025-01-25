@@ -2,7 +2,6 @@
 /tests/data/customers.error.json
 **/__pycache__/
 **/.env
-/.idea/inspectionProfiles/Project_Default.xml
 /requirements.txt
-/.idea/
+.idea/*
 /dist/
