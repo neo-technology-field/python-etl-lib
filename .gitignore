@@ -3,5 +3,4 @@
 **/__pycache__/
 **/.env
 /requirements.txt
-.idea/*
 /dist/
