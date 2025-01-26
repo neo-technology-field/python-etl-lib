@@ -6,6 +6,7 @@ build-backend = "flit_core.buildapi"
 name = "etl-lib"
 authors = [{ name = "Bert Radke", email = "bert.radke@pm.me" }]
 license = { file = "LICENSE" }
+readme = "README.md"
 classifiers = [
     "License :: OSI Approved :: Apache Software License",
     'Intended Audience :: Developers',
@@ -28,7 +29,7 @@ dependencies = [
 
 [project.optional-dependencies]
 test = [
-    "pytest>=8.3.4; python_version >= '3.8'",
+    "pytest>=8.3.0; python_version >= '3.8'",
     "testcontainers[neo4j]==4.9.0; python_version >= '3.9' and python_version < '4.0'",
     "pytest-cov",
 ]
@@ -38,3 +39,5 @@ build =["flit>=3.10.1; python_version >= '3.8'"]
 [project.urls]
 Home = "https://github.com/neo-technology-field/python-etl-lib"
 
+[tool.flit.sdist]
+exclude = ["documentation/", "examples/", "tests/", ".idea/", ".github/"]

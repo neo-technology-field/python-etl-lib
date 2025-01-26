@@ -1,52 +1,52 @@
-= Python ETL Toolbox
+# Example pipeline to load a GTFS feed
 
-Is this yet another Python ETL tool? Perhaps, but the purpose here is not to offer a ready-made solution. Instead, this library provides a collection of building blocks designed to help developers quickly assemble an ETL pipeline.
+This directory contains an example pipeline to load https://gtfs.org/documentation/schedule/reference/[GTFS] feed data into Neo4j. The data model is re-used from the https://faboo.org/2021/01/loading-uk-gtfs/[Loading the UK GTFS data feed]
+blog post, rewriting the `LOAD CSV` used there to build a pipeline as a showcase.
 
-The included components offer built-in functionality deemed essential for ETL pipelines, such as:
+To run it, a GTFS feed needs to be placed into a directory.
 
-* logging
-* error handling
-* validation (via Pydantic)
-* batching and streaming
+The `gtfs.py` is mostly about setting up a cli and loading/reading arguments and env variables.
 
-While this library currently focuses on Neo4j databases, it can be extended to other sources and sinks as needed. It does not provide a CLI out of the box, but the example usage offers inspiration for customization.
+The actual pipeline is constructed via:
 
-== Main Building Blocks
 
-=== Task
+```python
+context = ETLContext(env_vars=dict(os.environ))
 
-Pipelines can be built as a series of Tasks. For example, loading a CSV file into Neo4j can be implemented using `CSVLoad2Neo4jTask` or `ExecuteCypherTask`. Tasks do not pass data directly between one another; instead, the `execute()` function provides status information to the caller.
+schema = SchemaTask(context=context)
+init_group = TaskGroup(context=context, tasks=[schema], name="schema-init")
 
-Tasks integrate seamlessly with the `ProgressReporter`, which can optionally log status information to a Neo4j database.
+tasks = [
+    LoadAgenciesTask(context=context, file=input_directory / LoadAgenciesTask.file_name()),
+    LoadRoutesTask(context=context, file=input_directory / LoadRoutesTask.file_name()),
+    LoadStopsTask(context=context, file=input_directory / LoadStopsTask.file_name()),
+    LoadTripsTask(context=context, file=input_directory / LoadTripsTask.file_name()),
+    LoadCalendarTask(context=context, file=input_directory / LoadCalendarTask.file_name()),
+    LoadStopTimesTask(context=context, file=input_directory / LoadStopTimesTask.file_name()),
+]
+csv_group = TaskGroup(context=context, tasks=tasks, name="csv-loading")
 
-To maximize flexibility, Tasks can be composed of `BatchProcessor`s, allowing developers to quickly assemble Tasks from existing building blocks.
+post_group = TaskGroup(context=context, tasks=[CreateSequenceTask(context=context)], name="post-processing")
 
-=== TaskGroups
+all_group = TaskGroup(context=context, tasks=[init_group, csv_group, post_group], name="main")
 
-Tasks can be grouped into logical blocks, such as init, loading, and post-processing. The provided functionality is designed to simplify the composition of ETL pipelines while supporting logging, error handling, and other key features.
+context.reporter.register_tasks(all_group, source=input_directory.name)
 
-=== BatchProcessors
+all_group.execute()
+```
 
-``BatchProcessor``s allow the creation of Tasks by chaining smaller components, such as reading data from a source, validating it, and writing it to a sink—all while processing data in batches. Refer to `CSVLoad2Neo4jTask` for an example implementation.
+An `all_group` is constructed from the `TaskGroup` `init_group, csv_group, post_group]` which again consists of other Task.
 
-== ETLContext
+The `all_group.execute()` triggers the pipeline. The Tasks execution follows the order of the task in the arrays.
 
-The ETLContext object holds shared information and functionality required by all components of the pipeline. It also contains a `Neo4jContext` for Neo4j-specific operations.
+Validating the input data is done via Pydantic. See `Load*Task.py` for examples. Lines not matching the Pydantic rules are written as `*.error.json` per input file and can be examined after execution.
 
-=== ProgressReporter
-
-The `ProgressReporter` is responsible for logging Task progress as the pipeline executes. If the `REPORTER_DATABASE` environment variable is set, the reporter will log progress information to a Neo4j database.
-
-A NeoDash dashboard is provided to visualize information about previous ETL runs.
-
-Each Task provides details such as rows read, nodes created, and nodes deleted. Only non-zero statistics are logged through Python's logging module. When reporting to a database, all statistics are included.
-
-Logging is implemented using Python's standard logging package. Users are responsible for configuring logging as required. The GTFS example demonstrates logging to both a file and the console, with most messages logged at the INFO level.
+Tasks have the ability to abort the entire pipeline by implementing the `abort_on_fail()` function and return `True`.
 
 Example output from the GTFS example is shown below:
 
 [source,python,options="nowrap"]
-----
+```
 025-01-18 18:44:45,214 - INFO - Processing directory: /Users/bert/Downloads/mdb-2333-202412230030
 2025-01-18 18:44:45,214 - INFO - Neo4j URL: neo4j://localhost:7687
 2025-01-18 18:44:45,214 - INFO - Neo4j User: neo4j
@@ -55,17 +55,17 @@ Example output from the GTFS example is shown below:
 2025-01-18 18:44:45,239 - INFO - driver connected to instance at neo4j://localhost:7687 with username neo4j and database neo4j
 2025-01-18 18:44:45,239 - INFO - progress reporting to database: neo4j
 └──main
-   ├──schema-init
-   │  └──SchemaTask
-   ├──csv-loading
-   │  ├──LoadAgenciesTask('/Users/bert/Downloads/mdb-2333-202412230030/agency.txt')
-   │  ├──LoadRoutesTask('/Users/bert/Downloads/mdb-2333-202412230030/routes.txt')
-   │  ├──LoadStopsTask('/Users/bert/Downloads/mdb-2333-202412230030/stops.txt')
-   │  ├──LoadTripsTask('/Users/bert/Downloads/mdb-2333-202412230030/trips.txt')
-   │  ├──LoadCalendarTask('/Users/bert/Downloads/mdb-2333-202412230030/calendar.txt')
-   │  └──LoadStopTimesTask('/Users/bert/Downloads/mdb-2333-202412230030/stop_times.txt')
-   └──post-processing
-      └──CreateSequenceTask
+├──schema-init
+│  └──SchemaTask
+├──csv-loading
+│  ├──LoadAgenciesTask('/Users/bert/Downloads/mdb-2333-202412230030/agency.txt')
+│  ├──LoadRoutesTask('/Users/bert/Downloads/mdb-2333-202412230030/routes.txt')
+│  ├──LoadStopsTask('/Users/bert/Downloads/mdb-2333-202412230030/stops.txt')
+│  ├──LoadTripsTask('/Users/bert/Downloads/mdb-2333-202412230030/trips.txt')
+│  ├──LoadCalendarTask('/Users/bert/Downloads/mdb-2333-202412230030/calendar.txt')
+│  └──LoadStopTimesTask('/Users/bert/Downloads/mdb-2333-202412230030/stop_times.txt')
+└──post-processing
+└──CreateSequenceTask
 
 2025-01-18 18:44:45,715 - INFO - starting main
 2025-01-18 18:44:45,752 - INFO - starting schema-init
@@ -142,16 +142,16 @@ Example output from the GTFS example is shown below:
 |         10134369 |               3 |                 3889625 |        2193075 |         1994980 |                   4 |      1995192 |          1995192 |
 +------------------+-----------------+-------------------------+----------------+-----------------+---------------------+--------------+------------------+
 2025-01-18 18:46:32,897 - INFO - Processing complete.
-----
+```
 
 When reporting to a Neo4j database, each ETL run results in a tree structure like the one shown below (example from the GTFS example):
 
-image::documentation/schema.png[Schema]
+![Schema](../../documentation/schema.png)
 
 Each ETLTask node, once the associated task has been completed, will have an attached `ETLStats` node with properties such as below. The stats reported here depend on the task(s) involved.
 
-[code]
-----
+
+```
 csv_lines_read:4170,
 labels_removed:0,
 indexes_removed:0,
@@ -166,34 +166,6 @@ constraints_removed:0,
 labels_added:0,
 nodes_created:0,
 valid_rows:4170
-----
+```
 
 Tasks with SubTasks (defined as `TaskGroup`) aggregate statistics from all their child Tasks. Therefore, viewing the top-level `ETLRun` node provides a summary of the entire pipeline.
-
-A simple NeoDash dashboard configuration is provided in the `dashboard.json` file. For more information, visit the https://neo4j.com/labs/neodash/[NeoDash documentation].
-
-== Building, Testing, Running
-
-This project uses https://realpython.com/pipenv-guide/[Pipenv].
-
-To set up, activate the environment with `pipenv shell` and then `run pipenv install` to install all dependencies.
-
-Run the GTFS example using the following command:
-----
-pipenv run src/examples/gtfs/gtfs.py <gtfs input directory>
-----
-
-=== Tests
-
-Most tests need a Neo4j database. 2 options exists:
-
-. Use en existing running database. Provide the following env variables:
-* `NEO4J_URI`
-* `NEO4J_USERNAME`
-* `NEO4J_PASSWORD`
-* `NEO4J_TEST_DATABASE`
-. Use testcontainers to start and stop a Neo4j database.
-This option is activated when the env variable `NEO4J_TEST_CONTAINER` is detected. This variable determines which docker image to run. In this case, the variables from option1 are ignored.
-
-Run the tests via `pipenv run pytest`.
-

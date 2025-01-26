@@ -43,7 +43,7 @@ def neo4j_driver():
             return
     else:
         print(
-            f"found NEO4J_TEST_CONTAINER not set, using instance at  {os.getenv('NEO4J_URI')} and database={os.getenv("NEO4J_TEST_DATABASE")}")
+            f"found NEO4J_TEST_CONTAINER not set, using instance at  {os.getenv('NEO4J_URI')} and database={os.getenv('NEO4J_TEST_DATABASE')}")
         # do not use test containers, but a running remote db
         with GraphDatabase.driver(os.getenv('NEO4J_URI'),
                                   auth=(os.getenv('NEO4J_USERNAME'),

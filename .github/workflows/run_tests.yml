@@ -1,5 +1,5 @@
 name: Project Tests
-on: [push]
+on: [ push ]
 env:
   NEO4J_TEST_CONTAINER: 'neo4j:5.26.0-enterprise'
 
@@ -9,12 +9,15 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
-      - name: Install Python, pipenv and Pipfile packages
-        uses: palewire/install-python-pipenv-pipfile@v4
+        uses: actions/checkout@v4
+      - name: Setup Python
+        uses: actions/setup-python@v5
         with:
           python-version: 3.13.1
-      - name: Run tests
+      - name: Install dependencies
         run: |
-          pipenv install --dev
-          pipenv run pytest
+          python -m pip install --upgrade pip pip-tools
+          pip-compile --extra test,gds pyproject.toml
+          pip-sync
+      - name: Run Test
+        run: pytest
