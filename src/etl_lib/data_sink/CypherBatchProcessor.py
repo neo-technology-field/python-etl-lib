@@ -13,10 +13,14 @@ class CypherBatchProcessor(BatchProcessor):
     def __init__(self, context: ETLContext, task: Task, predecessor: BatchProcessor, query: str):
         """
         Constructs a new CypherBatchProcessor.
-        :param context: `ETLContext` instance.
-        :param predecessor: BatchProcessor which `get_batch()` function will be called to receive batches to process.
-        :param query: Cypher to write the query to Neo4j. Data will be passed as `batch` parameter.
-            Therefor, the query should start with a `UNWIND $batch AS row`.
+
+        Args:
+            context: :py:class:`etl_lib.core.ETLContext.ETLContext` instance.
+            task: :py:class:`etl_lib.core.Task.Task` instance owning this batchProcessor.
+            predecessor: BatchProcessor which :py:func:`~get_batch` function will be called to receive batches to process.
+            query: Cypher to write the query to Neo4j.
+                Data will be passed as `batch` parameter.
+                Therefor, the query should start with a `UNWIND $batch AS row`.
         """
         super().__init__(context, task, predecessor)
         self.query = query

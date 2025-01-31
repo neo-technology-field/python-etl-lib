@@ -1,5 +1,4 @@
 import logging
-from pathlib import Path
 from typing import NamedTuple, Any
 
 from graphdatascience import GraphDataScience
@@ -99,15 +98,23 @@ class Neo4jContext:
 
 
 class ETLContext:
+    """
+    General context information.
+
+    Will be passed to all :py:class:`etl_lib.core.Task` to provide access to environment variables and functionally
+    deemed general enough that all parts of the ETL pipeline would need it.
+    """
     neo4j: Neo4jContext
     __env_vars: dict
-    path_error: Path
-    path_import: Path
-    path_processed: Path
 
     def __init__(self, env_vars: dict):
         """
-        Create a new ETLContext. The context created will contain an `Neo4jContext` and a `ProgressReporter`.
+        Create a new ETLContext.
+
+        Args:
+            env_vars: Environment variables. Stored internally and can be accessed via :py:func:`~env` .
+
+        The context created will contain an :py:class:`~Neo4jContext` and a :py:class:`ProgressReporter`.
         See there for keys used from the provided `env_vars` dict.
         """
         self.logger = logging.getLogger(self.__class__.__name__)
@@ -118,8 +125,12 @@ class ETLContext:
     def env(self, key: str) -> Any:
         """
         Returns the value of an entry in the `env_vars` dict.
-        :param key: name of the entry to read.
-        :return: value of the entry, or None if the key is not in the dict.
+
+        Args:
+            key: name of the entry to read.
+
+        Returns:
+            va  lue of the entry, or None if the key is not in the dict.
         """
         if key in self.__env_vars:
             return self.__env_vars[key]

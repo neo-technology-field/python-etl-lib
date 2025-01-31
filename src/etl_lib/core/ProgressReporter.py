@@ -8,7 +8,10 @@ from etl_lib.core.Task import Task, TaskGroup
 
 class ProgressReporter:
     """
-    ProgressReporter that reports status updates from the tasks through the python `logging` package.
+    Responsible for reporting progress of :py:class:`etl_lib.core.Task` .
+
+    This specific implementation uses the python logging module to log progress.
+    Non-error logging is using the INFO level.
     """
     start_time: datetime
     end_time: datetime
@@ -19,17 +22,26 @@ class ProgressReporter:
 
     def register_tasks(self, main: Task):
         """
-        Registers Tasks with this reporter, esp. needed for derived reporters that need to prepare tasks for later reporting
-        Tasks need to contain an `uuid` member to uniquely identify a task in the tree.
-        :param main: Root of the task tree.
+        Registers a :py:class:`etl_lib.core.Task` with this reporter.
+
+        Needs to be called once with the root task. The function will walk the tree of tasks and register them in turn.
+
+        Args:
+            main: Root of the task tree.
         """
-        self.logger.info("\n" + self.print_tree(main))
+        self.logger.info("\n" + self.__print_tree(main))
 
     def started_task(self, task: Task) -> Task:
         """
-        Marks the task as started. Start the time keeping for this task.
-        :param task: Task to be marked as started.
-        :return: The current task that was started.
+        Marks the task as started.
+
+        Start the time keeping for this task and performs logging.
+
+        Args:
+            task: Task to be marked as started.
+
+        Returns:
+            The task that was provided.
         """
         task.start_time = datetime.now()
         self.logger.info(f"{'\t' * task.depth}starting {task.task_name()}")
@@ -37,13 +49,18 @@ class ProgressReporter:
 
     def finished_task(self, task: Task, success: bool, summery: dict, error: str = None) -> Task:
         """
-        Marks the task as finished. Finish the time keeping for this task.
-        This does not change the current task.
-        :param task: Task to be marked as finished.
-        :param success: True if the task was successfully finished.
-        :param summery: dict of statistics for this task (such as `nodes_created`)
-        :param error: If an exception occurred, the exception test should be provided here.
-        :return: The current task that was finished.
+        Marks the task as finished.
+
+        Stops the time recording for the tasks and performs logging. Logging will include details from the provided summery.
+
+        Args:
+            task: Task to be marked as finished.
+            success: True if the task has successfully finished.
+            summery: statistics for this task (such as `nodes_created`)
+            error: If an exception occurred, the exception text should be provided here.
+
+        Returns:
+            Task to be marked as started.
         """
         task.end_time = datetime.now()
         task.success = success
@@ -62,16 +79,21 @@ class ProgressReporter:
 
     def report_progress(self, task: Task, batches: int, expected_batches: int, stats: dict) -> None:
         """
-        Optionally provide updates during execution of a task, most likely at the end of each batch.
-        :param task: Task reporting updates.
-        :param batches: Number of batches processed so far.
-        :param expected_batches: Number of expected batches. Can be `None` if the overall number of
+        Optionally provide updates during execution of a task, such as batches processed so far.
+
+        This is an optional call, as not all :py:class:`etl_lib.core.Task` need batching.
+
+        Args:
+            task: Task reporting updates.
+            batches: Number of batches processed so far.
+            expected_batches: Number of expected batches. Can be `None` if the overall number of
                 batches is not know before execution.
-        :param stats: dict of statistics so far (such as `nodes_created`)
+            stats: dict of statistics so far (such as `nodes_created`).
         """
         pass
 
-    def print_tree(self, task: Task, last=True, header='') -> str:
+    def __print_tree(self, task: Task, last=True, header='') -> str:
+        """Generates a tree view of the task tree."""
         elbow = "└──"
         pipe = "│  "
         tee = "├──"
@@ -80,8 +102,8 @@ class ProgressReporter:
         if isinstance(task, TaskGroup):
             children = list(task.sub_tasks())
             for i, c in enumerate(children):
-                tree_string += self.print_tree(c, header=header + (blank if last else pipe),
-                                               last=i == len(children) - 1)
+                tree_string += self.__print_tree(c, header=header + (blank if last else pipe),
+                                                 last=i == len(children) - 1)
         return tree_string
 
 
@@ -93,8 +115,10 @@ class Neo4jProgressReporter(ProgressReporter):
     def __init__(self, context, database: str):
         """
         Creates a new Neo4j progress reporter.
-        :param context: ETLContext containing a Neo4jConnection instance.
-        :param database: Name of the database to write the status updates to.
+
+        Args:
+            context: :py:class:`etl_lib.core.ETLContext` containing a Neo4jConnection instance.
+            database: Name of the database to write the status updates to.
         """
         super().__init__(context)
         self.database = database
@@ -109,9 +133,10 @@ class Neo4jProgressReporter(ProgressReporter):
             session.run(
                 "CREATE (t:ETLTask:ETLRun {uuid:$id, task:$task, order:$order, name:$name, status: 'open'}) SET t +=$other",
                 id=root.uuid, order=order, task=root.__repr__(), name=root.task_name(), other=kwargs)
-            self.persist_task(session, root, order)
+            self.__persist_task(session, root, order)
 
-    def persist_task(self, session, task: Task | TaskGroup, order: int) -> int:
+    def __persist_task(self, session, task: Task | TaskGroup, order: int) -> int:
+        """Writes task information to the database."""
 
         if type(task) is Task:
             order += 1
@@ -132,7 +157,7 @@ class Neo4jProgressReporter(ProgressReporter):
                     """,
                     parent_id=task.uuid, id=child.uuid, task=child.__repr__(), order=order, name=child.task_name())
                 if isinstance(child, TaskGroup):
-                    order = self.persist_task(session, child, order)
+                    order = self.__persist_task(session, child, order)
         return order
 
     def started_task(self, task: Task) -> Task:
@@ -169,6 +194,15 @@ class Neo4jProgressReporter(ProgressReporter):
 
 
 def get_reporter(context) -> ProgressReporter:
+    """
+    Returns a ProgressReporter instance.
+
+    If the :py:class:`ETLContext <etl_lib.core.ETLContext>` env holds the key `REPORTER_DATABASE` then
+    a :py:class:`Neo4jProgressReporter` instance is created with the given database name.
+
+    Otherwise, a  :py:class:`ProgressReporter` (no logging to database) instance will be created.
+    """
+
     db = context.env("REPORTER_DATABASE")
     if db is None:
         return ProgressReporter(context)

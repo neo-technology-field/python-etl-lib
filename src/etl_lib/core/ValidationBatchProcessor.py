@@ -2,17 +2,37 @@ import json
 from pathlib import Path
 from typing import Type, Generator
 
-from etl_lib.core.ETLContext import ETLContext
-from etl_lib.core.BatchProcessor import BatchProcessor, BatchResults
 from pydantic import BaseModel, ValidationError
 
+from etl_lib.core.BatchProcessor import BatchProcessor, BatchResults
+from etl_lib.core.ETLContext import ETLContext
 from etl_lib.core.Task import Task
 from etl_lib.core.utils import merge_summery
 
 
 class ValidationBatchProcessor(BatchProcessor):
+    """
+    Batch processor for validation, using Pydantic.
+    """
 
     def __init__(self, context: ETLContext, task: Task, predecessor, model: Type[BaseModel], error_file: Path):
+        """
+        Constructs a new ValidationBatchProcessor.
+
+        The :py:class:`etl_lib.core.BatchProcessor.BatchResults` returned from the :py:func:`~get_batch` of this
+        implementation will contain the following additional entries:
+
+        - `valid_rows`: Number of valid rows.
+        - `invalid_rows`: Number of invalid rows.
+
+        Args:
+            context: :py:class:`etl_lib.core.ETLContext.ETLContext` instance.
+            task: :py:class:`etl_lib.core.Task.Task` instance owning this batchProcessor.
+            predecessor: BatchProcessor which :py:func:`~get_batch` function will be called to receive batches to process.
+            model: Pydantic model class used to validate each row in the batch.
+            error_file: Path to the file that will receive each row that did not pass validation.
+                Each row in this file will contain the original data together with all validation errors for this row.
+        """
         super().__init__(context, task, predecessor)
         self.error_file = error_file
         self.model = model
@@ -46,7 +66,7 @@ class ValidationBatchProcessor(BatchProcessor):
             # Yield BatchResults with statistics
             yield BatchResults(
                 chunk=valid_rows,
-                statistics=merge_summery(batch.statistics,{
+                statistics=merge_summery(batch.statistics, {
                     "valid_rows": len(valid_rows),
                     "invalid_rows": len(invalid_rows)
                 }),

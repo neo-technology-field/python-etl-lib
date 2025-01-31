@@ -3,10 +3,12 @@ requires = ["flit_core >=3.2,<4"]
 build-backend = "flit_core.buildapi"
 
 [project]
-name = "etl-lib"
+name = "neo4j-etl-lib"
 authors = [{ name = "Bert Radke", email = "bert.radke@pm.me" }]
 license = { file = "LICENSE" }
 readme = "README.md"
+requires-python = ">=3.10"
+
 classifiers = [
     "License :: OSI Approved :: Apache Software License",
     'Intended Audience :: Developers',
@@ -17,7 +19,7 @@ classifiers = [
     "Development Status :: 4 - Beta"
 ]
 dynamic = ["version", "description"]
-keywords = ["etl", "graph"]
+keywords = ["etl", "graph", "database"]
 
 dependencies = [
     "pydantic>=2.10.5; python_version >= '3.8'",
@@ -28,16 +30,19 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-test = [
+dev = [
     "pytest>=8.3.0; python_version >= '3.8'",
     "testcontainers[neo4j]==4.9.0; python_version >= '3.9' and python_version < '4.0'",
-    "pytest-cov",
+    "pytest-cov", "bumpver", "isort", "pip-tools",
+    "sphinx", "sphinx-rtd-theme", "pydata-sphinx-theme", "sphinx-autodoc-typehints", "sphinxcontrib-napoleon"
 ]
 gds = ["graphdatascience>=1.13; python_version >= '3.9'"]
-build =["flit>=3.10.1; python_version >= '3.8'"]
 
 [project.urls]
 Home = "https://github.com/neo-technology-field/python-etl-lib"
 
 [tool.flit.sdist]
 exclude = ["documentation/", "examples/", "tests/", ".idea/", ".github/"]
+
+[tool.flit.module]
+name = "etl_lib"

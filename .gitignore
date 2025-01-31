@@ -5,3 +5,5 @@
 /requirements.txt
 /dist/
 /.idea/workspace.xml
+/docs/_build/
+/docs/_autosummary/

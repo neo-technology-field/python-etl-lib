@@ -18,13 +18,13 @@ It does not provide a CLI out of the box, but contains a set of functions to lis
 
 ### Installation
 
-Package is available on PyPi and can be installed via 
+Package is available on PyPi and can be installed (for development) via:
 
 ```bash
 python3 -m venv venv
 source venv/bin/activate
 python -m pip install pip-tools
-pip-compile --extra test pyproject.toml
+pip-compile --extra dev pyproject.toml
 pip-sync
 ```
 
@@ -84,5 +84,3 @@ all_group.execute()
 See the provided [example](examples/gtfs/README.md) for a more realistic pipeline and how the logging and reporting would look like.
 
 With the above, all lines in the input file `agency.txt` that do not fit the Pydantic model, would be sent to an json file, containing the error data and a description of why it could not be loaded.
-
-

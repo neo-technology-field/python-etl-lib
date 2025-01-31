@@ -1,32 +1,37 @@
 import csv
 import gzip
 from pathlib import Path
+from typing import Generator
 
-from etl_lib.core.ETLContext import ETLContext
 from etl_lib.core.BatchProcessor import BatchProcessor, BatchResults
+from etl_lib.core.ETLContext import ETLContext
 from etl_lib.core.Task import Task
 
 
 class CSVBatchProcessor(BatchProcessor):
     """
     BatchProcessor that reads a CSV file using the `csv` package.
+
     File can optionally be gzipped.
     The returned batch of rows will have an additional `_row` column, containing the source row of the data,
-        starting with 0
+    starting with 0.
     """
+
     def __init__(self, csv_file: Path, context: ETLContext, task: Task, **kwargs):
         """
-        Reads a CSV file in batches, optionally unzipping on the fly.
-        :param csv_file: Path to the CSV file.
-        :param context: `ETLContext` instance.
-        :param kwargs: Will be passed on to the `csv.DictReader providing a way to customise the reading to different
-                csv formats
+        Constructs a new CSVBatchProcessor.
+
+        Args:
+            csv_file: Path to the CSV file.
+            context: :py:class:`etl_lib.core.ETLContext.ETLContext` instance.
+            kwargs: Will be passed on to the `csv.DictReader` providing a way to customise the reading to different
+                csv formats.
         """
         super().__init__(context, task)
         self.csv_file = csv_file
         self.kwargs = kwargs
 
-    def get_batch(self, max_batch__size: int) -> BatchResults:
+    def get_batch(self, max_batch__size: int) -> Generator[BatchResults]:
         for batch_size, chunks_ in self.read_csv(self.csv_file, batch_size=max_batch__size, **self.kwargs):
             yield BatchResults(chunk=chunks_, statistics={"csv_lines_read": batch_size}, batch_size=batch_size)
 
@@ -45,9 +50,13 @@ class CSVBatchProcessor(BatchProcessor):
     def __split_to_batches(self, source: [dict], batch_size):
         """
         Splits the provided source into batches.
-        :param source: Anything that can be loop over, ideally, this should also be a generator
-        :param batch_size: desired batch size
-        :return: a generator object to loop over the batches. Each batch is an Array
+
+        Args:
+            source: Anything that can be loop over, ideally, this should also be a generator
+            batch_size: desired batch size
+
+        Returns:
+            generator object to loop over the batches. Each batch is an Array.
         """
         cnt = 0
         batch_ = []

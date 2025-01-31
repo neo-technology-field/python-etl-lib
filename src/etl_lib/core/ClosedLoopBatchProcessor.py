@@ -6,6 +6,12 @@ from etl_lib.core.Task import Task
 
 
 class ClosedLoopBatchProcessor(BatchProcessor):
+    """
+    Reporting implementation of a BatchProcessor.
+
+    Meant to be the last entry in the list of :py:class:`etl_lib.core.BatchProcessor` driving the processing and
+    reporting updates of the processed batches using the :py:class:`etl_lib.core.ProgressReporter` from the context.
+    """
 
     def __init__(self, context: ETLContext, task: Task, predecessor: BatchProcessor, expected_rows: int = None):
         super().__init__(context, task, predecessor)

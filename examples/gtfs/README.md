@@ -146,7 +146,7 @@ Example output from the GTFS example is shown below:
 
 When reporting to a Neo4j database, each ETL run results in a tree structure like the one shown below (example from the GTFS example):
 
-![Schema](../../documentation/schema.png)
+![Schema](../../docs/_static/images/schema.png)
 
 Each ETLTask node, once the associated task has been completed, will have an attached `ETLStats` node with properties such as below. The stats reported here depend on the task(s) involved.
 
