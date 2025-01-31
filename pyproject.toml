@@ -40,6 +40,7 @@ gds = ["graphdatascience>=1.13; python_version >= '3.9'"]
 
 [project.urls]
 Home = "https://github.com/neo-technology-field/python-etl-lib"
+Documentation = "https://neo-technology-field.github.io/python-etl-lib/index.html"
 
 [tool.flit.sdist]
 exclude = ["documentation/", "examples/", "tests/", ".idea/", ".github/"]
