@@ -11,7 +11,7 @@ from etl_lib.core.ETLContext import QueryResult, Neo4jContext, ETLContext
 from etl_lib.core.Task import Task
 
 
-def get_test_file(file_name):
+def get_test_file(file_name: object) -> Path:
     """
     Returns the absolut path of a file that exists in `tests/data/` directory.
     """

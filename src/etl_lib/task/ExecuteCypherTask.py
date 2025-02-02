@@ -6,7 +6,12 @@ from etl_lib.core.utils import merge_summery
 
 
 class ExecuteCypherTask(Task):
+    """
+    Execute cypher (write) as a Task.
 
+    This task is for data refinement jobs, as it does not return cypher results.
+    Parameters can be passed as keyword arguments to the constructor and will be available as parameters inside cypher.
+    """
     def __init__(self, context: ETLContext):
         super().__init__(context)
         self.context = context

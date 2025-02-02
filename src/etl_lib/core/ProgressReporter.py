@@ -66,7 +66,7 @@ class ProgressReporter:
         task.success = success
         task.summery = summery
 
-        report = f"{'\t' * task.depth}finished {task.task_name()} with success: {success}"
+        report = f"{'\t' * task.depth} finished {task.task_name()} in {task.start_time - task.end_time} with success: {success}"
         if error is not None:
             report += f", error: \n{error}"
         else:

@@ -4,7 +4,6 @@ from pathlib import Path
 from typing import Generator
 
 from etl_lib.core.BatchProcessor import BatchProcessor, BatchResults
-from etl_lib.core.ETLContext import ETLContext
 from etl_lib.core.Task import Task
 
 
@@ -17,7 +16,7 @@ class CSVBatchProcessor(BatchProcessor):
     starting with 0.
     """
 
-    def __init__(self, csv_file: Path, context: ETLContext, task: Task, **kwargs):
+    def __init__(self, csv_file: Path, context, task: Task = None, **kwargs):
         """
         Constructs a new CSVBatchProcessor.
 
@@ -32,10 +31,10 @@ class CSVBatchProcessor(BatchProcessor):
         self.kwargs = kwargs
 
     def get_batch(self, max_batch__size: int) -> Generator[BatchResults]:
-        for batch_size, chunks_ in self.read_csv(self.csv_file, batch_size=max_batch__size, **self.kwargs):
+        for batch_size, chunks_ in self.__read_csv(self.csv_file, batch_size=max_batch__size, **self.kwargs):
             yield BatchResults(chunk=chunks_, statistics={"csv_lines_read": batch_size}, batch_size=batch_size)
 
-    def read_csv(self, file: Path, batch_size: int, **kwargs):
+    def __read_csv(self, file: Path, batch_size: int, **kwargs):
         if file.suffix == ".gz":
             with gzip.open(file, "rt", encoding='utf-8-sig') as f:
                 yield from self.__parse_csv(batch_size, file=f, **kwargs)
@@ -44,30 +43,23 @@ class CSVBatchProcessor(BatchProcessor):
                 yield from self.__parse_csv(batch_size, file=f, **kwargs)
 
     def __parse_csv(self, batch_size, file, **kwargs):
-        csv_file = csv.DictReader(file, **kwargs)
-        yield from self.__split_to_batches(csv_file, batch_size)
+        """Read CSV in batches without loading the entire file at once."""
+        csv_reader = csv.DictReader(file, **kwargs)
 
-    def __split_to_batches(self, source: [dict], batch_size):
-        """
-        Splits the provided source into batches.
-
-        Args:
-            source: Anything that can be loop over, ideally, this should also be a generator
-            batch_size: desired batch size
-
-        Returns:
-            generator object to loop over the batches. Each batch is an Array.
-        """
         cnt = 0
         batch_ = []
-        for i in source:
-            i["_row"] = cnt
+
+        for row in csv_reader:
+            row["_row"] = cnt
             cnt += 1
-            batch_.append(self.__clean_dict(i))
+            batch_.append(self.__clean_dict(row))
+
             if len(batch_) == batch_size:
                 yield len(batch_), batch_
                 batch_ = []
-        if len(batch_) > 0:
+
+        # Yield any remaining data
+        if batch_:
             yield len(batch_), batch_
 
     def __clean_dict(self, input_dict):

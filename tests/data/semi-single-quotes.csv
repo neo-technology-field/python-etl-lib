@@ -1,0 +1,4 @@
+'string';'integer';'float'
+'Hello, World!';'42';'3.14'
+'Ümläuts & Accénts';'-1';'-0.01'
+'Escape \\tTab';'999999';'1000000.0'

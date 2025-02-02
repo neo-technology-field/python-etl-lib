@@ -2,7 +2,7 @@ import logging
 from typing import NamedTuple, Any
 
 from graphdatascience import GraphDataScience
-from neo4j import Driver, GraphDatabase, WRITE_ACCESS, SummaryCounters
+from neo4j import GraphDatabase, WRITE_ACCESS, SummaryCounters
 
 from etl_lib.core.ProgressReporter import get_reporter
 
@@ -20,18 +20,19 @@ def append_results(r1: QueryResult, r2: QueryResult) -> QueryResult:
 
 
 class Neo4jContext:
-    uri: str
-    auth: (str, str)
-    driver: Driver
-    database: str
+    """
+    Holds the connection to the neo4j database and provides facilities to execute queries.
+    """
 
     def __init__(self, env_vars: dict):
         """
         Create a new Neo4j context.
+
         Reads the following env_vars keys:
         - `NEO4J_URI`,
         - `NEO4J_USERNAME`,
         - `NEO4J_PASSWORD`.
+        - `NEO4J_DATABASE`,
         """
         self.logger = logging.getLogger(self.__class__.__name__)
         self.uri = env_vars["NEO4J_URI"]
@@ -43,6 +44,10 @@ class Neo4jContext:
     def query_database(self, session, query, **kwargs) -> QueryResult:
         """
         Executes a Cypher query on the Neo4j database.
+
+        Args:
+            session: Neo4j database session.
+            query: Cypher query either as a single query or as a list.
         """
         if isinstance(query, list):
             results = []
@@ -78,12 +83,34 @@ class Neo4jContext:
         }
 
     def session(self, database=None):
+        """
+        Create a new Neo4j session in write mode.
+
+        Caller is responsible to close the session.
+        Args:
+            database: name of the database to use for this session. If not provided, the database name provided during
+                construction will be used.
+
+        Returns:
+            newly created Neo4j session.
+
+        """
         if database is None:
             return self.driver.session(database=self.database, default_access_mode=WRITE_ACCESS)
         else:
             return self.driver.session(database=database, default_access_mode=WRITE_ACCESS)
 
     def gds(self, database=None) -> GraphDataScience:
+        """
+        Creates a new GraphDataScience client.
+
+        Args:
+            database: Name of the database to use for this dgs client.
+                If not provided, the database name provided during construction will be used.
+
+        Returns:
+            gds client.
+        """
         if database is None:
             return GraphDataScience.from_neo4j_driver(driver=self.driver, database=self.database)
         else:
