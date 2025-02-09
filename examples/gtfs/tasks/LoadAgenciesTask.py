@@ -3,10 +3,10 @@ from pathlib import Path
 from pydantic import BaseModel, Field
 
 from etl_lib.core.ETLContext import ETLContext
-from etl_lib.task.data_loading.CSVLoad2Neo4jTask import CSVLoad2Neo4jTasks
+from etl_lib.task.data_loading.CSVLoad2Neo4jTask import CSVLoad2Neo4jTask
 
 
-class LoadAgenciesTask(CSVLoad2Neo4jTasks):
+class LoadAgenciesTask(CSVLoad2Neo4jTask):
     class Agency(BaseModel):
         id: str = Field(alias="agency_id", default="generic")
         name: str = Field(alias="agency_name")

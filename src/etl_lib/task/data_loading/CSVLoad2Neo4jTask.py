@@ -13,7 +13,7 @@ from etl_lib.data_sink.CypherBatchProcessor import CypherBatchProcessor
 from etl_lib.data_source.CSVBatchProcessor import CSVBatchProcessor
 
 
-class CSVLoad2Neo4jTasks(Task):
+class CSVLoad2Neo4jTask(Task):
 
     def __init__(self, context: ETLContext, model: Type[BaseModel], file: Path, batch_size: int = 5000):
         super().__init__(context)

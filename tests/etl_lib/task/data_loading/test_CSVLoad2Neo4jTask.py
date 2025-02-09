@@ -3,7 +3,7 @@ from datetime import date
 from neo4j.spatial import WGS84Point
 from pydantic import BaseModel, Field, field_validator
 
-from etl_lib.task.data_loading.CSVLoad2Neo4jTask import CSVLoad2Neo4jTasks
+from etl_lib.task.data_loading.CSVLoad2Neo4jTask import CSVLoad2Neo4jTask
 from test_utils.utils import get_test_file, get_node_count
 
 
@@ -38,7 +38,7 @@ class Customer(BaseModel):
         return WGS84Point((float(splits[0]), float(splits[1])))
 
 
-class CustomerLoadTask(CSVLoad2Neo4jTasks):
+class CustomerLoadTask(CSVLoad2Neo4jTask):
 
     def __init__(self, context):
         super().__init__(context, Customer, file=get_test_file("customers.csv"), batch_size=20)

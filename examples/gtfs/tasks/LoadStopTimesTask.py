@@ -3,10 +3,10 @@ from pathlib import Path
 from pydantic import BaseModel
 
 from etl_lib.core.ETLContext import ETLContext
-from etl_lib.task.data_loading.CSVLoad2Neo4jTask import CSVLoad2Neo4jTasks
+from etl_lib.task.data_loading.CSVLoad2Neo4jTask import CSVLoad2Neo4jTask
 
 
-class LoadStopTimesTask(CSVLoad2Neo4jTasks):
+class LoadStopTimesTask(CSVLoad2Neo4jTask):
     class StopTime(BaseModel):
         trip_id: str
         stop_id: str

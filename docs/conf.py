@@ -16,7 +16,7 @@ sys.path.insert(0, os.path.abspath('../src'))  # Source code dir relative to thi
 
 # -- Project information -----------------------------------------------------
 
-project = 'Neo4j-etl-lib'
+project = 'neo4j-etl-lib'
 author = 'Bert Radke'
 
 # The full version, including alpha/beta/rc tags
@@ -31,19 +31,23 @@ release = version
 # ones.
 extensions = [
     'sphinx.ext.autodoc',  # Core Sphinx library for auto html doc generation from docstrings
-    'sphinx.ext.autosummary',  # Create neat summary tables for modules/classes/methods etc
     'sphinx.ext.viewcode',  # Add a link to the Python source code for classes, functions etc.
     'sphinx_autodoc_typehints', # Automatically document param types (less noise in class signature)
-    'sphinx.ext.napoleon'
+    'sphinx.ext.napoleon',
+    'sphinx.ext.graphviz'
 ]
 
-autosummary_generate = True  # Turn on sphinx.ext.autosummary
-autoclass_content = "both"  # Add __init__ doc (ie. params) to class summaries
+autoclass_content = "class"
 html_show_sourcelink = False  # Remove 'view source code' from top of page (for html, not python)
 autodoc_inherit_docstrings = True  # If no docstring, inherit from base class
 set_type_checking_flag = True  # Enable 'expensive' imports for sphinx_autodoc_typehints
-#autodoc_typehints = "description" # Sphinx-native method. Not as good as sphinx_autodoc_typehints
+autodoc_typehints = "description" # Sphinx-native method. Not as good as sphinx_autodoc_typehints
 add_module_names = False # Remove namespaces from class/method signatures
+
+autodoc_default_options = {
+    'special-members': '__init__',
+}
+
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']

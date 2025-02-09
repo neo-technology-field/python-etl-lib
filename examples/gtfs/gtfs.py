@@ -8,35 +8,18 @@ from dotenv import load_dotenv
 from etl_lib.cli.run_tools import cli
 from etl_lib.core.ETLContext import ETLContext
 from etl_lib.core.Task import TaskGroup
-from examples.gtfs.tasks.CreateSequenceTask import CreateSequenceTask
-from examples.gtfs.tasks.LoadAgenciesTask import LoadAgenciesTask
-from examples.gtfs.tasks.LoadCalendarTask import LoadCalendarTask
-from examples.gtfs.tasks.LoadRoutesTask import LoadRoutesTask
-from examples.gtfs.tasks.LoadStopTimesTask import LoadStopTimesTask
-from examples.gtfs.tasks.LoadStopsTask import LoadStopsTask
-from examples.gtfs.tasks.LoadTripsTask import LoadTripsTask
-from examples.gtfs.tasks.SchemaTask import SchemaTask
+from etl_lib.core.utils import setup_logging
+from tasks.CreateSequenceTask import CreateSequenceTask
+from tasks.LoadAgenciesTask import LoadAgenciesTask
+from tasks.LoadCalendarTask import LoadCalendarTask
+from tasks.LoadRoutesTask import LoadRoutesTask
+from tasks.LoadStopTimesTask import LoadStopTimesTask
+from tasks.LoadStopsTask import LoadStopsTask
+from tasks.LoadTripsTask import LoadTripsTask
+from tasks.SchemaTask import SchemaTask
 
 # Load environment variables from .env file
 load_dotenv()
-
-
-def setup_logging(log_file=None):
-    """
-    Set up logging to console and optionally to a log file.
-
-    :param log_file: Path to the log file
-    :type log_file: str, optional
-    """
-    handlers = [logging.StreamHandler()]
-    if log_file:
-        handlers.append(logging.FileHandler(log_file))
-
-    logging.basicConfig(
-        level=logging.INFO,
-        format='%(asctime)s - %(levelname)s - %(message)s',
-        handlers=handlers
-    )
 
 
 @cli.command("import")

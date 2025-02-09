@@ -155,7 +155,7 @@ def detail(ctx, run_id, details):
                 "status": record["status"],
                 "batches": record["batches"],
                 "duration": __duration_from_start_end(record["startTime"], record["endTime"]),
-                "changes": sum(record.get("stats", {}).values())
+                "changes": record.get("changes", 0)
             }
             for record in records
         ]

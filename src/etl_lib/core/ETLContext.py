@@ -84,9 +84,8 @@ class Neo4jContext:
 
     def session(self, database=None):
         """
-        Create a new Neo4j session in write mode.
+        Create a new Neo4j session in write mode, caller is responsible to close the session.
 
-        Caller is responsible to close the session.
         Args:
             database: name of the database to use for this session. If not provided, the database name provided during
                 construction will be used.

@@ -78,9 +78,6 @@ class Task:
         """Time when the :py:func:`~execute` has finished., `None` before."""
         self.success: bool
         """True if the task has finished successful. False otherwise, `None` before the task has finished."""
-        self.summery: dict  # TODO: still in use?
-        """Summery statistics about the task performed, such as rows inserted, updated."""
-        self.error: str  # TODO: still in use?
         self.depth: int = 0
         """Level or depth of the task in the hierarchy. The root task is depth 0. Updated by the Reporter"""
 

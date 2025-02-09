@@ -3,10 +3,10 @@ from pathlib import Path
 from pydantic import BaseModel, Field
 
 from etl_lib.core.ETLContext import ETLContext
-from etl_lib.task.data_loading.CSVLoad2Neo4jTask import CSVLoad2Neo4jTasks
+from etl_lib.task.data_loading.CSVLoad2Neo4jTask import CSVLoad2Neo4jTask
 
 
-class LoadTransfersTask(CSVLoad2Neo4jTasks):
+class LoadTransfersTask(CSVLoad2Neo4jTask):
     class Transfer(BaseModel):
         from_stop_id: str
         minTransferTime: int = Field(gt=0, alias="min_transfer_time", default=0)

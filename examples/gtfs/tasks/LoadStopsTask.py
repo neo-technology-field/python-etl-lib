@@ -4,10 +4,10 @@ from typing import Optional
 from pydantic import BaseModel, Field
 
 from etl_lib.core.ETLContext import ETLContext
-from etl_lib.task.data_loading.CSVLoad2Neo4jTask import CSVLoad2Neo4jTasks
+from etl_lib.task.data_loading.CSVLoad2Neo4jTask import CSVLoad2Neo4jTask
 
 
-class LoadStopsTask(CSVLoad2Neo4jTasks):
+class LoadStopsTask(CSVLoad2Neo4jTask):
     class Stop(BaseModel):
         id: str = Field(alias="stop_id")
         name: str = Field(alias="stop_name")

@@ -53,19 +53,19 @@ Example output from the GTFS example is shown below:
 2025-01-18 18:44:45,214 - INFO - Neo4j Database Name: neo4j
 2025-01-18 18:44:45,214 - INFO - Connecting to Neo4j at neo4j://localhost:7687 with user neo4j to access database neo4j...
 2025-01-18 18:44:45,239 - INFO - driver connected to instance at neo4j://localhost:7687 with username neo4j and database neo4j
-2025-01-18 18:44:45,239 - INFO - progress reporting to database: neo4j
+2025-01-18 18:44:45,239 - INFO -
 └──main
-├──schema-init
-│  └──SchemaTask
-├──csv-loading
-│  ├──LoadAgenciesTask('/Users/bert/Downloads/mdb-2333-202412230030/agency.txt')
-│  ├──LoadRoutesTask('/Users/bert/Downloads/mdb-2333-202412230030/routes.txt')
-│  ├──LoadStopsTask('/Users/bert/Downloads/mdb-2333-202412230030/stops.txt')
-│  ├──LoadTripsTask('/Users/bert/Downloads/mdb-2333-202412230030/trips.txt')
-│  ├──LoadCalendarTask('/Users/bert/Downloads/mdb-2333-202412230030/calendar.txt')
-│  └──LoadStopTimesTask('/Users/bert/Downloads/mdb-2333-202412230030/stop_times.txt')
-└──post-processing
-└──CreateSequenceTask
+   ├──schema-init
+   │  └──SchemaTask
+   ├──csv-loading
+   │  ├──LoadAgenciesTask('/Users/bert/Downloads/mdb-2333-202412230030/agency.txt')
+   │  ├──LoadRoutesTask('/Users/bert/Downloads/mdb-2333-202412230030/routes.txt')
+   │  ├──LoadStopsTask('/Users/bert/Downloads/mdb-2333-202412230030/stops.txt')
+   │  ├──LoadTripsTask('/Users/bert/Downloads/mdb-2333-202412230030/trips.txt')
+   │  ├──LoadCalendarTask('/Users/bert/Downloads/mdb-2333-202412230030/calendar.txt')
+   │  └──LoadStopTimesTask('/Users/bert/Downloads/mdb-2333-202412230030/stop_times.txt')
+   └──post-processing
+      └──CreateSequenceTask
 
 2025-01-18 18:44:45,715 - INFO - starting main
 2025-01-18 18:44:45,752 - INFO - starting schema-init

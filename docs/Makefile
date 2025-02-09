@@ -19,5 +19,6 @@ help:
 # Note: Jupytext converts .py to .ipynb (Sphinx seems to execute Notebook..?)
 %: Makefile
 	rm -rf _build
-	rm -rf _autosummary
+	rm -rf source
+	sphinx-apidoc -o ./source ../src/etl_lib
 	@$(SPHINXBUILD) -M $@ "$(SOURCEDIR)" "$(BUILDDIR)" $(SPHINXOPTS) $(O)

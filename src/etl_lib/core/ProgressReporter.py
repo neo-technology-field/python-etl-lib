@@ -66,7 +66,7 @@ class ProgressReporter:
         task.success = success
         task.summery = summery
 
-        report = f"{'\t' * task.depth} finished {task.task_name()} in {task.start_time - task.end_time} with success: {success}"
+        report = f"{'\t' * task.depth} finished {task.task_name()} in {task.end_time - task.start_time} with success: {success}"
         if error is not None:
             report += f", error: \n{error}"
         else:
@@ -197,10 +197,10 @@ def get_reporter(context) -> ProgressReporter:
     """
     Returns a ProgressReporter instance.
 
-    If the :py:class:`ETLContext <etl_lib.core.ETLContext>` env holds the key `REPORTER_DATABASE` then
-    a :py:class:`Neo4jProgressReporter` instance is created with the given database name.
+    If the :class:`ETLContext <etl_lib.core.ETLContext>` env holds the key `REPORTER_DATABASE` then
+    a :class:`Neo4jProgressReporter` instance is created with the given database name.
 
-    Otherwise, a  :py:class:`ProgressReporter` (no logging to database) instance will be created.
+    Otherwise, a  :class:`ProgressReporter` (no logging to database) instance will be created.
     """
 
     db = context.env("REPORTER_DATABASE")
