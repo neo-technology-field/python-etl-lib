@@ -90,8 +90,8 @@ jobs:
         env:
           FLINT_PYPI_TOKEN: ${{ secrets.PYPI_API_TOKEN }}
         run: |
-          pip install flint
-          flint publish --token $FLINT_PYPI_TOKEN
+          pip install flit
+          flit publish --token $FLINT_PYPI_TOKEN
 
       - name: Build Latest Documentation
         run: |
