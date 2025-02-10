@@ -85,13 +85,13 @@ jobs:
           python -m pip install --upgrade pip pip-tools
           pip-compile --extra dev,gds pyproject.toml
           pip-sync
-          pip install flint
 
       - name: Build and Publish Package
         env:
           FLINT_PYPI_TOKEN: ${{ secrets.PYPI_API_TOKEN }}
         run: |
-          python -m flint publish --token $FLINT_PYPI_TOKEN
+          pip install flint
+          flint publish --token $FLINT_PYPI_TOKEN
 
       - name: Build Latest Documentation
         run: |
