@@ -52,30 +52,37 @@ jobs:
         id: get_version
         run: echo "VERSION=$(python -c 'import etl_lib; print(etl_lib.__version__)')" >> $GITHUB_ENV
 
+      - name: Print Extracted Version
+        id: print version
+        run:
+          echo "Extracted version: $VERSION"
+
       - name: Check if Tag Already Exists
         run: |
-          if git rev-parse "v${{ env.VERSION }}" >/dev/null 2>&1; then
-            echo "Tag v${{ env.VERSION }} already exists. Failing the workflow."
+          if git rev-parse "v${{ VERSION }}" >/dev/null 2>&1; then
+            echo "Tag v${{ VERSION }} already exists. Failing the workflow."
             exit 1
           fi
 
       - name: Create Git Tag
         run: |
-          git tag v${{ env.VERSION }}
-          git push origin v${{ env.VERSION }}
+          git tag v${{ VERSION }}
+          git push origin v${{ VERSION }}
 
       - name: Create GitHub Release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          gh release create v${{ env.VERSION }} \
-            --title "Release v${{ env.VERSION }}" \
-            --notes "Automated release of version v${{ env.VERSION }}"
+          gh release create v${{ VERSION }} \
+            --title "Release v${{ VERSION }}" \
+            --notes "Automated release of version v${{ VERSION }}"
 
       - name: Install Dependencies
         run: |
-          python -m pip install --upgrade pip
-          pip install .
+          python -m pip install --upgrade pip pip-tools
+          pip-compile --extra dev,gds pyproject.toml
+          pip-sync
+          pip install flint
 
       - name: Build and Publish Package
         env:
