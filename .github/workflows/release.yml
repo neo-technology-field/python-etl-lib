@@ -7,6 +7,8 @@ on:
         description: "Confirm package release"
         required: true
         default: "yes"
+env:
+  NEO4J_TEST_CONTAINER: 'neo4j:5.26.0-enterprise'
 
 jobs:
   test:
