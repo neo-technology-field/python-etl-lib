@@ -1,6 +1,6 @@
-# Python ETL Toolbox
+# Neo4j ETL Toolbox
 
-A library of building blocks to assemble etl pipelines.
+A Python library of building blocks to assemble etl pipelines.
 
 Complete documentation can be found on https://neo-technology-field.github.io/python-etl-lib/index.html
 
