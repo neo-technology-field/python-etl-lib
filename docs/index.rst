@@ -14,7 +14,7 @@ Welcome to the neo4j-etl-lib documentation
 ==========================================
 
 I often found myself implementing pipelines for small to medium sized project and repeating the same code again and again.
-This library is an effort to collect building blocks in a way that makes assembling pipelines easy out of these building blocks.
+This library is an effort to collect building blocks in a way that makes assembling pipelines out of these building blocks easy.
 
 When building ETL pipelines the following criteria should be considered as a bare minimum:
 
