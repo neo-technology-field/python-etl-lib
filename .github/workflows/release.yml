@@ -54,7 +54,7 @@ jobs:
 
       - name: Print Extracted Version
         id: print version
-        run:
+        run: |
           echo "Extracted version: $VERSION"
 
       - name: Check if Tag Already Exists
