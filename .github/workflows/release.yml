@@ -50,7 +50,10 @@ jobs:
 
       - name: Extract Version from etl_lib
         id: get_version
-        run: echo "VERSION=$(python -c 'import etl_lib; print(etl_lib.__version__)')" >> $GITHUB_ENV
+        run: |
+          export PYTHONPATH=src 
+          VERSION=$(python -c 'import etl_lib; print(etl_lib.__version__)')
+          echo "VERSION=$VERSION" >> $GITHUB_ENV
 
       - name: Print Extracted Version
         id: print_version
