@@ -53,7 +53,7 @@ jobs:
         run: echo "VERSION=$(python -c 'import etl_lib; print(etl_lib.__version__)')" >> $GITHUB_ENV
 
       - name: Print Extracted Version
-        id: print version
+        id: print_version
         run: |
           echo "Extracted version: $VERSION"
 
