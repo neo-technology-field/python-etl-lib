@@ -5,6 +5,9 @@
    Documentation <self>
    batching
    reporting
+   validation
+   configuration
+   testing
    cli
    API Reference <source/etl_lib>
 

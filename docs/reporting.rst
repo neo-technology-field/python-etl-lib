@@ -53,6 +53,8 @@ At the end of each :class:`~etl_lib.core.Task.Task`, the reporter logs summary m
 
 To maintain readability, only summary information with non-zero values is reported.
 
+..  _neo4j_reporter:
+
 Neo4j Reporter
 --------------
 
