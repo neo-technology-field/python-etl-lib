@@ -72,13 +72,21 @@ jobs:
           git tag v$VERSION
           git push origin v$VERSION
 
+      - name: Extract Release Notes
+        id: extract_notes
+        run: |
+          NOTES=$(awk '/^## \['"$VERSION"'\]/ {flag=1; next} /^## \[/ {flag=0} flag' CHANGELOG.md)
+          echo "NOTES<<EOF" >> $GITHUB_ENV
+          echo "$NOTES" >> $GITHUB_ENV
+          echo "EOF" >> $GITHUB_ENV
+
       - name: Create GitHub Release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           gh release create v$VERSION \
             --title "Release v$VERSION" \
-            --notes "Automated release of version v$VERSION"
+            --notes "$NOTES"
 
       - name: Install Dependencies
         run: |
