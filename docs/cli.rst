@@ -1,15 +1,15 @@
 CLI
 ===
 
-The module :mod:`etl_lib.cli.run_tools` defines a few functions to to query details of past etl runs. They make use of the ``click`` package to define a click ``group()`` with the name ``cli`` that can be easily added to a command line utility.
+The module :mod:`etl_lib.cli.run_tools` defines functions to query details of past ETL runs. It utilizes the ``click`` package to define a ``click.group()`` named ``cli``, which can be easily integrated into a command-line utility.
 
-See the `GTFS example <https://github.com/neo-technology-field/python-etl-lib/tree/main/examples/gtfs>`_ on how to build a command line tool.
+See the `GTFS example <https://github.com/neo-technology-field/python-etl-lib/tree/main/examples/gtfs>`_ for guidance on building a command-line tool.
 
 .. code-block:: python
 
     from etl_lib.cli.run_tools import cli
     @cli.command("<your own command>")
-    @click.argument(<cour own arguments>)
+    @click.argument(<your own arguments>)
     @click.pass_context
     def main(ctx, input_directory):
         pass
@@ -20,11 +20,11 @@ See the `GTFS example <https://github.com/neo-technology-field/python-etl-lib/tr
 Commands
 --------
 
-The above example integrates the ``cli`` group. The help output of the added commands is as follows:
+The ``cli`` group provides the following commands:
 
 .. code-block:: console
 
-    $bash: python <your-cli>.py --help
+    $ python <your-cli>.py --help
     Usage: <your-cli>.py [OPTIONS] COMMAND [ARGS]...
 
       Environment variables can be configured via a .env file or overridden via
@@ -47,25 +47,27 @@ The above example integrates the ``cli`` group. The help output of the added com
     Commands:
       delete  Delete runs based on run ID, date, or age.
       detail  Show a breakdown of the task for the specified run, including...
-      query   Retrieve the list of the last x etl runs from the database and...
+      query   Retrieve the list of the last x ETL runs from the database and...
 
 Query
 +++++
 
 .. code-block:: console
 
-    $bash: python <your-cli>.py query --help
+    $ python <your-cli>.py query --help
     Usage: <your-cli>.py query [OPTIONS]
 
-    Retrieve the list of the last x etl runs from the database and display them.
+    Retrieve the list of the last x ETL runs from the database and display them.
 
     Options:
       --number-runs INTEGER  Number of rows to process, defaults to 10
       --help                 Show this message and exit.
 
+Example output:
+
 .. code-block:: console
 
-    <your-cli>.py query
+    $ python <your-cli>.py query
     Listing runs in database 'neo4j'
     +--------+--------------------------------------+------------------+------------------+-----------+
     | name   | ID                                   | startTime        | endTime          |   changes |
@@ -73,14 +75,14 @@ Query
     | main   | 69260954-0b94-4043-be1b-f99ce5a64d3a | 2025-02-09 17:19 | 2025-02-09 17:20 |   4566469 |
     +--------+--------------------------------------+------------------+------------------+-----------+
 
-The ``changes`` column is the sum of all changes in that run, be it csv rows read, constraints added, property set, ..
+The ``changes`` column represents the sum of all modifications in that run, including CSV rows read, constraints added, properties set, etc.
 
 Detail
 ++++++
 
 .. code-block:: console
 
-    $bash: python <your-cli>.py detail --help
+    $ python <your-cli>.py detail --help
     Usage: <your-cli>.py detail [OPTIONS] RUN_ID
 
       Show a breakdown of the task for the specified run, including statistics.
@@ -89,9 +91,11 @@ Detail
       --details  Show stats for each task
       --help     Show this message and exit.
 
+Example output:
+
 .. code-block:: console
 
-    $bash: python <your-cli>.py detail 69260954-0b94-4043-be1b-f99ce5a64d3a
+    $ python <your-cli>.py detail 69260954-0b94-4043-be1b-f99ce5a64d3a
     Showing details for run ID: 69260954-0b94-4043-be1b-f99ce5a64d3a
     +-------------------------------------------------------------------------------+----------+-----------+------------+-----------+
     | task                                                                          | status   | batches   | duration   |   changes |
@@ -109,13 +113,16 @@ Detail
     | Task(CreateSequenceTask)                                                      | success  |           | 0:00:07    |         0 |
     +-------------------------------------------------------------------------------+----------+-----------+------------+-----------+
 
-In the above example, the expected total of batches was not know in advance, hence the ``380 / -`` display. Read tis as `380 batches of unknown`.
+In cases where the expected number of batches is unknown, the ``380 / -`` format is used.
 
-With an additional ``--details`` flag, for each task in the table above detailed information will be displayed (only showing 1 row):
+Adding the ``--details`` flag provides additional task-specific statistics:
+
+Example output:
+
 
 .. code-block:: console
 
-    $bash: python <your-cli>.py detail 69260954-0b94-4043-be1b-f99ce5a64d3a --details
+    $ python <your-cli>.py detail 69260954-0b94-4043-be1b-f99ce5a64d3a --details
     Showing statistics for Task 'TaskGroup(csv-loading)' with status 'success'
     +----------------+---------+
     | Name           |   Value |
@@ -125,13 +132,12 @@ With an additional ``--details`` flag, for each task in the table above detailed
     | valid_rows     | 1995192 |
     +----------------+---------+
 
-
 Delete
 ++++++
 
 .. code-block:: console
 
-    $bash: python <your-cli>.py delete --help
+    $ python <your-cli>.py delete --help
     Usage: <your-cli>.py delete [OPTIONS]
 
       Delete runs based on run ID, date, or age. One and only one of --run-id,

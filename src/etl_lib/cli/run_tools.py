@@ -98,7 +98,7 @@ def cli(ctx, neo4j_uri, neo4j_user, neo4j_password, log_file, database_name):
 @click.pass_context
 def query(ctx, number_runs):
     """
-    Retrieve the list of the last x etl runs from the database and display them.
+    Retrieve the list of the last x ETL runs from the database and display them.
     """
     print(f"Listing runs in database '{ctx.obj['database_name']}'")
     with __driver(ctx) as driver:

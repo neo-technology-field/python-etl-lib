@@ -1,21 +1,20 @@
 Reporting
 =========
 
-The library comes with 2 implementations for reporting.
-
+The library comes with two implementations for reporting.
 
 ..  _basic_reporter:
 
 Basic Reporter
 --------------
 
-The :class:`~etl_lib.core.ProgressReporter.ProgressReporter` implements basic reporting using the Python logging package. Logging is done on ``INFO`` level.
+The :class:`~etl_lib.core.ProgressReporter.ProgressReporter` implements basic reporting using the Python logging package. Logging is done at the ``INFO`` level.
 
-The :func:`~etl_lib.core.utils.setup_logging` function is provided and sets up the logging to console and optional file.
+The :func:`~etl_lib.core.utils.setup_logging` function is provided to configure logging to both the console and an optional file.
 
-The reporter is created and configured inside the :class:`~etl_lib.core.ETLContext.ETLContext` constructor and can be retrieved from there.
+The reporter is instantiated and configured inside the :class:`~etl_lib.core.ETLContext.ETLContext` constructor and can be retrieved from there.
 
-Part of the etl pipeline setup must be a call to the :func:`~etl_lib.core.ProgressReporter.ProgressReporter.register_tasks()` passing in the root of the task tree:
+As part of the ETL pipeline setup, a call to :func:`~etl_lib.core.ProgressReporter.ProgressReporter.register_tasks()` must be made, passing in the root of the task tree:
 
 .. code-block:: python
 
@@ -39,9 +38,9 @@ This will log a tree representation of the tasks:
        └──post-processing
           └──CreateSequenceTask
 
-The :class:`~etl_lib.core.Task.Task` is responsible for informing the reporter (from the context) about status changes, such as starting and ending of tasks. This is done before and after calls to :func:`~etl_lib.core.Task.Task.run_internal()` so that implementations of :class:`~etl_lib.core.Task.Task` do not need to worry about this.
+The :class:`~etl_lib.core.Task.Task` is responsible for informing the reporter (from the context) about status changes, such as task start and completion. This occurs before and after calls to :func:`~etl_lib.core.Task.Task.run_internal()`, ensuring that task implementations do not need to handle this manually.
 
-At the end of each :class:`~etl_lib.core.Task.Task`, the reporter will be called again leading to log messages such as the following:
+At the end of each :class:`~etl_lib.core.Task.Task`, the reporter logs summary messages such as:
 
 .. code-block::
 
@@ -52,36 +51,37 @@ At the end of each :class:`~etl_lib.core.Task.Task`, the reporter will be called
     |      1898816 |          1898816 |          3394080 |         678816 |                 1357632 |          678816 |
     +--------------+------------------+------------------+----------------+-------------------------+-----------------+
 
-To keep the reporting readable, only summery information with non-zero values are shown in here.
+To maintain readability, only summary information with non-zero values is reported.
 
 Neo4j Reporter
 --------------
 
-The :class:`~etl_lib.core.ProgressReporter.Neo4jProgressReporter` extends the basic:class:`~etl_lib.core.ProgressReporter.ProgressReporter` so that each run of the of the pipeline is persisted into a Neo4j database.
+The :class:`~etl_lib.core.ProgressReporter.Neo4jProgressReporter` extends the basic :class:`~etl_lib.core.ProgressReporter.ProgressReporter`, allowing each ETL pipeline run to be persisted in a Neo4j database.
 
-Which implementation is used is decided by existence of the key ``REPORTER_DATABASE`` in ``context.env``. This ``env`` dictionary should be build from the process environment.
+Which implementation is used depends on the existence of the key ``REPORTER_DATABASE`` in ``context.env``. This ``env`` dictionary should be built from the process environment.
 
-If the key ``REPORTER_DATABASE`` exists, its value will be used to write etl status information into the specified database, thus allowing to separate the application data from etl status data.
+If the ``REPORTER_DATABASE`` key exists, its value determines the database where ETL status information is stored, enabling separation between application data and ETL metadata.
 
-Each ETL run create a sub graph that is only connected to itself. The following image shows the structure of such a sub grap for the GTFS example:
+Each ETL run creates an independent subgraph. The following diagram illustrates the structure of such a subgraph for a GTFS example:
 
 .. image:: _static/images/schema.png
 
-The green colors denote :class:`~etl_lib.core.Task.Task` and :class:`~etl_lib.core.Task.TaskGroups` are shown in blue.
-The ``ETLStats`` nodes are created once a task is finished and hold the summery information for the attached task. For tasks that have children, this ``ETLStats`` data is the aggregation of of all children. Therefore, to see the summery for the pipeline run, the ``ETLStats`` attached to the ``ETLRun`` node is sufficient.
+Green nodes represent :class:`~etl_lib.core.Task.Task`, while blue nodes represent :class:`~etl_lib.core.Task.TaskGroups`.
 
-Here, all summery information is stored, meaning even entries with a ``0`` as value will be found in the ``ETLStats`` nodes (as opposed to the :ref:`basic_reporter` which only reports non-``0`` values).
+``ETLStats`` nodes are created upon task completion and store summary information. For tasks with child tasks, the ``ETLStats`` node aggregates data from all children. To view the overall summary for a pipeline run, refer to the ``ETLStats`` node attached to the ``ETLRun`` node.
 
-The root of the project contains ``dashboard.json`` for a `Neodash Dashboard Builder <https://github.com/neo4j-labs/neodash>`_.
+Unlike the :ref:`basic_reporter`, which only logs non-zero values, ``ETLStats`` nodes store all summary data, including zero values.
+
+The project's root directory includes a ``dashboard.json`` file for use with `Neodash Dashboard Builder <https://github.com/neo4j-labs/neodash>`_.
 
 .. ATTENTION::
-    The Neo4j reporter does not automatically create constraints for the meta data information. Such a constraint can be created manually via:
-        .. code-block:: cypher
+    The Neo4j reporter does not automatically create constraints for metadata. To manually create the constraint, execute the following Cypher query:
 
-            CREATE CONSTRAINT IF NOT EXISTS FOR (n:ETLTask)
-                REQUIRE n.uuid IS UNIQUE
+    .. code-block:: cypher
 
-    Alternatively, the :class:`~etl_lib.task.CreateReportingConstraintsTask.CreateReportingConstraintsTask` can be added to the beginning of a pipeline to create the constraint it does not exist.
+        CREATE CONSTRAINT IF NOT EXISTS FOR (n:ETLTask)
+            REQUIRE n.uuid IS UNIQUE
 
-In addition, :doc:`cli` explains how to use a command line interface to query and manage etl run history.
+    Alternatively, the :class:`~etl_lib.task.CreateReportingConstraintsTask.CreateReportingConstraintsTask` can be added at the start of a pipeline to ensure the constraint is created if it does not exist.
 
+Additionally, :doc:`cli` provides details on using the command-line interface to query and manage ETL run history.
