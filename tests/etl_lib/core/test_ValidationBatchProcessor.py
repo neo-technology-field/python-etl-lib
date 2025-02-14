@@ -7,7 +7,7 @@ from pydantic import BaseModel, field_validator, Field
 
 from etl_lib.core.BatchProcessor import BatchProcessor, BatchResults
 from etl_lib.core.ValidationBatchProcessor import ValidationBatchProcessor
-from test_utils.utils import DummyContext
+from etl_lib.test_utils.utils import DummyContext
 
 
 class DataGenerator(BatchProcessor):

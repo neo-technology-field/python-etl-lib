@@ -15,7 +15,7 @@ def get_test_file(file_name: object) -> Path:
     """
     Returns the absolut path of a file that exists in `tests/data/` directory.
     """
-    return Path(__file__).parent / f"../data/{file_name}"
+    return Path(__file__).parent / f"../../../tests/data/{file_name}"
 
 
 def run_write_query(driver, query, data):

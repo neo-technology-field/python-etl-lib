@@ -3,7 +3,7 @@ from datetime import datetime
 from etl_lib.core.Task import Task, TaskReturn, TaskGroup, ParallelTaskGroup
 from etl_lib.core.utils import merge_summery
 from etl_lib.task.ExecuteCypherTask import ExecuteCypherTask
-from test_utils.utils import DummyContext, DummyReporter
+from etl_lib.test_utils.utils import DummyContext, DummyReporter
 
 
 def test_merge_summery():

@@ -1,6 +1,6 @@
 from etl_lib.core.Task import TaskReturn
 from etl_lib.task.GDSTask import GDSTask, transform_dict
-from test_utils.utils import check_property_exists
+from etl_lib.test_utils.utils import check_property_exists
 
 
 def test_GDSTask(etl_context):

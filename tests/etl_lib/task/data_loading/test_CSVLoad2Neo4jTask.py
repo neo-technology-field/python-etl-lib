@@ -4,7 +4,7 @@ from neo4j.spatial import WGS84Point
 from pydantic import BaseModel, Field, field_validator
 
 from etl_lib.task.data_loading.CSVLoad2Neo4jTask import CSVLoad2Neo4jTask
-from test_utils.utils import get_test_file, get_node_count
+from etl_lib.test_utils.utils import get_test_file, get_node_count
 
 
 def convert_geo(geo_string) -> WGS84Point:
