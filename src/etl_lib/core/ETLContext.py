@@ -130,8 +130,6 @@ class ETLContext:
     Will be passed to all :py:class:`etl_lib.core.Task` to provide access to environment variables and functionally
     deemed general enough that all parts of the ETL pipeline would need it.
     """
-    neo4j: Neo4jContext
-    __env_vars: dict
 
     def __init__(self, env_vars: dict):
         """

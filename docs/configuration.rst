@@ -36,3 +36,7 @@ The following parameters are currently recognized:
       - | Name of the database to store ETL metadata.
         | See :ref:`neo4j_reporter` for more details. If not provided,
         | reporting will be done only to the console or a log file.
+    * - ``ETL_ERROR_PATH``
+      - Validation
+      - | Directory where error files should be created.
+        | See :ref:`validation` for more details. If not provided, error files will be placed into the same directory as the input files.

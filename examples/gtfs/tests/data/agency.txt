@@ -1,0 +1,11 @@
+agency_id,agency_name,agency_url,agency_timezone,agency_lang,agency_phone,agency_fare_url,agency_email
+1,Transit Agency A,http://www.transita.com,America/New_York,en,123-456-7890,http://www.transita.com/fares,contact@transita.com
+2,Transit Agency B,http://www.transitb.org,Europe/London,,,,
+3,,http://www.transitc.net,America/Chicago,,,,
+4,Transit Agency D,http://www.transitd.net,America/Los_Angeles,,,,not-an-email
+,Transit Agency E,http://www.transite.com,Asia/Tokyo,,,,
+6,Transit Agency F,http://www.transitf.org,Australia/Sydney,en-AU,987-654-3210,,
+7,Transit Agency G,not_a_url,Europe/Paris,,,,
+8,Transit Agency H,https://www.transith.com,America/Toronto,,,,info@transith.com
+9,Transit Agency I,https://www.transiti.com,America/Denver,,,https://www.transiti.com/fares,
+10,Transit Agency J,http://www.transitj.com,Europe/Berlin,de,+49 123 4567,,support@transitj.com

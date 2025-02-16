@@ -47,7 +47,7 @@ class ValidationBatchProcessor(BatchProcessor):
             for row in batch.chunk:
                 try:
                     # Validate and transform the row
-                    validated_row = self.model(**row).model_dump()
+                    validated_row = json.loads(self.model(**row).model_dump_json())
                     valid_rows.append(validated_row)
                 except ValidationError as e:
                     # Collect invalid rows with errors

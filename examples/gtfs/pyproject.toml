@@ -1,0 +1,7 @@
+[project]
+name = "etl_lib example to load a GTFS feed"
+version = "1.0"
+
+dependencies = [
+    "neo4j_etl_lib >= 0.0.3"
+]

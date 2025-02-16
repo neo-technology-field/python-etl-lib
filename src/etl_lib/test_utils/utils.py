@@ -3,7 +3,7 @@ import os
 from pathlib import Path
 from typing import Any
 
-
+from _pytest.tmpdir import tmp_path
 from neo4j import Driver
 from neo4j.time import Date
 
@@ -11,16 +11,9 @@ from etl_lib.core.ETLContext import QueryResult, Neo4jContext, ETLContext
 from etl_lib.core.Task import Task
 
 
-def get_test_file(file_name: object) -> Path:
-    """
-    Returns the absolut path of a file that exists in `tests/data/` directory.
-    """
-    return Path(__file__).parent / f"../../../tests/data/{file_name}"
-
-
-def run_write_query(driver, query, data):
+def run_query(driver, query, data):
     with driver.session(database=get_database_name()) as session:
-        session.run(query, data=data)
+        yield session.run(query, data=data)
 
 
 def get_node_count(driver, label: str) -> int:
@@ -112,11 +105,15 @@ class TestNeo4jContext(Neo4jContext):
 
 class TestETLContext(ETLContext):
 
-    def __init__(self, driver: Driver):
+    def __init__(self, driver: Driver, tmp_path):
         self.logger = logging.getLogger(self.__class__.__name__)
-        self.__env_vars = {}
+        self.__env_vars = {"ETL_ERROR_PATH": tmp_path}
         self.neo4j = TestNeo4jContext(driver)
         self.reporter = DummyReporter()
+
+    def env(self, key: str) -> Any:
+        if key in self.__env_vars:
+            return self.__env_vars[key]
 
 
 class DummyReporter:
