@@ -39,4 +39,16 @@ The following parameters are currently recognized:
     * - ``ETL_ERROR_PATH``
       - Validation
       - | Directory where error files should be created.
-        | See :ref:`validation` for more details. If not provided, error files will be placed into the same directory as the input files.
+        | See :doc:`validation` for more details. If not provided, error files will be placed into the same directory as the input files.
+    * - ``NEO4J_TEST_CONTAINER``
+      - Testing
+      - | Docker image name to use for testing, esp.: ``neo4j:5.26.1-enterprise``.
+        | See :doc:`testing` for more details. If provided, `TestContainers <https://testcontainers-python.readthedocs.io/en/latest/>`_
+        | will be used with the image name provided.
+    * - ``NEO4J_TEST_DATABASE``
+      - Testing
+      - | Name of the Neo4j database to use during integration testing.
+        | Only considered if ``NEO4J_TEST_CONTAINER`` is not given.
+        | Allows to run integration tests against an external Neo4j installation
+        | without impacting other DBs.
+

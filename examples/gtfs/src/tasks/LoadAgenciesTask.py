@@ -1,4 +1,3 @@
-import uuid
 from pathlib import Path
 from typing import Optional
 
@@ -10,7 +9,7 @@ from etl_lib.task.data_loading.CSVLoad2Neo4jTask import CSVLoad2Neo4jTask
 
 class LoadAgenciesTask(CSVLoad2Neo4jTask):
     class Agency(BaseModel):
-        id: Optional[str] = Field(alias="agency_id", default_factory=lambda: str(uuid.uuid4()))
+        id: Optional[str] = Field(alias="agency_id", default="generic")
         name: str = Field(..., alias="agency_name")
         url: HttpUrl = Field(..., alias="agency_url")
         timezone: str = Field(..., alias="agency_timezone")
@@ -21,8 +20,9 @@ class LoadAgenciesTask(CSVLoad2Neo4jTask):
 
         @field_validator("id", mode="before")
         @classmethod
-        def ensure_id(cls, v):
-            return v or str(uuid.uuid4())
+        def set_default_id(cls, v):
+            # the default on the id field above is only if the input row does not even have an agency_id
+            return v if v is not None else "generic"
 
         class Config:
             json_encoders = {
@@ -43,7 +43,7 @@ class LoadAgenciesTask(CSVLoad2Neo4jTask):
             a.timezone = row.timezone, 
             a.lang = row.lang,
             a.phone = row.phone, 
-            a.fare_url = row.fare_url, 
+            a.fareUrl = row.fare_url, 
             a.email = row.email
         """
 

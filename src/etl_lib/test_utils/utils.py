@@ -13,7 +13,8 @@ from etl_lib.core.Task import Task
 
 def run_query(driver, query, data):
     with driver.session(database=get_database_name()) as session:
-        yield session.run(query, data=data)
+        result = session.run(query, data=data)
+        return result.data()
 
 
 def get_node_count(driver, label: str) -> int:

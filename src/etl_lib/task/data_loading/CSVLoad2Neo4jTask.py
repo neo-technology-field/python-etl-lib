@@ -21,9 +21,11 @@ class CSVLoad2Neo4jTask(Task):
     The validation step is using pydantic, hence a Pydantic model needs to be provided.
     Rows that fail the validation, will be written to en error file. The location of the error file is determined as
     follows:
-        If the context env vars hold an entry `ETL_ERROR_PATH` the file will be place there, with the name
-            set to name of the provided filename appended with `.error.json`
-        If  `ETL_ERROR_PATH` is not set, the file will be placed in the same directory as the CSV file.
+
+    If the context env vars hold an entry `ETL_ERROR_PATH` the file will be place there, with the name set to name
+    of the provided filename appended with `.error.json`
+
+    If  `ETL_ERROR_PATH` is not set, the file will be placed in the same directory as the CSV file.
     """
     def __init__(self, context: ETLContext, model: Type[BaseModel], file: Path, batch_size: int = 5000):
         super().__init__(context)

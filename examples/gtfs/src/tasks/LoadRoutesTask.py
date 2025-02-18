@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Any
+from typing import Optional
 
 from pydantic import BaseModel, Field, field_validator
 
@@ -15,11 +15,19 @@ class LoadRoutesTask(CSVLoad2Neo4jTask):
         type: int = Field(alias="route_type")
         agency_id: str = Field(alias="agency_id")
 
-        @field_validator('agency_id', mode='before')
+        @field_validator("agency_id", mode="before")
         @classmethod
-        def handle_null(cls, value: Any) -> str:
-            if value is None:
-                return "generic"
+        def handle_null_agency_id(cls, value: Optional[str]) -> str:
+            return value or "generic"
+
+        @field_validator("type", mode="before")
+        @classmethod
+        def validate_route_type(cls, value: str) -> int:
+            valid_types = {0, 1, 2, 3, 4, 5, 6, 7}
+            value = int(value)
+            if value not in valid_types:
+                raise ValueError(f"Invalid route_type: {value}. Must be one of {valid_types}.")
+
             return value
 
     def __init__(self, context: ETLContext, file: Path):
