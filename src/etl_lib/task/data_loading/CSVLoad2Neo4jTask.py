@@ -9,8 +9,8 @@ from etl_lib.core.ETLContext import ETLContext
 from etl_lib.core.ClosedLoopBatchProcessor import ClosedLoopBatchProcessor
 from etl_lib.core.Task import Task, TaskReturn
 from etl_lib.core.ValidationBatchProcessor import ValidationBatchProcessor
-from etl_lib.data_sink.CypherBatchProcessor import CypherBatchProcessor
-from etl_lib.data_source.CSVBatchProcessor import CSVBatchProcessor
+from etl_lib.data_sink.CypherBatchSink import CypherBatchSink
+from etl_lib.data_source.CSVBatchSource import CSVBatchSource
 
 
 class CSVLoad2Neo4jTask(Task):
@@ -41,9 +41,9 @@ class CSVLoad2Neo4jTask(Task):
         else:
             error_file = error_path / self.file.with_name(self.file.stem + ".error.json").name
 
-        csv = CSVBatchProcessor(self.file, self.context, self)
+        csv = CSVBatchSource(self.file, self.context, self)
         validator = ValidationBatchProcessor(self.context, self, csv, self.model, error_file)
-        cypher = CypherBatchProcessor(self.context, self, validator, self._query())
+        cypher = CypherBatchSink(self.context, self, validator, self._query())
         end = ClosedLoopBatchProcessor(self.context, self, cypher)
         result = next(end.get_batch(self.batch_size))
 

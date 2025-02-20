@@ -4,7 +4,7 @@ from pathlib import Path
 import pytest
 
 from etl_lib.core.BatchProcessor import BatchResults
-from etl_lib.data_source.CSVBatchProcessor import CSVBatchProcessor
+from etl_lib.data_source.CSVBatchSource import CSVBatchSource
 from test_utils.utils import DummyContext
 from test_utils.utils import get_test_file
 
@@ -25,7 +25,7 @@ EXPECTED_DATA = [
 def test_csv_batch_processor(csv_file, csv_reader_options):
     """Test CSVBatchProcessor passing and using specific csv reader options."""
 
-    processor = CSVBatchProcessor(csv_file=csv_file, context=DummyContext(), **csv_reader_options)
+    processor = CSVBatchSource(csv_file=csv_file, context=DummyContext(), **csv_reader_options)
 
     batch_size = len(EXPECTED_DATA)
     batches = list(processor.get_batch(batch_size))
@@ -67,7 +67,7 @@ def test_csv_batch_processor_batching(tmp_path: Path, batch_size):
                 "float": str(float(i) * 1.1)
             })
 
-    processor = CSVBatchProcessor(csv_file=csv_path, context=DummyContext(), **csv_reader_options)
+    processor = CSVBatchSource(csv_file=csv_path, context=DummyContext(), **csv_reader_options)
 
     yield_count = 0
     all_batches = []

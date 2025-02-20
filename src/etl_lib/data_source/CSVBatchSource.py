@@ -7,7 +7,7 @@ from etl_lib.core.BatchProcessor import BatchProcessor, BatchResults
 from etl_lib.core.Task import Task
 
 
-class CSVBatchProcessor(BatchProcessor):
+class CSVBatchSource(BatchProcessor):
     """
     BatchProcessor that reads a CSV file using the `csv` package.
 
@@ -18,11 +18,11 @@ class CSVBatchProcessor(BatchProcessor):
 
     def __init__(self, csv_file: Path, context, task: Task = None, **kwargs):
         """
-        Constructs a new CSVBatchProcessor.
+        Constructs a new CSVBatchSource.
 
         Args:
             csv_file: Path to the CSV file.
-            context: :py:class:`etl_lib.core.ETLContext.ETLContext` instance.
+            context: :class:`etl_lib.core.ETLContext.ETLContext` instance.
             kwargs: Will be passed on to the `csv.DictReader` providing a way to customise the reading to different
                 csv formats.
         """
