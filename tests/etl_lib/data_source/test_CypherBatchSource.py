@@ -1,3 +1,5 @@
+from neo4j import Record
+
 from etl_lib.data_source.CypherBatchSource import CypherBatchSource
 
 
@@ -66,4 +68,46 @@ def test_cypher_batch_parameters(etl_context):
                 "param2": "bar",
             }},
         ]
+    ]
+
+def test_cypher_batch_with_transformer(etl_context):
+    query = """
+    UNWIND range(1,3) AS i
+    RETURN {i: i, string: toString(i), float: toFloat(i)} AS val
+    """
+
+    def transformer(record: Record) -> dict | None:
+        # Create a new transformed dictionary using comprehension
+        return {
+            "val": {
+                **record["val"],  # Unpack existing dictionary values
+                "double_i": record["val"]["i"] * 2  # Add transformed value
+            }
+        }
+
+    sut = CypherBatchSource(context=etl_context, task=None, query=query, record_transformer=transformer)
+    result_gen = sut.get_batch(max_batch_size=2)
+    data = []
+    for result in result_gen:
+        data.append(result.chunk)
+
+    assert data == [
+        [{"val": {
+            "string": "1",
+            "float": 1.0,
+            "i": 1,
+            "double_i": 2,
+        }},
+            {"val": {
+                "string": "2",
+                "float": 2.0,
+                "i": 2,
+                "double_i": 4,
+            }}],
+        [{"val": {
+            "string": "3",
+            "float": 3.0,
+            "i": 3,
+            "double_i": 6,
+        }}]
     ]

@@ -6,6 +6,8 @@
    batching
    reporting
    validation
+   data-sources
+   data-sinks
    configuration
    testing
    cli
@@ -44,7 +46,7 @@ The library can be installed via pip (inside a virtual environment):
 Overview
 --------
 
-The core of the library is the :class:`~etl_lib.core.Task.Task` class and its implementations.
+    The core of the library is the :class:`~etl_lib.core.Task.Task` class and its implementations.
 This class represents an individual job to be executed.
 
 Each task receives an instance of :class:`~etl_lib.core.ETLContext.ETLContext` during construction,
