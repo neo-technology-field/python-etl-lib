@@ -12,6 +12,15 @@ It utilizes Python's built-in `csv` module. The constructor forwards `kwargs` to
 
 Additionally, it detects compressed files and decompresses them on the fly.
 
+Example usage:
+
+.. code-block:: python
+
+    from pathlib import Path
+
+    csv_source = CSVBatchSource(Path("input.csv"), context, delimiter=';', quotechar='"')
+
+
 Neo4j / Cypher
 --------------
 
@@ -20,3 +29,11 @@ The :class:`~etl_lib.data_source.CypherBatchSource.CypherBatchSource` implementa
 Each row in the returned batch is a dictionary, as provided by the `Neo4j Python Driver <https://neo4j.com/docs/api/python-driver/current/api.html#neo4j.Record.data>`_.
 
 If an optional `record_transformer` is supplied in the constructor, this transformer is used to convert the `Record` into a dictionary, providing greater flexibility in handling different data types.
+
+Example usage:
+
+.. code-block:: python
+
+    query = "MATCH (n) RETURN n.id AS id, n.name AS name, n.type AS type"
+    cypher_source = CypherBatchSource(context, task, query)
+
