@@ -1,0 +1,330 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>etl_lib.test_utils.utils &mdash; neo4j-etl-lib 0.1.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/graphviz.css?v=4ae1632d" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/readthedocs-custom.css" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=01f34227"></script>
+      <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            neo4j-etl-lib
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../index.html">Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../batching.html">Batching and Streaming</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../reporting.html">Reporting</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../validation.html">Validation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../data-sources.html">Data Sources</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../data-sinks.html">Data Sinks</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../configuration.html">Configuration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../testing.html">Testing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../cli.html">CLI</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../source/etl_lib.html">API Reference</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">neo4j-etl-lib</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">etl_lib.test_utils.utils</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for etl_lib.test_utils.utils</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pathlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">Path</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">_pytest.tmpdir</span><span class="w"> </span><span class="kn">import</span> <span class="n">tmp_path</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">neo4j</span><span class="w"> </span><span class="kn">import</span> <span class="n">Driver</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">neo4j.time</span><span class="w"> </span><span class="kn">import</span> <span class="n">Date</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">etl_lib.core.ETLContext</span><span class="w"> </span><span class="kn">import</span> <span class="n">QueryResult</span><span class="p">,</span> <span class="n">Neo4jContext</span><span class="p">,</span> <span class="n">ETLContext</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">etl_lib.core.Task</span><span class="w"> </span><span class="kn">import</span> <span class="n">Task</span>
+
+
+<div class="viewcode-block" id="run_query">
+<a class="viewcode-back" href="../../../source/etl_lib.test_utils.html#etl_lib.test_utils.utils.run_query">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">run_query</span><span class="p">(</span><span class="n">driver</span><span class="p">,</span> <span class="n">query</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
+    <span class="k">with</span> <span class="n">driver</span><span class="o">.</span><span class="n">session</span><span class="p">(</span><span class="n">database</span><span class="o">=</span><span class="n">get_database_name</span><span class="p">())</span> <span class="k">as</span> <span class="n">session</span><span class="p">:</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="n">session</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">query</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">data</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">result</span><span class="o">.</span><span class="n">data</span><span class="p">()</span></div>
+
+
+
+<div class="viewcode-block" id="get_node_count">
+<a class="viewcode-back" href="../../../source/etl_lib.test_utils.html#etl_lib.test_utils.utils.get_node_count">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_node_count</span><span class="p">(</span><span class="n">driver</span><span class="p">,</span> <span class="n">label</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Get the count of nodes with the specified label&quot;&quot;&quot;</span>
+    <span class="n">query</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;MATCH (n:</span><span class="si">{</span><span class="n">label</span><span class="si">}</span><span class="s2">) RETURN COUNT(n) AS count&quot;</span>
+    <span class="k">with</span> <span class="n">driver</span><span class="o">.</span><span class="n">session</span><span class="p">(</span><span class="n">database</span><span class="o">=</span><span class="n">get_database_name</span><span class="p">())</span> <span class="k">as</span> <span class="n">session</span><span class="p">:</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="n">session</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">query</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">result</span><span class="o">.</span><span class="n">single</span><span class="p">()[</span><span class="s2">&quot;count&quot;</span><span class="p">]</span></div>
+
+
+
+<div class="viewcode-block" id="get_relationship_count">
+<a class="viewcode-back" href="../../../source/etl_lib.test_utils.html#etl_lib.test_utils.utils.get_relationship_count">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_relationship_count</span><span class="p">(</span><span class="n">driver</span><span class="p">,</span> <span class="n">rel_type</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Get the count of relationships with the specified type&quot;&quot;&quot;</span>
+    <span class="n">query</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;MATCH ()-[r:</span><span class="si">{</span><span class="n">rel_type</span><span class="si">}</span><span class="s2">]-&gt;() RETURN COUNT(r) AS count&quot;</span>
+    <span class="k">with</span> <span class="n">driver</span><span class="o">.</span><span class="n">session</span><span class="p">(</span><span class="n">database</span><span class="o">=</span><span class="n">get_database_name</span><span class="p">())</span> <span class="k">as</span> <span class="n">session</span><span class="p">:</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="n">session</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">query</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">result</span><span class="o">.</span><span class="n">single</span><span class="p">()[</span><span class="s2">&quot;count&quot;</span><span class="p">]</span></div>
+
+
+
+<div class="viewcode-block" id="check_property_exists">
+<a class="viewcode-back" href="../../../source/etl_lib.test_utils.html#etl_lib.test_utils.utils.check_property_exists">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">check_property_exists</span><span class="p">(</span><span class="n">driver</span><span class="p">,</span> <span class="n">label</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">property_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Checks if all nodes with the given label have the given property.</span>
+<span class="sd">    :return:</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">with</span> <span class="n">driver</span><span class="o">.</span><span class="n">session</span><span class="p">(</span><span class="n">database</span><span class="o">=</span><span class="n">get_database_name</span><span class="p">())</span> <span class="k">as</span> <span class="n">session</span><span class="p">:</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="n">session</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;MATCH (n:</span><span class="si">{</span><span class="n">label</span><span class="si">}</span><span class="s2">) WHERE n.</span><span class="si">{</span><span class="n">property_name</span><span class="si">}</span><span class="s2"> IS NULL&quot;</span>
+                             <span class="sa">f</span><span class="s2">&quot; RETURN COUNT(n) = 0 AS exists&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">result</span><span class="o">.</span><span class="n">single</span><span class="p">()[</span><span class="s2">&quot;exists&quot;</span><span class="p">]</span></div>
+
+
+
+<div class="viewcode-block" id="get_graph">
+<a class="viewcode-back" href="../../../source/etl_lib.test_utils.html#etl_lib.test_utils.utils.get_graph">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_graph</span><span class="p">(</span><span class="n">driver</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Return a grap representation of all data in the database.</span>
+<span class="sd">    The returned structure is an array of dicts. Each dict has the following keys:</span>
+<span class="sd">    `start`, `end`, and `rel` representing each relationship found in the graph.</span>
+<span class="sd">    Use the following query to generate this structure from a known good graph:</span>
+
+<span class="sd">        MATCH (s)-[r]-&gt;(e)</span>
+<span class="sd">        WITH {labels:labels(s), props:properties(s)} AS start, {type:type(r), props:properties(r)} AS rel, {labels:labels(e), props:properties(e)} AS end</span>
+<span class="sd">        RETURN {start:start, rel:rel, end:end}</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">with</span>  <span class="n">driver</span><span class="o">.</span><span class="n">session</span><span class="p">(</span><span class="n">database</span><span class="o">=</span><span class="n">get_database_name</span><span class="p">())</span> <span class="k">as</span> <span class="n">session</span><span class="p">:</span>
+        <span class="n">records</span> <span class="o">=</span> <span class="n">session</span><span class="o">.</span><span class="n">run</span><span class="p">(</span>
+<span class="w">            </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">            MATCH (s)-[r]-&gt;(e)</span>
+<span class="sd">            WITH {labels:labels(s), props:properties(s)} AS start, </span>
+<span class="sd">                {type:type(r), props:properties(r)} AS rel, </span>
+<span class="sd">                {labels:labels(e), props:properties(e)} AS end </span>
+<span class="sd">            RETURN {start:start, rel:rel, end:end} AS graph</span>
+<span class="sd">            &quot;&quot;&quot;</span>
+        <span class="p">)</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="p">[</span><span class="n">record</span><span class="o">.</span><span class="n">data</span><span class="p">()[</span><span class="s2">&quot;graph&quot;</span><span class="p">]</span> <span class="k">for</span> <span class="n">record</span> <span class="ow">in</span> <span class="n">records</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">convert_neo4j_date_to_string</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="s2">&quot;%Y-%m-</span><span class="si">%d</span><span class="s2">&quot;</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="convert_neo4j_date_to_string">
+<a class="viewcode-back" href="../../../source/etl_lib.test_utils.html#etl_lib.test_utils.utils.convert_neo4j_date_to_string">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">convert_neo4j_date_to_string</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">date_format</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Recursively converts all neo4j.time.Date instances in a dictionary into strings using the provided format.</span>
+
+<span class="sd">    :param data: The input dictionary or list to process.</span>
+<span class="sd">    :param date_format: A format string compatible with Python&#39;s strftime.</span>
+<span class="sd">    :return: The processed dictionary or list with dates converted to strings.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+        <span class="k">return</span> <span class="p">{</span><span class="n">key</span><span class="p">:</span> <span class="n">convert_neo4j_date_to_string</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">date_format</span><span class="p">)</span> <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">data</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
+    <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+        <span class="k">return</span> <span class="p">[</span><span class="n">convert_neo4j_date_to_string</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="n">date_format</span><span class="p">)</span> <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">data</span><span class="p">]</span>
+    <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">Date</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">data</span><span class="o">.</span><span class="n">to_native</span><span class="p">()</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="n">date_format</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">data</span></div>
+
+
+
+<div class="viewcode-block" id="get_database_name">
+<a class="viewcode-back" href="../../../source/etl_lib.test_utils.html#etl_lib.test_utils.utils.get_database_name">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_database_name</span><span class="p">():</span>
+    <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">getenv</span><span class="p">(</span><span class="s2">&quot;NEO4J_TEST_CONTAINER&quot;</span><span class="p">)</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="c1"># not running with test containers. expect test db to be set</span>
+        <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">getenv</span><span class="p">(</span><span class="s2">&quot;NEO4J_TEST_DATABASE&quot;</span><span class="p">)</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">os</span><span class="o">.</span><span class="n">getenv</span><span class="p">(</span><span class="s2">&quot;NEO4J_TEST_DATABASE&quot;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s2">&quot;define NEO4J_TEST_DATABASE environment variable&quot;</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="TestNeo4jContext">
+<a class="viewcode-back" href="../../../source/etl_lib.test_utils.html#etl_lib.test_utils.utils.TestNeo4jContext">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">TestNeo4jContext</span><span class="p">(</span><span class="n">Neo4jContext</span><span class="p">):</span>
+
+<div class="viewcode-block" id="TestNeo4jContext.__init__">
+<a class="viewcode-back" href="../../../source/etl_lib.test_utils.html#etl_lib.test_utils.utils.TestNeo4jContext.__init__">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">driver</span><span class="p">:</span> <span class="n">Driver</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">driver</span> <span class="o">=</span> <span class="n">driver</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">database</span> <span class="o">=</span> <span class="n">get_database_name</span><span class="p">()</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="TestETLContext">
+<a class="viewcode-back" href="../../../source/etl_lib.test_utils.html#etl_lib.test_utils.utils.TestETLContext">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">TestETLContext</span><span class="p">(</span><span class="n">ETLContext</span><span class="p">):</span>
+
+<div class="viewcode-block" id="TestETLContext.__init__">
+<a class="viewcode-back" href="../../../source/etl_lib.test_utils.html#etl_lib.test_utils.utils.TestETLContext.__init__">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">driver</span><span class="p">:</span> <span class="n">Driver</span><span class="p">,</span> <span class="n">tmp_path</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__env_vars</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;ETL_ERROR_PATH&quot;</span><span class="p">:</span> <span class="n">tmp_path</span><span class="p">}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">neo4j</span> <span class="o">=</span> <span class="n">TestNeo4jContext</span><span class="p">(</span><span class="n">driver</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">reporter</span> <span class="o">=</span> <span class="n">DummyReporter</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="TestETLContext.env">
+<a class="viewcode-back" href="../../../source/etl_lib.test_utils.html#etl_lib.test_utils.utils.TestETLContext.env">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">env</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">key</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">__env_vars</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__env_vars</span><span class="p">[</span><span class="n">key</span><span class="p">]</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="DummyReporter">
+<a class="viewcode-back" href="../../../source/etl_lib.test_utils.html#etl_lib.test_utils.utils.DummyReporter">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">DummyReporter</span><span class="p">:</span>
+
+<div class="viewcode-block" id="DummyReporter.register_tasks">
+<a class="viewcode-back" href="../../../source/etl_lib.test_utils.html#etl_lib.test_utils.utils.DummyReporter.register_tasks">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">register_tasks</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">main</span><span class="p">:</span> <span class="n">Task</span><span class="p">):</span>
+        <span class="k">pass</span></div>
+
+
+<div class="viewcode-block" id="DummyReporter.started_task">
+<a class="viewcode-back" href="../../../source/etl_lib.test_utils.html#etl_lib.test_utils.utils.DummyReporter.started_task">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">started_task</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">task</span><span class="p">:</span> <span class="n">Task</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Task</span><span class="p">:</span>
+        <span class="k">pass</span></div>
+
+
+<div class="viewcode-block" id="DummyReporter.finished_task">
+<a class="viewcode-back" href="../../../source/etl_lib.test_utils.html#etl_lib.test_utils.utils.DummyReporter.finished_task">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">finished_task</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">task</span><span class="p">,</span> <span class="n">success</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span> <span class="n">summery</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span> <span class="n">error</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Task</span><span class="p">:</span>
+        <span class="k">pass</span></div>
+
+
+<div class="viewcode-block" id="DummyReporter.report_progress">
+<a class="viewcode-back" href="../../../source/etl_lib.test_utils.html#etl_lib.test_utils.utils.DummyReporter.report_progress">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">report_progress</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">task</span><span class="p">,</span> <span class="n">batches</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">expected_batches</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">stats</span><span class="p">:</span> <span class="nb">dict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">pass</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="DummyNeo4jContext">
+<a class="viewcode-back" href="../../../source/etl_lib.test_utils.html#etl_lib.test_utils.utils.DummyNeo4jContext">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">DummyNeo4jContext</span><span class="p">:</span>
+
+<div class="viewcode-block" id="DummyNeo4jContext.query_database">
+<a class="viewcode-back" href="../../../source/etl_lib.test_utils.html#etl_lib.test_utils.utils.DummyNeo4jContext.query_database">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">query_database</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">session</span><span class="p">,</span> <span class="n">query</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">QueryResult</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">QueryResult</span><span class="p">([],</span> <span class="p">{})</span></div>
+
+
+<div class="viewcode-block" id="DummyNeo4jContext.session">
+<a class="viewcode-back" href="../../../source/etl_lib.test_utils.html#etl_lib.test_utils.utils.DummyNeo4jContext.session">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">session</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">database</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="k">return</span> <span class="kc">None</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="DummyContext">
+<a class="viewcode-back" href="../../../source/etl_lib.test_utils.html#etl_lib.test_utils.utils.DummyContext">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">DummyContext</span><span class="p">:</span>
+    <span class="n">neo4j</span><span class="p">:</span> <span class="n">DummyNeo4jContext</span>
+    <span class="n">__env_vars</span><span class="p">:</span> <span class="nb">dict</span>
+    <span class="n">path_error</span><span class="p">:</span> <span class="n">Path</span>
+    <span class="n">path_import</span><span class="p">:</span> <span class="n">Path</span>
+    <span class="n">path_processed</span><span class="p">:</span> <span class="n">Path</span>
+    <span class="n">reporter</span> <span class="o">=</span> <span class="n">DummyReporter</span><span class="p">()</span>
+
+<div class="viewcode-block" id="DummyContext.env">
+<a class="viewcode-back" href="../../../source/etl_lib.test_utils.html#etl_lib.test_utils.utils.DummyContext.env">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">env</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
+        <span class="k">pass</span></div>
+</div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright .</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

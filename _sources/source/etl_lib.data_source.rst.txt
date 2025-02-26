@@ -1,0 +1,29 @@
+etl\_lib.data\_source package
+=============================
+
+Submodules
+----------
+
+etl\_lib.data\_source.CSVBatchSource module
+-------------------------------------------
+
+.. automodule:: etl_lib.data_source.CSVBatchSource
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
+etl\_lib.data\_source.CypherBatchSource module
+----------------------------------------------
+
+.. automodule:: etl_lib.data_source.CypherBatchSource
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
+Module contents
+---------------
+
+.. automodule:: etl_lib.data_source
+   :members:
+   :show-inheritance:
+   :undoc-members:
