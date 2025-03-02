@@ -1,0 +1,29 @@
+etl\_lib.data\_sink package
+===========================
+
+Submodules
+----------
+
+etl\_lib.data\_sink.CSVBatchSink module
+---------------------------------------
+
+.. automodule:: etl_lib.data_sink.CSVBatchSink
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
+etl\_lib.data\_sink.CypherBatchSink module
+------------------------------------------
+
+.. automodule:: etl_lib.data_sink.CypherBatchSink
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
+Module contents
+---------------
+
+.. automodule:: etl_lib.data_sink
+   :members:
+   :show-inheritance:
+   :undoc-members:

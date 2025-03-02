@@ -1,0 +1,69 @@
+etl\_lib.core package
+=====================
+
+Submodules
+----------
+
+etl\_lib.core.BatchProcessor module
+-----------------------------------
+
+.. automodule:: etl_lib.core.BatchProcessor
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
+etl\_lib.core.ClosedLoopBatchProcessor module
+---------------------------------------------
+
+.. automodule:: etl_lib.core.ClosedLoopBatchProcessor
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
+etl\_lib.core.ETLContext module
+-------------------------------
+
+.. automodule:: etl_lib.core.ETLContext
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
+etl\_lib.core.ProgressReporter module
+-------------------------------------
+
+.. automodule:: etl_lib.core.ProgressReporter
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
+etl\_lib.core.Task module
+-------------------------
+
+.. automodule:: etl_lib.core.Task
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
+etl\_lib.core.ValidationBatchProcessor module
+---------------------------------------------
+
+.. automodule:: etl_lib.core.ValidationBatchProcessor
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
+etl\_lib.core.utils module
+--------------------------
+
+.. automodule:: etl_lib.core.utils
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
+Module contents
+---------------
+
+.. automodule:: etl_lib.core
+   :members:
+   :show-inheritance:
+   :undoc-members:

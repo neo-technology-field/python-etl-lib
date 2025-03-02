@@ -1,0 +1,1144 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>etl_lib.core package &mdash; neo4j-etl-lib 0.1.1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="../_static/graphviz.css?v=4ae1632d" />
+      <link rel="stylesheet" type="text/css" href="../_static/readthedocs-custom.css" />
+
+  
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=a58bc63e"></script>
+      <script src="../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="etl_lib.data_sink package" href="etl_lib.data_sink.html" />
+    <link rel="prev" title="etl_lib.cli package" href="etl_lib.cli.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            neo4j-etl-lib
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../index.html">Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../batching.html">Batching and Streaming</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../reporting.html">Reporting</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../validation.html">Validation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../data-sources.html">Data Sources</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../data-sinks.html">Data Sinks</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../configuration.html">Configuration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../testing.html">Testing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../cli.html">CLI</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="etl_lib.html">API Reference</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="etl_lib.html#subpackages">Subpackages</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="etl_lib.cli.html">etl_lib.cli package</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">etl_lib.core package</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#submodules">Submodules</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#module-etl_lib.core.BatchProcessor">etl_lib.core.BatchProcessor module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#module-etl_lib.core.ClosedLoopBatchProcessor">etl_lib.core.ClosedLoopBatchProcessor module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#module-etl_lib.core.ETLContext">etl_lib.core.ETLContext module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#module-etl_lib.core.ProgressReporter">etl_lib.core.ProgressReporter module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#module-etl_lib.core.Task">etl_lib.core.Task module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#module-etl_lib.core.ValidationBatchProcessor">etl_lib.core.ValidationBatchProcessor module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#module-etl_lib.core.utils">etl_lib.core.utils module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#module-etl_lib.core">Module contents</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="etl_lib.data_sink.html">etl_lib.data_sink package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="etl_lib.data_source.html">etl_lib.data_source package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="etl_lib.task.html">etl_lib.task package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="etl_lib.test_utils.html">etl_lib.test_utils package</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="etl_lib.html#module-etl_lib">Module contents</a></li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">neo4j-etl-lib</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="etl_lib.html">etl_lib package</a></li>
+      <li class="breadcrumb-item active">etl_lib.core package</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="etl-lib-core-package">
+<h1>etl_lib.core package<a class="headerlink" href="#etl-lib-core-package" title="Link to this heading"></a></h1>
+<section id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="Link to this heading"></a></h2>
+</section>
+<section id="module-etl_lib.core.BatchProcessor">
+<span id="etl-lib-core-batchprocessor-module"></span><h2>etl_lib.core.BatchProcessor module<a class="headerlink" href="#module-etl_lib.core.BatchProcessor" title="Link to this heading"></a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="etl_lib.core.BatchProcessor.BatchProcessor">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">BatchProcessor</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">context</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">task</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">predecessor</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/etl_lib/core/BatchProcessor.html#BatchProcessor"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#etl_lib.core.BatchProcessor.BatchProcessor" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Allows assembly of <a class="reference internal" href="#etl_lib.core.Task.Task" title="etl_lib.core.Task.Task"><code class="xref py py-class docutils literal notranslate"><span class="pre">etl_lib.core.Task.Task</span></code></a> out of smaller building blocks.</p>
+<p>This way, functionally such as reading from a CSV file, writing to a database or validation
+can be implemented and tested independently and re-used.</p>
+<p>BatchProcessors form, a linked list, where each processor only knows about its predecessor.</p>
+<p>BatchProcessors process data in batches. A batch of data is requested from the provided predecessors
+<a class="reference internal" href="#etl_lib.core.BatchProcessor.BatchProcessor.get_batch" title="etl_lib.core.BatchProcessor.BatchProcessor.get_batch"><code class="xref py py-func docutils literal notranslate"><span class="pre">get_batch()</span></code></a>
+and returned in batches to the caller. Usage of <cite>Generators</cite> ensure that not all data must be loaded at once.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>task</strong> (<a class="reference internal" href="#etl_lib.core.Task.Task" title="etl_lib.core.Task.Task"><em>Task</em></a>)</p>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="etl_lib.core.BatchProcessor.BatchProcessor.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">context</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">task</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">predecessor</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/etl_lib/core/BatchProcessor.html#BatchProcessor.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#etl_lib.core.BatchProcessor.BatchProcessor.__init__" title="Link to this definition"></a></dt>
+<dd><p>Constructs a new <a class="reference internal" href="#module-etl_lib.core.BatchProcessor" title="etl_lib.core.BatchProcessor"><code class="xref py py-class docutils literal notranslate"><span class="pre">etl_lib.core.BatchProcessor</span></code></a> instance.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>context</strong> – <a class="reference internal" href="#etl_lib.core.ETLContext.ETLContext" title="etl_lib.core.ETLContext.ETLContext"><code class="xref py py-class docutils literal notranslate"><span class="pre">etl_lib.core.ETLContext.ETLContext</span></code></a> instance. Will be available to subclasses.</p></li>
+<li><p><strong>task</strong> (<a class="reference internal" href="#etl_lib.core.Task.Task" title="etl_lib.core.Task.Task"><em>Task</em></a>) – <a class="reference internal" href="#etl_lib.core.Task.Task" title="etl_lib.core.Task.Task"><code class="xref py py-class docutils literal notranslate"><span class="pre">etl_lib.core.Task.Task</span></code></a> this processor is part of.
+Needed for status reporting only.</p></li>
+<li><p><strong>predecessor</strong> – Source of batches for this processor.
+Can be <cite>None</cite> of no predecessor is needed (such as when this processor is the start of the queue.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="etl_lib.core.BatchProcessor.BatchProcessor.context">
+<span class="sig-name descname"><span class="pre">context</span></span><a class="headerlink" href="#etl_lib.core.BatchProcessor.BatchProcessor.context" title="Link to this definition"></a></dt>
+<dd><p><a class="reference internal" href="#etl_lib.core.ETLContext.ETLContext" title="etl_lib.core.ETLContext.ETLContext"><code class="xref py py-class docutils literal notranslate"><span class="pre">etl_lib.core.ETLContext.ETLContext</span></code></a> instance. Providing access to general facilities.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="etl_lib.core.BatchProcessor.BatchProcessor.get_batch">
+<em class="property"><span class="k"><span class="pre">abstractmethod</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">get_batch</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">max_batch__size</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/etl_lib/core/BatchProcessor.html#BatchProcessor.get_batch"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#etl_lib.core.BatchProcessor.BatchProcessor.get_batch" title="Link to this definition"></a></dt>
+<dd><p>Provides a batch of data to the caller.</p>
+<p>The batch itself could be called and processed from the provided predecessor or generated from other sources.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">Generator</span></code>[<a class="reference internal" href="#etl_lib.core.BatchProcessor.BatchResults" title="etl_lib.core.BatchProcessor.BatchResults"><code class="xref py py-class docutils literal notranslate"><span class="pre">BatchResults</span></code></a>, <code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code>, <code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code>]</span></p>
+</dd>
+<dt class="field-even">Parameters<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>max_batch__size</strong> (<em>int</em>) – The max size of the batch the caller expects to receive.</p>
+</dd>
+</dl>
+<dl class="simple">
+<dt>Returns</dt><dd><p>A generator that yields batches.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="etl_lib.core.BatchProcessor.BatchProcessor.predecessor">
+<span class="sig-name descname"><span class="pre">predecessor</span></span><a class="headerlink" href="#etl_lib.core.BatchProcessor.BatchProcessor.predecessor" title="Link to this definition"></a></dt>
+<dd><p>Predecessor, used as a source of batches.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="etl_lib.core.BatchProcessor.BatchProcessor.task">
+<span class="sig-name descname"><span class="pre">task</span></span><a class="headerlink" href="#etl_lib.core.BatchProcessor.BatchProcessor.task" title="Link to this definition"></a></dt>
+<dd><p>The <a class="reference internal" href="#etl_lib.core.Task.Task" title="etl_lib.core.Task.Task"><code class="xref py py-class docutils literal notranslate"><span class="pre">etl_lib.core.Task.Task</span></code></a> owning instance.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="etl_lib.core.BatchProcessor.BatchResults">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">BatchResults</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">chunk</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">statistics=&lt;factory&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">batch_size=9223372036854775807</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/etl_lib/core/BatchProcessor.html#BatchResults"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#etl_lib.core.BatchProcessor.BatchResults" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Return object of the <a class="reference internal" href="#etl_lib.core.BatchProcessor.BatchProcessor.get_batch" title="etl_lib.core.BatchProcessor.BatchProcessor.get_batch"><code class="xref py py-func docutils literal notranslate"><span class="pre">get_batch()</span></code></a> method, wrapping a batched data together with meta information.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>chunk</strong> (<em>[</em><em>]</em>)</p></li>
+<li><p><strong>statistics</strong> (<em>dict</em>)</p></li>
+<li><p><strong>batch_size</strong> (<em>int</em>)</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="etl_lib.core.BatchProcessor.BatchResults.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">chunk</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">statistics=&lt;factory&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">batch_size=9223372036854775807</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#etl_lib.core.BatchProcessor.BatchResults.__init__" title="Link to this definition"></a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>chunk</strong> (<em>[</em><em>]</em>)</p></li>
+<li><p><strong>statistics</strong> (<em>dict</em>)</p></li>
+<li><p><strong>batch_size</strong> (<em>int</em>)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="etl_lib.core.BatchProcessor.BatchResults.batch_size">
+<span class="sig-name descname"><span class="pre">batch_size</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">9223372036854775807</span></em><a class="headerlink" href="#etl_lib.core.BatchProcessor.BatchResults.batch_size" title="Link to this definition"></a></dt>
+<dd><p>size of the batch.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="etl_lib.core.BatchProcessor.BatchResults.chunk">
+<span class="sig-name descname"><span class="pre">chunk</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">[]</span></em><a class="headerlink" href="#etl_lib.core.BatchProcessor.BatchResults.chunk" title="Link to this definition"></a></dt>
+<dd><p>The batch of data.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="etl_lib.core.BatchProcessor.BatchResults.statistics">
+<span class="sig-name descname"><span class="pre">statistics</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code></em><a class="headerlink" href="#etl_lib.core.BatchProcessor.BatchResults.statistics" title="Link to this definition"></a></dt>
+<dd><p><cite>dict</cite> of statistic information, such as row processed, nodes writen, ..</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="etl_lib.core.BatchProcessor.append_result">
+<span class="sig-name descname"><span class="pre">append_result</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">org</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">stats</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/etl_lib/core/BatchProcessor.html#append_result"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#etl_lib.core.BatchProcessor.append_result" title="Link to this definition"></a></dt>
+<dd><p>Appends the stats dict to the provided <cite>org</cite>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference internal" href="#etl_lib.core.BatchProcessor.BatchResults" title="etl_lib.core.BatchProcessor.BatchResults"><code class="xref py py-class docutils literal notranslate"><span class="pre">BatchResults</span></code></a></span></p>
+</dd>
+<dt class="field-even">Parameters<span class="colon">:</span></dt>
+<dd class="field-even"><ul class="simple">
+<li><p><strong>org</strong> (<a class="reference internal" href="#etl_lib.core.BatchProcessor.BatchResults" title="etl_lib.core.BatchProcessor.BatchResults"><em>BatchResults</em></a>) – The original <cite>BatchResults</cite> object.</p></li>
+<li><p><strong>stats</strong> (<em>dict</em>) – dict containing statistics to be added to the org object.</p></li>
+</ul>
+</dd>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p><dl class="simple">
+<dt>New <cite>BatchResults</cite> object, where the <a class="reference internal" href="#etl_lib.core.BatchProcessor.BatchResults.statistics" title="etl_lib.core.BatchProcessor.BatchResults.statistics"><code class="xref py py-attr docutils literal notranslate"><span class="pre">statistics</span></code></a> attribute is the merged result of the</dt><dd><p>provided parameters. Values in the dicts with the same key are added.</p>
+</dd>
+</dl>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+<section id="module-etl_lib.core.ClosedLoopBatchProcessor">
+<span id="etl-lib-core-closedloopbatchprocessor-module"></span><h2>etl_lib.core.ClosedLoopBatchProcessor module<a class="headerlink" href="#module-etl_lib.core.ClosedLoopBatchProcessor" title="Link to this heading"></a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="etl_lib.core.ClosedLoopBatchProcessor.ClosedLoopBatchProcessor">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ClosedLoopBatchProcessor</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">context</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">task</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">predecessor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">expected_rows</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/etl_lib/core/ClosedLoopBatchProcessor.html#ClosedLoopBatchProcessor"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#etl_lib.core.ClosedLoopBatchProcessor.ClosedLoopBatchProcessor" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#etl_lib.core.BatchProcessor.BatchProcessor" title="etl_lib.core.BatchProcessor.BatchProcessor"><code class="xref py py-class docutils literal notranslate"><span class="pre">BatchProcessor</span></code></a></p>
+<p>Reporting implementation of a BatchProcessor.</p>
+<p>Meant to be the last entry in the list of <a class="reference internal" href="#module-etl_lib.core.BatchProcessor" title="etl_lib.core.BatchProcessor"><code class="xref py py-class docutils literal notranslate"><span class="pre">etl_lib.core.BatchProcessor</span></code></a> driving the processing and
+reporting updates of the processed batches using the <a class="reference internal" href="#module-etl_lib.core.ProgressReporter" title="etl_lib.core.ProgressReporter"><code class="xref py py-class docutils literal notranslate"><span class="pre">etl_lib.core.ProgressReporter</span></code></a> from the context.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>context</strong> (<a class="reference internal" href="#etl_lib.core.ETLContext.ETLContext" title="etl_lib.core.ETLContext.ETLContext"><em>ETLContext</em></a>)</p></li>
+<li><p><strong>task</strong> (<a class="reference internal" href="#etl_lib.core.Task.Task" title="etl_lib.core.Task.Task"><em>Task</em></a>)</p></li>
+<li><p><strong>predecessor</strong> (<a class="reference internal" href="#etl_lib.core.BatchProcessor.BatchProcessor" title="etl_lib.core.BatchProcessor.BatchProcessor"><em>BatchProcessor</em></a>)</p></li>
+<li><p><strong>expected_rows</strong> (<em>int</em>)</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="etl_lib.core.ClosedLoopBatchProcessor.ClosedLoopBatchProcessor.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">context</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">task</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">predecessor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">expected_rows</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/etl_lib/core/ClosedLoopBatchProcessor.html#ClosedLoopBatchProcessor.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#etl_lib.core.ClosedLoopBatchProcessor.ClosedLoopBatchProcessor.__init__" title="Link to this definition"></a></dt>
+<dd><p>Constructs a new <a class="reference internal" href="#module-etl_lib.core.BatchProcessor" title="etl_lib.core.BatchProcessor"><code class="xref py py-class docutils literal notranslate"><span class="pre">etl_lib.core.BatchProcessor</span></code></a> instance.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>context</strong> (<a class="reference internal" href="#etl_lib.core.ETLContext.ETLContext" title="etl_lib.core.ETLContext.ETLContext"><em>ETLContext</em></a>) – <a class="reference internal" href="#etl_lib.core.ETLContext.ETLContext" title="etl_lib.core.ETLContext.ETLContext"><code class="xref py py-class docutils literal notranslate"><span class="pre">etl_lib.core.ETLContext.ETLContext</span></code></a> instance. Will be available to subclasses.</p></li>
+<li><p><strong>task</strong> (<a class="reference internal" href="#etl_lib.core.Task.Task" title="etl_lib.core.Task.Task"><em>Task</em></a>) – <a class="reference internal" href="#etl_lib.core.Task.Task" title="etl_lib.core.Task.Task"><code class="xref py py-class docutils literal notranslate"><span class="pre">etl_lib.core.Task.Task</span></code></a> this processor is part of.
+Needed for status reporting only.</p></li>
+<li><p><strong>predecessor</strong> (<a class="reference internal" href="#etl_lib.core.BatchProcessor.BatchProcessor" title="etl_lib.core.BatchProcessor.BatchProcessor"><em>BatchProcessor</em></a>) – Source of batches for this processor.
+Can be <cite>None</cite> of no predecessor is needed (such as when this processor is the start of the queue.</p></li>
+<li><p><strong>expected_rows</strong> (<em>int</em>)</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="etl_lib.core.ClosedLoopBatchProcessor.ClosedLoopBatchProcessor.get_batch">
+<span class="sig-name descname"><span class="pre">get_batch</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">max_batch__size</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/etl_lib/core/ClosedLoopBatchProcessor.html#ClosedLoopBatchProcessor.get_batch"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#etl_lib.core.ClosedLoopBatchProcessor.ClosedLoopBatchProcessor.get_batch" title="Link to this definition"></a></dt>
+<dd><p>Provides a batch of data to the caller.</p>
+<p>The batch itself could be called and processed from the provided predecessor or generated from other sources.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">Generator</span></code>[<a class="reference internal" href="#etl_lib.core.BatchProcessor.BatchResults" title="etl_lib.core.BatchProcessor.BatchResults"><code class="xref py py-class docutils literal notranslate"><span class="pre">BatchResults</span></code></a>, <code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code>, <code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code>]</span></p>
+</dd>
+<dt class="field-even">Parameters<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>max_batch__size</strong> (<em>int</em>) – The max size of the batch the caller expects to receive.</p>
+</dd>
+</dl>
+<dl class="simple">
+<dt>Returns</dt><dd><p>A generator that yields batches.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="module-etl_lib.core.ETLContext">
+<span id="etl-lib-core-etlcontext-module"></span><h2>etl_lib.core.ETLContext module<a class="headerlink" href="#module-etl_lib.core.ETLContext" title="Link to this heading"></a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="etl_lib.core.ETLContext.ETLContext">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ETLContext</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">env_vars</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/etl_lib/core/ETLContext.html#ETLContext"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#etl_lib.core.ETLContext.ETLContext" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>General context information.</p>
+<p>Will be passed to all <a class="reference internal" href="#module-etl_lib.core.Task" title="etl_lib.core.Task"><code class="xref py py-class docutils literal notranslate"><span class="pre">etl_lib.core.Task</span></code></a> to provide access to environment variables and functionally
+deemed general enough that all parts of the ETL pipeline would need it.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>env_vars</strong> (<em>dict</em>)</p>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="etl_lib.core.ETLContext.ETLContext.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">env_vars</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/etl_lib/core/ETLContext.html#ETLContext.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#etl_lib.core.ETLContext.ETLContext.__init__" title="Link to this definition"></a></dt>
+<dd><p>Create a new ETLContext.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>env_vars</strong> (<em>dict</em>) – Environment variables. Stored internally and can be accessed via <a class="reference internal" href="#etl_lib.core.ETLContext.ETLContext.env" title="etl_lib.core.ETLContext.ETLContext.env"><code class="xref py py-func docutils literal notranslate"><span class="pre">env()</span></code></a> .</p>
+</dd>
+</dl>
+<p>The context created will contain an <a class="reference internal" href="#etl_lib.core.ETLContext.Neo4jContext" title="etl_lib.core.ETLContext.Neo4jContext"><code class="xref py py-class docutils literal notranslate"><span class="pre">Neo4jContext</span></code></a> and a <code class="xref py py-class docutils literal notranslate"><span class="pre">ProgressReporter</span></code>.
+See there for keys used from the provided <cite>env_vars</cite> dict.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="etl_lib.core.ETLContext.ETLContext.env">
+<span class="sig-name descname"><span class="pre">env</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">key</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/etl_lib/core/ETLContext.html#ETLContext.env"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#etl_lib.core.ETLContext.ETLContext.env" title="Link to this definition"></a></dt>
+<dd><p>Returns the value of an entry in the <cite>env_vars</cite> dict.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code></span></p>
+</dd>
+<dt class="field-even">Parameters<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>key</strong> (<em>str</em>) – name of the entry to read.</p>
+</dd>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>va  lue of the entry, or None if the key is not in the dict.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="etl_lib.core.ETLContext.Neo4jContext">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Neo4jContext</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">env_vars</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/etl_lib/core/ETLContext.html#Neo4jContext"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#etl_lib.core.ETLContext.Neo4jContext" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Holds the connection to the neo4j database and provides facilities to execute queries.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>env_vars</strong> (<em>dict</em>)</p>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="etl_lib.core.ETLContext.Neo4jContext.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">env_vars</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/etl_lib/core/ETLContext.html#Neo4jContext.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#etl_lib.core.ETLContext.Neo4jContext.__init__" title="Link to this definition"></a></dt>
+<dd><p>Create a new Neo4j context.</p>
+<p>Reads the following env_vars keys:
+- <cite>NEO4J_URI</cite>,
+- <cite>NEO4J_USERNAME</cite>,
+- <cite>NEO4J_PASSWORD</cite>.
+- <cite>NEO4J_DATABASE</cite>,</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>env_vars</strong> (<em>dict</em>)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="etl_lib.core.ETLContext.Neo4jContext.gds">
+<span class="sig-name descname"><span class="pre">gds</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">database</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/etl_lib/core/ETLContext.html#Neo4jContext.gds"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#etl_lib.core.ETLContext.Neo4jContext.gds" title="Link to this definition"></a></dt>
+<dd><p>Creates a new GraphDataScience client.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">GraphDataScience</span></code></span></p>
+</dd>
+<dt class="field-even">Parameters<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>database</strong> – Name of the database to use for this dgs client.
+If not provided, the database name provided during construction will be used.</p>
+</dd>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>gds client.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="etl_lib.core.ETLContext.Neo4jContext.query_database">
+<span class="sig-name descname"><span class="pre">query_database</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">session</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">query</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/etl_lib/core/ETLContext.html#Neo4jContext.query_database"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#etl_lib.core.ETLContext.Neo4jContext.query_database" title="Link to this definition"></a></dt>
+<dd><p>Executes a Cypher query on the Neo4j database.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference internal" href="#etl_lib.core.ETLContext.QueryResult" title="etl_lib.core.ETLContext.QueryResult"><code class="xref py py-class docutils literal notranslate"><span class="pre">QueryResult</span></code></a></span></p>
+</dd>
+<dt class="field-even">Parameters<span class="colon">:</span></dt>
+<dd class="field-even"><ul class="simple">
+<li><p><strong>session</strong> – Neo4j database session.</p></li>
+<li><p><strong>query</strong> – Cypher query either as a single query or as a list.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="etl_lib.core.ETLContext.Neo4jContext.session">
+<span class="sig-name descname"><span class="pre">session</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">database</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/etl_lib/core/ETLContext.html#Neo4jContext.session"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#etl_lib.core.ETLContext.Neo4jContext.session" title="Link to this definition"></a></dt>
+<dd><p>Create a new Neo4j session in write mode, caller is responsible to close the session.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>database</strong> – name of the database to use for this session. If not provided, the database name provided during
+construction will be used.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>newly created Neo4j session.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="etl_lib.core.ETLContext.QueryResult">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">QueryResult</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">summery</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/etl_lib/core/ETLContext.html#QueryResult"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#etl_lib.core.ETLContext.QueryResult" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">NamedTuple</span></code></p>
+<p>Result of a query against the neo4j database.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>data</strong> (<em>[</em><em>]</em>)</p></li>
+<li><p><strong>summery</strong> (<em>{}</em>)</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="etl_lib.core.ETLContext.QueryResult.data">
+<span class="sig-name descname"><span class="pre">data</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">[]</span></em><a class="headerlink" href="#etl_lib.core.ETLContext.QueryResult.data" title="Link to this definition"></a></dt>
+<dd><p>Data as returned from the query.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="etl_lib.core.ETLContext.QueryResult.summery">
+<span class="sig-name descname"><span class="pre">summery</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">{}</span></em><a class="headerlink" href="#etl_lib.core.ETLContext.QueryResult.summery" title="Link to this definition"></a></dt>
+<dd><p>Counters as reported by neo4j. Contains entries such as <cite>nodes_created</cite>, <cite>nodes_deleted</cite>, etc.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="etl_lib.core.ETLContext.append_results">
+<span class="sig-name descname"><span class="pre">append_results</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">r1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">r2</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/etl_lib/core/ETLContext.html#append_results"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#etl_lib.core.ETLContext.append_results" title="Link to this definition"></a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference internal" href="#etl_lib.core.ETLContext.QueryResult" title="etl_lib.core.ETLContext.QueryResult"><code class="xref py py-class docutils literal notranslate"><span class="pre">QueryResult</span></code></a></span></p>
+</dd>
+<dt class="field-even">Parameters<span class="colon">:</span></dt>
+<dd class="field-even"><ul class="simple">
+<li><p><strong>r1</strong> (<a class="reference internal" href="#etl_lib.core.ETLContext.QueryResult" title="etl_lib.core.ETLContext.QueryResult"><em>QueryResult</em></a>)</p></li>
+<li><p><strong>r2</strong> (<a class="reference internal" href="#etl_lib.core.ETLContext.QueryResult" title="etl_lib.core.ETLContext.QueryResult"><em>QueryResult</em></a>)</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+<section id="module-etl_lib.core.ProgressReporter">
+<span id="etl-lib-core-progressreporter-module"></span><h2>etl_lib.core.ProgressReporter module<a class="headerlink" href="#module-etl_lib.core.ProgressReporter" title="Link to this heading"></a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="etl_lib.core.ProgressReporter.Neo4jProgressReporter">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Neo4jProgressReporter</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">context</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">database</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/etl_lib/core/ProgressReporter.html#Neo4jProgressReporter"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#etl_lib.core.ProgressReporter.Neo4jProgressReporter" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#etl_lib.core.ProgressReporter.ProgressReporter" title="etl_lib.core.ProgressReporter.ProgressReporter"><code class="xref py py-class docutils literal notranslate"><span class="pre">ProgressReporter</span></code></a></p>
+<p>Extends the ProgressReporter to additionally write the status updates from the tasks to a Neo4j database.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>database</strong> (<em>str</em>)</p>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="etl_lib.core.ProgressReporter.Neo4jProgressReporter.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">context</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">database</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/etl_lib/core/ProgressReporter.html#Neo4jProgressReporter.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#etl_lib.core.ProgressReporter.Neo4jProgressReporter.__init__" title="Link to this definition"></a></dt>
+<dd><p>Creates a new Neo4j progress reporter.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>context</strong> – <a class="reference internal" href="#module-etl_lib.core.ETLContext" title="etl_lib.core.ETLContext"><code class="xref py py-class docutils literal notranslate"><span class="pre">etl_lib.core.ETLContext</span></code></a> containing a Neo4jConnection instance.</p></li>
+<li><p><strong>database</strong> (<em>str</em>) – Name of the database to write the status updates to.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="etl_lib.core.ProgressReporter.Neo4jProgressReporter.finished_task">
+<span class="sig-name descname"><span class="pre">finished_task</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">task</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">result</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/etl_lib/core/ProgressReporter.html#Neo4jProgressReporter.finished_task"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#etl_lib.core.ProgressReporter.Neo4jProgressReporter.finished_task" title="Link to this definition"></a></dt>
+<dd><p>Marks the task as finished.</p>
+<p>Stops the time recording for the tasks and performs logging. Logging will include details from the provided summery.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference internal" href="#etl_lib.core.Task.Task" title="etl_lib.core.Task.Task"><code class="xref py py-class docutils literal notranslate"><span class="pre">Task</span></code></a></span></p>
+</dd>
+<dt class="field-even">Parameters<span class="colon">:</span></dt>
+<dd class="field-even"><ul class="simple">
+<li><p><strong>task</strong> (<a class="reference internal" href="#etl_lib.core.Task.Task" title="etl_lib.core.Task.Task"><em>Task</em></a>) – Task to be marked as finished.</p></li>
+<li><p><strong>result</strong> (<a class="reference internal" href="#etl_lib.core.Task.TaskReturn" title="etl_lib.core.Task.TaskReturn"><em>TaskReturn</em></a>) – result of the task execution, such as status and summery information.</p></li>
+</ul>
+</dd>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Task to be marked as started.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="etl_lib.core.ProgressReporter.Neo4jProgressReporter.register_tasks">
+<span class="sig-name descname"><span class="pre">register_tasks</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">root</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/etl_lib/core/ProgressReporter.html#Neo4jProgressReporter.register_tasks"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#etl_lib.core.ProgressReporter.Neo4jProgressReporter.register_tasks" title="Link to this definition"></a></dt>
+<dd><p>Registers a <a class="reference internal" href="#module-etl_lib.core.Task" title="etl_lib.core.Task"><code class="xref py py-class docutils literal notranslate"><span class="pre">etl_lib.core.Task</span></code></a> with this reporter.</p>
+<p>Needs to be called once with the root task. The function will walk the tree of tasks and register them in turn.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>main</strong> – Root of the task tree.</p></li>
+<li><p><strong>root</strong> (<a class="reference internal" href="#etl_lib.core.Task.Task" title="etl_lib.core.Task.Task"><em>Task</em></a>)</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="etl_lib.core.ProgressReporter.Neo4jProgressReporter.report_progress">
+<span class="sig-name descname"><span class="pre">report_progress</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">task</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">batches</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">expected_batches</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">stats</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/etl_lib/core/ProgressReporter.html#Neo4jProgressReporter.report_progress"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#etl_lib.core.ProgressReporter.Neo4jProgressReporter.report_progress" title="Link to this definition"></a></dt>
+<dd><p>Optionally provide updates during execution of a task, such as batches processed so far.</p>
+<p>This is an optional call, as not all <a class="reference internal" href="#module-etl_lib.core.Task" title="etl_lib.core.Task"><code class="xref py py-class docutils literal notranslate"><span class="pre">etl_lib.core.Task</span></code></a> need batching.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code></span></p>
+</dd>
+<dt class="field-even">Parameters<span class="colon">:</span></dt>
+<dd class="field-even"><ul class="simple">
+<li><p><strong>task</strong> (<a class="reference internal" href="#etl_lib.core.Task.Task" title="etl_lib.core.Task.Task"><em>Task</em></a>) – Task reporting updates.</p></li>
+<li><p><strong>batches</strong> (<em>int</em>) – Number of batches processed so far.</p></li>
+<li><p><strong>expected_batches</strong> (<em>int</em>) – Number of expected batches. Can be <cite>None</cite> if the overall number of
+batches is not know before execution.</p></li>
+<li><p><strong>stats</strong> (<em>dict</em>) – dict of statistics so far (such as <cite>nodes_created</cite>).</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="etl_lib.core.ProgressReporter.Neo4jProgressReporter.started_task">
+<span class="sig-name descname"><span class="pre">started_task</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">task</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/etl_lib/core/ProgressReporter.html#Neo4jProgressReporter.started_task"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#etl_lib.core.ProgressReporter.Neo4jProgressReporter.started_task" title="Link to this definition"></a></dt>
+<dd><p>Marks the task as started.</p>
+<p>Start the time keeping for this task and performs logging.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference internal" href="#etl_lib.core.Task.Task" title="etl_lib.core.Task.Task"><code class="xref py py-class docutils literal notranslate"><span class="pre">Task</span></code></a></span></p>
+</dd>
+<dt class="field-even">Parameters<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>task</strong> (<a class="reference internal" href="#etl_lib.core.Task.Task" title="etl_lib.core.Task.Task"><em>Task</em></a>) – Task to be marked as started.</p>
+</dd>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The task that was provided.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="etl_lib.core.ProgressReporter.ProgressReporter">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ProgressReporter</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">context</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/etl_lib/core/ProgressReporter.html#ProgressReporter"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#etl_lib.core.ProgressReporter.ProgressReporter" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Responsible for reporting progress of <a class="reference internal" href="#module-etl_lib.core.Task" title="etl_lib.core.Task"><code class="xref py py-class docutils literal notranslate"><span class="pre">etl_lib.core.Task</span></code></a> .</p>
+<p>This specific implementation uses the python logging module to log progress.
+Non-error logging is using the INFO level.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="etl_lib.core.ProgressReporter.ProgressReporter.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">context</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/etl_lib/core/ProgressReporter.html#ProgressReporter.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#etl_lib.core.ProgressReporter.ProgressReporter.__init__" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="etl_lib.core.ProgressReporter.ProgressReporter.end_time">
+<span class="sig-name descname"><span class="pre">end_time</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><code class="xref py py-class docutils literal notranslate"><span class="pre">datetime</span></code></em><a class="headerlink" href="#etl_lib.core.ProgressReporter.ProgressReporter.end_time" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="etl_lib.core.ProgressReporter.ProgressReporter.finished_task">
+<span class="sig-name descname"><span class="pre">finished_task</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">task</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">result</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/etl_lib/core/ProgressReporter.html#ProgressReporter.finished_task"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#etl_lib.core.ProgressReporter.ProgressReporter.finished_task" title="Link to this definition"></a></dt>
+<dd><p>Marks the task as finished.</p>
+<p>Stops the time recording for the tasks and performs logging. Logging will include details from the provided summery.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference internal" href="#etl_lib.core.Task.Task" title="etl_lib.core.Task.Task"><code class="xref py py-class docutils literal notranslate"><span class="pre">Task</span></code></a></span></p>
+</dd>
+<dt class="field-even">Parameters<span class="colon">:</span></dt>
+<dd class="field-even"><ul class="simple">
+<li><p><strong>task</strong> (<a class="reference internal" href="#etl_lib.core.Task.Task" title="etl_lib.core.Task.Task"><em>Task</em></a>) – Task to be marked as finished.</p></li>
+<li><p><strong>result</strong> (<a class="reference internal" href="#etl_lib.core.Task.TaskReturn" title="etl_lib.core.Task.TaskReturn"><em>TaskReturn</em></a>) – result of the task execution, such as status and summery information.</p></li>
+</ul>
+</dd>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Task to be marked as started.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="etl_lib.core.ProgressReporter.ProgressReporter.register_tasks">
+<span class="sig-name descname"><span class="pre">register_tasks</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">main</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/etl_lib/core/ProgressReporter.html#ProgressReporter.register_tasks"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#etl_lib.core.ProgressReporter.ProgressReporter.register_tasks" title="Link to this definition"></a></dt>
+<dd><p>Registers a <a class="reference internal" href="#module-etl_lib.core.Task" title="etl_lib.core.Task"><code class="xref py py-class docutils literal notranslate"><span class="pre">etl_lib.core.Task</span></code></a> with this reporter.</p>
+<p>Needs to be called once with the root task. The function will walk the tree of tasks and register them in turn.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>main</strong> (<a class="reference internal" href="#etl_lib.core.Task.Task" title="etl_lib.core.Task.Task"><em>Task</em></a>) – Root of the task tree.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="etl_lib.core.ProgressReporter.ProgressReporter.report_progress">
+<span class="sig-name descname"><span class="pre">report_progress</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">task</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">batches</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">expected_batches</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">stats</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/etl_lib/core/ProgressReporter.html#ProgressReporter.report_progress"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#etl_lib.core.ProgressReporter.ProgressReporter.report_progress" title="Link to this definition"></a></dt>
+<dd><p>Optionally provide updates during execution of a task, such as batches processed so far.</p>
+<p>This is an optional call, as not all <a class="reference internal" href="#module-etl_lib.core.Task" title="etl_lib.core.Task"><code class="xref py py-class docutils literal notranslate"><span class="pre">etl_lib.core.Task</span></code></a> need batching.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code></span></p>
+</dd>
+<dt class="field-even">Parameters<span class="colon">:</span></dt>
+<dd class="field-even"><ul class="simple">
+<li><p><strong>task</strong> (<a class="reference internal" href="#etl_lib.core.Task.Task" title="etl_lib.core.Task.Task"><em>Task</em></a>) – Task reporting updates.</p></li>
+<li><p><strong>batches</strong> (<em>int</em>) – Number of batches processed so far.</p></li>
+<li><p><strong>expected_batches</strong> (<em>int</em>) – Number of expected batches. Can be <cite>None</cite> if the overall number of
+batches is not know before execution.</p></li>
+<li><p><strong>stats</strong> (<em>dict</em>) – dict of statistics so far (such as <cite>nodes_created</cite>).</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="etl_lib.core.ProgressReporter.ProgressReporter.start_time">
+<span class="sig-name descname"><span class="pre">start_time</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><code class="xref py py-class docutils literal notranslate"><span class="pre">datetime</span></code></em><a class="headerlink" href="#etl_lib.core.ProgressReporter.ProgressReporter.start_time" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="etl_lib.core.ProgressReporter.ProgressReporter.started_task">
+<span class="sig-name descname"><span class="pre">started_task</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">task</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/etl_lib/core/ProgressReporter.html#ProgressReporter.started_task"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#etl_lib.core.ProgressReporter.ProgressReporter.started_task" title="Link to this definition"></a></dt>
+<dd><p>Marks the task as started.</p>
+<p>Start the time keeping for this task and performs logging.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference internal" href="#etl_lib.core.Task.Task" title="etl_lib.core.Task.Task"><code class="xref py py-class docutils literal notranslate"><span class="pre">Task</span></code></a></span></p>
+</dd>
+<dt class="field-even">Parameters<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>task</strong> (<a class="reference internal" href="#etl_lib.core.Task.Task" title="etl_lib.core.Task.Task"><em>Task</em></a>) – Task to be marked as started.</p>
+</dd>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The task that was provided.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="etl_lib.core.ProgressReporter.get_reporter">
+<span class="sig-name descname"><span class="pre">get_reporter</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">context</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/etl_lib/core/ProgressReporter.html#get_reporter"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#etl_lib.core.ProgressReporter.get_reporter" title="Link to this definition"></a></dt>
+<dd><p>Returns a ProgressReporter instance.</p>
+<p>If the <a class="reference internal" href="#module-etl_lib.core.ETLContext" title="etl_lib.core.ETLContext"><code class="xref py py-class docutils literal notranslate"><span class="pre">ETLContext</span></code></a> env holds the key <cite>REPORTER_DATABASE</cite> then
+a <a class="reference internal" href="#etl_lib.core.ProgressReporter.Neo4jProgressReporter" title="etl_lib.core.ProgressReporter.Neo4jProgressReporter"><code class="xref py py-class docutils literal notranslate"><span class="pre">Neo4jProgressReporter</span></code></a> instance is created with the given database name.</p>
+<p>Otherwise, a  <a class="reference internal" href="#etl_lib.core.ProgressReporter.ProgressReporter" title="etl_lib.core.ProgressReporter.ProgressReporter"><code class="xref py py-class docutils literal notranslate"><span class="pre">ProgressReporter</span></code></a> (no logging to database) instance will be created.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference internal" href="#etl_lib.core.ProgressReporter.ProgressReporter" title="etl_lib.core.ProgressReporter.ProgressReporter"><code class="xref py py-class docutils literal notranslate"><span class="pre">ProgressReporter</span></code></a></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+<section id="module-etl_lib.core.Task">
+<span id="etl-lib-core-task-module"></span><h2>etl_lib.core.Task module<a class="headerlink" href="#module-etl_lib.core.Task" title="Link to this heading"></a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="etl_lib.core.Task.ParallelTaskGroup">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ParallelTaskGroup</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">context</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tasks</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/etl_lib/core/Task.html#ParallelTaskGroup"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#etl_lib.core.Task.ParallelTaskGroup" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#etl_lib.core.Task.TaskGroup" title="etl_lib.core.Task.TaskGroup"><code class="xref py py-class docutils literal notranslate"><span class="pre">TaskGroup</span></code></a></p>
+<p>Task group for parallel execution of jobs.</p>
+<p>This class uses a ThreadPoolExecutor to run the provided tasks <a class="reference internal" href="#etl_lib.core.Task.ParallelTaskGroup.run_internal" title="etl_lib.core.Task.ParallelTaskGroup.run_internal"><code class="xref py py-func docutils literal notranslate"><span class="pre">run_internal()</span></code></a> functions in parallel.
+Care should be taken that the Tasks can operate without blocking.locking each other.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>tasks</strong> (<em>list</em><em>[</em><a class="reference internal" href="#etl_lib.core.Task.Task" title="etl_lib.core.Task.Task"><em>Task</em></a><em>]</em>)</p></li>
+<li><p><strong>name</strong> (<em>str</em>)</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="etl_lib.core.Task.ParallelTaskGroup.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">context</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tasks</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/etl_lib/core/Task.html#ParallelTaskGroup.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#etl_lib.core.Task.ParallelTaskGroup.__init__" title="Link to this definition"></a></dt>
+<dd><p>Construct a TaskGroup object.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>context</strong> – <a class="reference internal" href="#etl_lib.core.ETLContext.ETLContext" title="etl_lib.core.ETLContext.ETLContext"><code class="xref py py-class docutils literal notranslate"><span class="pre">etl_lib.core.ETLContext.ETLContext</span></code></a> instance.</p></li>
+<li><p><strong>tasks</strong> (<em>list</em><em>[</em><a class="reference internal" href="#etl_lib.core.Task.Task" title="etl_lib.core.Task.Task"><em>Task</em></a><em>]</em>) – an array of <cite>Task</cite> instances.
+These will be executed in parallel when <a class="reference internal" href="#etl_lib.core.Task.ParallelTaskGroup.run_internal" title="etl_lib.core.Task.ParallelTaskGroup.run_internal"><code class="xref py py-func docutils literal notranslate"><span class="pre">run_internal()</span></code></a>  is called.
+The Tasks in the array could itself be other TaskGroups.</p></li>
+<li><p><strong>name</strong> (<em>str</em>) – short name of the TaskGroup.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="etl_lib.core.Task.ParallelTaskGroup.run_internal">
+<span class="sig-name descname"><span class="pre">run_internal</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/etl_lib/core/Task.html#ParallelTaskGroup.run_internal"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#etl_lib.core.Task.ParallelTaskGroup.run_internal" title="Link to this definition"></a></dt>
+<dd><p>Place to provide the logic to be performed.</p>
+<p>This base class provides all the housekeeping and reporting, so that implementation must/should not need to care
+about them.
+Exceptions should not be captured by implementations. They are handled by this base class.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference internal" href="#etl_lib.core.Task.TaskReturn" title="etl_lib.core.Task.TaskReturn"><code class="xref py py-class docutils literal notranslate"><span class="pre">TaskReturn</span></code></a></span></p>
+</dd>
+<dt class="field-even">Parameters<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>kwargs</strong> – will be passed to <cite>run_internal</cite></p>
+</dd>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>An instance of <a class="reference internal" href="#etl_lib.core.Task.TaskReturn" title="etl_lib.core.Task.TaskReturn"><code class="xref py py-class docutils literal notranslate"><span class="pre">TaskReturn</span></code></a>.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="etl_lib.core.Task.Task">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Task</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">context</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/etl_lib/core/Task.html#Task"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#etl_lib.core.Task.Task" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>ETL job that can be executed.</p>
+<p>Provides reporting, time tracking and error handling.
+Implementations must provide the <a class="reference internal" href="#etl_lib.core.Task.Task.run_internal" title="etl_lib.core.Task.Task.run_internal"><code class="xref py py-func docutils literal notranslate"><span class="pre">run_internal()</span></code></a> function.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="etl_lib.core.Task.Task.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">context</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/etl_lib/core/Task.html#Task.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#etl_lib.core.Task.Task.__init__" title="Link to this definition"></a></dt>
+<dd><p>Construct a Task object.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>context</strong> – <a class="reference internal" href="#etl_lib.core.ETLContext.ETLContext" title="etl_lib.core.ETLContext.ETLContext"><code class="xref py py-class docutils literal notranslate"><span class="pre">etl_lib.core.ETLContext.ETLContext</span></code></a> instance. Will be available to subclasses.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="etl_lib.core.Task.Task.abort_on_fail">
+<span class="sig-name descname"><span class="pre">abort_on_fail</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/etl_lib/core/Task.html#Task.abort_on_fail"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#etl_lib.core.Task.Task.abort_on_fail" title="Link to this definition"></a></dt>
+<dd><p>Should the pipeline abort when this job fails.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code></span></p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><cite>True</cite> indicates that no other Tasks should be executed if <a class="reference internal" href="#etl_lib.core.Task.Task.run_internal" title="etl_lib.core.Task.Task.run_internal"><code class="xref py py-func docutils literal notranslate"><span class="pre">run_internal()</span></code></a> fails.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="etl_lib.core.Task.Task.depth">
+<span class="sig-name descname"><span class="pre">depth</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></em><a class="headerlink" href="#etl_lib.core.Task.Task.depth" title="Link to this definition"></a></dt>
+<dd><p>Level or depth of the task in the hierarchy. The root task is depth 0. Updated by the Reporter</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="etl_lib.core.Task.Task.end_time">
+<span class="sig-name descname"><span class="pre">end_time</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><code class="xref py py-class docutils literal notranslate"><span class="pre">datetime</span></code></em><a class="headerlink" href="#etl_lib.core.Task.Task.end_time" title="Link to this definition"></a></dt>
+<dd><p>Time when the <a class="reference internal" href="#etl_lib.core.Task.Task.execute" title="etl_lib.core.Task.Task.execute"><code class="xref py py-func docutils literal notranslate"><span class="pre">execute()</span></code></a> has finished., <cite>None</cite> before.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="etl_lib.core.Task.Task.execute">
+<span class="sig-name descname"><span class="pre">execute</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/etl_lib/core/Task.html#Task.execute"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#etl_lib.core.Task.Task.execute" title="Link to this definition"></a></dt>
+<dd><p>Executes the task.</p>
+<p>Implementations of this Interface should not overwrite this method, but provide the
+Task functionality inside <a class="reference internal" href="#etl_lib.core.Task.Task.run_internal" title="etl_lib.core.Task.Task.run_internal"><code class="xref py py-func docutils literal notranslate"><span class="pre">run_internal()</span></code></a> which will be called from here.
+Will use the <code class="xref py py-class docutils literal notranslate"><span class="pre">ProgressReporter</span></code> from the <code class="xref py py-attr docutils literal notranslate"><span class="pre">context</span></code> to report status updates.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference internal" href="#etl_lib.core.Task.TaskReturn" title="etl_lib.core.Task.TaskReturn"><code class="xref py py-class docutils literal notranslate"><span class="pre">TaskReturn</span></code></a></span></p>
+</dd>
+<dt class="field-even">Parameters<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>kwargs</strong> – will be passed to <cite>run_internal</cite></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="etl_lib.core.Task.Task.run_internal">
+<em class="property"><span class="k"><span class="pre">abstractmethod</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">run_internal</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/etl_lib/core/Task.html#Task.run_internal"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#etl_lib.core.Task.Task.run_internal" title="Link to this definition"></a></dt>
+<dd><p>Place to provide the logic to be performed.</p>
+<p>This base class provides all the housekeeping and reporting, so that implementation must/should not need to care
+about them.
+Exceptions should not be captured by implementations. They are handled by this base class.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference internal" href="#etl_lib.core.Task.TaskReturn" title="etl_lib.core.Task.TaskReturn"><code class="xref py py-class docutils literal notranslate"><span class="pre">TaskReturn</span></code></a></span></p>
+</dd>
+<dt class="field-even">Parameters<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>kwargs</strong> – will be passed to <cite>run_internal</cite></p>
+</dd>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>An instance of <a class="reference internal" href="#etl_lib.core.Task.TaskReturn" title="etl_lib.core.Task.TaskReturn"><code class="xref py py-class docutils literal notranslate"><span class="pre">TaskReturn</span></code></a>.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="etl_lib.core.Task.Task.start_time">
+<span class="sig-name descname"><span class="pre">start_time</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><code class="xref py py-class docutils literal notranslate"><span class="pre">datetime</span></code></em><a class="headerlink" href="#etl_lib.core.Task.Task.start_time" title="Link to this definition"></a></dt>
+<dd><p>Time when the <a class="reference internal" href="#etl_lib.core.Task.Task.execute" title="etl_lib.core.Task.Task.execute"><code class="xref py py-func docutils literal notranslate"><span class="pre">execute()</span></code></a> was called., <cite>None</cite> before.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="etl_lib.core.Task.Task.success">
+<span class="sig-name descname"><span class="pre">success</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code></em><a class="headerlink" href="#etl_lib.core.Task.Task.success" title="Link to this definition"></a></dt>
+<dd><p>True if the task has finished successful. False otherwise, <cite>None</cite> before the task has finished.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="etl_lib.core.Task.Task.task_name">
+<span class="sig-name descname"><span class="pre">task_name</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/etl_lib/core/Task.html#Task.task_name"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#etl_lib.core.Task.Task.task_name" title="Link to this definition"></a></dt>
+<dd><p>Option to overwrite the name of this Task.</p>
+<p>Name is used in reporting only.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></span></p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Sting describing the task. Defaults to the class name..</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="etl_lib.core.Task.Task.uuid">
+<span class="sig-name descname"><span class="pre">uuid</span></span><a class="headerlink" href="#etl_lib.core.Task.Task.uuid" title="Link to this definition"></a></dt>
+<dd><p>Uniquely identifies a Task.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="etl_lib.core.Task.TaskGroup">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">TaskGroup</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">context</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tasks</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/etl_lib/core/Task.html#TaskGroup"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#etl_lib.core.Task.TaskGroup" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#etl_lib.core.Task.Task" title="etl_lib.core.Task.Task"><code class="xref py py-class docutils literal notranslate"><span class="pre">Task</span></code></a></p>
+<p>Base class to allow wrapping of Task or TaskGroups to form a hierarchy of jobs.</p>
+<p>Implementations only need to provide the Tasks to execute as an array.
+The summery statistic object returned from the group execute method will be a merged/aggregated one.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>tasks</strong> (<em>list</em><em>[</em><a class="reference internal" href="#etl_lib.core.Task.Task" title="etl_lib.core.Task.Task"><em>Task</em></a><em>]</em>)</p></li>
+<li><p><strong>name</strong> (<em>str</em>)</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="etl_lib.core.Task.TaskGroup.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">context</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tasks</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/etl_lib/core/Task.html#TaskGroup.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#etl_lib.core.Task.TaskGroup.__init__" title="Link to this definition"></a></dt>
+<dd><p>Construct a TaskGroup object.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>context</strong> – <a class="reference internal" href="#etl_lib.core.ETLContext.ETLContext" title="etl_lib.core.ETLContext.ETLContext"><code class="xref py py-class docutils literal notranslate"><span class="pre">etl_lib.core.ETLContext.ETLContext</span></code></a> instance.</p></li>
+<li><p><strong>tasks</strong> (<em>list</em><em>[</em><a class="reference internal" href="#etl_lib.core.Task.Task" title="etl_lib.core.Task.Task"><em>Task</em></a><em>]</em>) – a list of <cite>:py:class:`etl_lib.core.Task.Rask</cite> instances.
+These will be executed in the order provided when <a class="reference internal" href="#etl_lib.core.Task.TaskGroup.run_internal" title="etl_lib.core.Task.TaskGroup.run_internal"><code class="xref py py-func docutils literal notranslate"><span class="pre">run_internal()</span></code></a> is called.</p></li>
+<li><p><strong>name</strong> (<em>str</em>) – short name of the TaskGroup for reporting.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="etl_lib.core.Task.TaskGroup.abort_on_fail">
+<span class="sig-name descname"><span class="pre">abort_on_fail</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/etl_lib/core/Task.html#TaskGroup.abort_on_fail"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#etl_lib.core.Task.TaskGroup.abort_on_fail" title="Link to this definition"></a></dt>
+<dd><p>Should the pipeline abort when this job fails.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p><cite>True</cite> indicates that no other Tasks should be executed if <a class="reference internal" href="#etl_lib.core.Task.TaskGroup.run_internal" title="etl_lib.core.Task.TaskGroup.run_internal"><code class="xref py py-func docutils literal notranslate"><span class="pre">run_internal()</span></code></a> fails.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="etl_lib.core.Task.TaskGroup.run_internal">
+<span class="sig-name descname"><span class="pre">run_internal</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/etl_lib/core/Task.html#TaskGroup.run_internal"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#etl_lib.core.Task.TaskGroup.run_internal" title="Link to this definition"></a></dt>
+<dd><p>Place to provide the logic to be performed.</p>
+<p>This base class provides all the housekeeping and reporting, so that implementation must/should not need to care
+about them.
+Exceptions should not be captured by implementations. They are handled by this base class.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference internal" href="#etl_lib.core.Task.TaskReturn" title="etl_lib.core.Task.TaskReturn"><code class="xref py py-class docutils literal notranslate"><span class="pre">TaskReturn</span></code></a></span></p>
+</dd>
+<dt class="field-even">Parameters<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>kwargs</strong> – will be passed to <cite>run_internal</cite></p>
+</dd>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>An instance of <a class="reference internal" href="#etl_lib.core.Task.TaskReturn" title="etl_lib.core.Task.TaskReturn"><code class="xref py py-class docutils literal notranslate"><span class="pre">TaskReturn</span></code></a>.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="etl_lib.core.Task.TaskGroup.sub_tasks">
+<span class="sig-name descname"><span class="pre">sub_tasks</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/etl_lib/core/Task.html#TaskGroup.sub_tasks"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#etl_lib.core.Task.TaskGroup.sub_tasks" title="Link to this definition"></a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type">[&lt;class ‘etl_lib.core.Task.Task’&gt;]</span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="etl_lib.core.Task.TaskGroup.task_name">
+<span class="sig-name descname"><span class="pre">task_name</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/etl_lib/core/Task.html#TaskGroup.task_name"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#etl_lib.core.Task.TaskGroup.task_name" title="Link to this definition"></a></dt>
+<dd><p>Option to overwrite the name of this Task.</p>
+<p>Name is used in reporting only.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></span></p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Sting describing the task. Defaults to the class name..</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="etl_lib.core.Task.TaskReturn">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">TaskReturn</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">success</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">summery</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">error</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/etl_lib/core/Task.html#TaskReturn"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#etl_lib.core.Task.TaskReturn" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Return object for the <a class="reference internal" href="#etl_lib.core.Task.Task.execute" title="etl_lib.core.Task.Task.execute"><code class="xref py py-func docutils literal notranslate"><span class="pre">execute()</span></code></a> function, transporting result information.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>success</strong> (<em>bool</em>)</p></li>
+<li><p><strong>summery</strong> (<em>dict</em>)</p></li>
+<li><p><strong>error</strong> (<em>str</em>)</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="etl_lib.core.Task.TaskReturn.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">success</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">summery</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">error</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/etl_lib/core/Task.html#TaskReturn.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#etl_lib.core.Task.TaskReturn.__init__" title="Link to this definition"></a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>success</strong> (<em>bool</em>)</p></li>
+<li><p><strong>summery</strong> (<em>dict</em>)</p></li>
+<li><p><strong>error</strong> (<em>str</em>)</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="etl_lib.core.Task.TaskReturn.error">
+<span class="sig-name descname"><span class="pre">error</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></em><a class="headerlink" href="#etl_lib.core.Task.TaskReturn.error" title="Link to this definition"></a></dt>
+<dd><p>Error message.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="etl_lib.core.Task.TaskReturn.success">
+<span class="sig-name descname"><span class="pre">success</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code></em><a class="headerlink" href="#etl_lib.core.Task.TaskReturn.success" title="Link to this definition"></a></dt>
+<dd><p>Success or failure of the task.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="etl_lib.core.Task.TaskReturn.summery">
+<span class="sig-name descname"><span class="pre">summery</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code></em><a class="headerlink" href="#etl_lib.core.Task.TaskReturn.summery" title="Link to this definition"></a></dt>
+<dd><p>dict holding statistics about the task performed, such as rows inserted, updated.</p>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="module-etl_lib.core.ValidationBatchProcessor">
+<span id="etl-lib-core-validationbatchprocessor-module"></span><h2>etl_lib.core.ValidationBatchProcessor module<a class="headerlink" href="#module-etl_lib.core.ValidationBatchProcessor" title="Link to this heading"></a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="etl_lib.core.ValidationBatchProcessor.ValidationBatchProcessor">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ValidationBatchProcessor</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">context</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">task</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">predecessor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">error_file</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/etl_lib/core/ValidationBatchProcessor.html#ValidationBatchProcessor"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#etl_lib.core.ValidationBatchProcessor.ValidationBatchProcessor" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#etl_lib.core.BatchProcessor.BatchProcessor" title="etl_lib.core.BatchProcessor.BatchProcessor"><code class="xref py py-class docutils literal notranslate"><span class="pre">BatchProcessor</span></code></a></p>
+<p>Batch processor for validation, using Pydantic.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>context</strong> (<a class="reference internal" href="#etl_lib.core.ETLContext.ETLContext" title="etl_lib.core.ETLContext.ETLContext"><em>ETLContext</em></a>)</p></li>
+<li><p><strong>task</strong> (<a class="reference internal" href="#etl_lib.core.Task.Task" title="etl_lib.core.Task.Task"><em>Task</em></a>)</p></li>
+<li><p><strong>model</strong> (<em>Type</em><em>[</em><em>BaseModel</em><em>]</em>)</p></li>
+<li><p><strong>error_file</strong> (<em>Path</em>)</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="etl_lib.core.ValidationBatchProcessor.ValidationBatchProcessor.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">context</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">task</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">predecessor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">error_file</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/etl_lib/core/ValidationBatchProcessor.html#ValidationBatchProcessor.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#etl_lib.core.ValidationBatchProcessor.ValidationBatchProcessor.__init__" title="Link to this definition"></a></dt>
+<dd><p>Constructs a new ValidationBatchProcessor.</p>
+<p>The <a class="reference internal" href="#etl_lib.core.BatchProcessor.BatchResults" title="etl_lib.core.BatchProcessor.BatchResults"><code class="xref py py-class docutils literal notranslate"><span class="pre">etl_lib.core.BatchProcessor.BatchResults</span></code></a> returned from the <a class="reference internal" href="#etl_lib.core.ValidationBatchProcessor.ValidationBatchProcessor.get_batch" title="etl_lib.core.ValidationBatchProcessor.ValidationBatchProcessor.get_batch"><code class="xref py py-func docutils literal notranslate"><span class="pre">get_batch()</span></code></a> of this
+implementation will contain the following additional entries:</p>
+<ul class="simple">
+<li><p><cite>valid_rows</cite>: Number of valid rows.</p></li>
+<li><p><cite>invalid_rows</cite>: Number of invalid rows.</p></li>
+</ul>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>context</strong> (<a class="reference internal" href="#etl_lib.core.ETLContext.ETLContext" title="etl_lib.core.ETLContext.ETLContext"><em>ETLContext</em></a>) – <a class="reference internal" href="#etl_lib.core.ETLContext.ETLContext" title="etl_lib.core.ETLContext.ETLContext"><code class="xref py py-class docutils literal notranslate"><span class="pre">etl_lib.core.ETLContext.ETLContext</span></code></a> instance.</p></li>
+<li><p><strong>task</strong> (<a class="reference internal" href="#etl_lib.core.Task.Task" title="etl_lib.core.Task.Task"><em>Task</em></a>) – <a class="reference internal" href="#etl_lib.core.Task.Task" title="etl_lib.core.Task.Task"><code class="xref py py-class docutils literal notranslate"><span class="pre">etl_lib.core.Task.Task</span></code></a> instance owning this batchProcessor.</p></li>
+<li><p><strong>predecessor</strong> – BatchProcessor which <a class="reference internal" href="#etl_lib.core.ValidationBatchProcessor.ValidationBatchProcessor.get_batch" title="etl_lib.core.ValidationBatchProcessor.ValidationBatchProcessor.get_batch"><code class="xref py py-func docutils literal notranslate"><span class="pre">get_batch()</span></code></a> function will be called to receive batches to process.</p></li>
+<li><p><strong>model</strong> (<em>Type</em><em>[</em><em>BaseModel</em><em>]</em>) – Pydantic model class used to validate each row in the batch.</p></li>
+<li><p><strong>error_file</strong> (<em>Path</em>) – Path to the file that will receive each row that did not pass validation.
+Each row in this file will contain the original data together with all validation errors for this row.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="etl_lib.core.ValidationBatchProcessor.ValidationBatchProcessor.get_batch">
+<span class="sig-name descname"><span class="pre">get_batch</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">max_batch__size</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/etl_lib/core/ValidationBatchProcessor.html#ValidationBatchProcessor.get_batch"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#etl_lib.core.ValidationBatchProcessor.ValidationBatchProcessor.get_batch" title="Link to this definition"></a></dt>
+<dd><p>Provides a batch of data to the caller.</p>
+<p>The batch itself could be called and processed from the provided predecessor or generated from other sources.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">Generator</span></code>[<a class="reference internal" href="#etl_lib.core.BatchProcessor.BatchResults" title="etl_lib.core.BatchProcessor.BatchResults"><code class="xref py py-class docutils literal notranslate"><span class="pre">BatchResults</span></code></a>, <code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code>, <code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code>]</span></p>
+</dd>
+<dt class="field-even">Parameters<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>max_batch__size</strong> (<em>int</em>) – The max size of the batch the caller expects to receive.</p>
+</dd>
+</dl>
+<dl class="simple">
+<dt>Returns</dt><dd><p>A generator that yields batches.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="module-etl_lib.core.utils">
+<span id="etl-lib-core-utils-module"></span><h2>etl_lib.core.utils module<a class="headerlink" href="#module-etl_lib.core.utils" title="Link to this heading"></a></h2>
+<dl class="py function">
+<dt class="sig sig-object py" id="etl_lib.core.utils.merge_summery">
+<span class="sig-name descname"><span class="pre">merge_summery</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">summery_1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">summery_2</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/etl_lib/core/utils.html#merge_summery"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#etl_lib.core.utils.merge_summery" title="Link to this definition"></a></dt>
+<dd><p>Helper function to merge dicts. Assuming that values are numbers.
+If a key exists in both dicts, then the result will contain a key with the added values.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code></span></p>
+</dd>
+<dt class="field-even">Parameters<span class="colon">:</span></dt>
+<dd class="field-even"><ul class="simple">
+<li><p><strong>summery_1</strong> (<em>dict</em>)</p></li>
+<li><p><strong>summery_2</strong> (<em>dict</em>)</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="etl_lib.core.utils.setup_logging">
+<span class="sig-name descname"><span class="pre">setup_logging</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">log_file</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/etl_lib/core/utils.html#setup_logging"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#etl_lib.core.utils.setup_logging" title="Link to this definition"></a></dt>
+<dd><p>Set up logging to console and optionally to a log file.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>log_file</strong> (<em>str</em><em>, </em><em>optional</em>) – Path to the log file</p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+<section id="module-etl_lib.core">
+<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-etl_lib.core" title="Link to this heading"></a></h2>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="etl_lib.cli.html" class="btn btn-neutral float-left" title="etl_lib.cli package" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="etl_lib.data_sink.html" class="btn btn-neutral float-right" title="etl_lib.data_sink package" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright .</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
