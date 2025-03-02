@@ -125,7 +125,7 @@ class DummyReporter:
     def started_task(self, task: Task) -> Task:
         pass
 
-    def finished_task(self, task, success: bool, summery: dict, error: str = None) -> Task:
+    def finished_task(self, task, result) -> Task:
         pass
 
     def report_progress(self, task, batches: int, expected_batches: int, stats: dict) -> None:

@@ -49,7 +49,7 @@ def test_parallel_task_group(etl_context):
             task.start_time = datetime.now()
             return task
 
-        def finished_task(self, task, success: bool, summery: dict, error: str = None) -> Task:
+        def finished_task(self, task, result) -> Task:
             task.end_time = datetime.now()
             return task
 
