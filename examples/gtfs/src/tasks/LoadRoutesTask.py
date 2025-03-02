@@ -1,7 +1,7 @@
 from pathlib import Path
 from typing import Optional
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, field_validator, model_validator
 
 from etl_lib.core.ETLContext import ETLContext
 from etl_lib.task.data_loading.CSVLoad2Neo4jTask import CSVLoad2Neo4jTask
@@ -10,8 +10,8 @@ from etl_lib.task.data_loading.CSVLoad2Neo4jTask import CSVLoad2Neo4jTask
 class LoadRoutesTask(CSVLoad2Neo4jTask):
     class Route(BaseModel):
         id: str = Field(alias="route_id")
-        short_name: str = Field(alias="route_short_name")
-        long_name: str = Field(alias="route_long_name")
+        short_name: Optional[str] = Field(None, alias="route_short_name")
+        long_name: Optional[str] = Field(None, alias="route_long_name")
         type: int = Field(alias="route_type")
         agency_id: str = Field(alias="agency_id")
 
@@ -27,8 +27,13 @@ class LoadRoutesTask(CSVLoad2Neo4jTask):
             value = int(value)
             if value not in valid_types:
                 raise ValueError(f"Invalid route_type: {value}. Must be one of {valid_types}.")
-
             return value
+
+        @model_validator(mode="after")
+        def check_name_fields(self) -> "Route":
+            if not self.short_name and not self.long_name:
+                raise ValueError("At least one of 'short_name' or 'long_name' must be provided.")
+            return self
 
     def __init__(self, context: ETLContext, file: Path):
         super().__init__(context, LoadRoutesTask.Route, file)

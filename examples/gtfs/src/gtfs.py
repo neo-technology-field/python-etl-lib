@@ -9,14 +9,14 @@ from etl_lib.cli.run_tools import cli
 from etl_lib.core.ETLContext import ETLContext
 from etl_lib.core.Task import TaskGroup
 from etl_lib.core.utils import setup_logging
-from examples.gtfs.src.tasks.CreateSequenceTask import CreateSequenceTask
-from examples.gtfs.src.tasks.LoadAgenciesTask import LoadAgenciesTask
-from examples.gtfs.src.tasks.LoadCalendarTask import LoadCalendarTask
-from examples.gtfs.src.tasks.LoadRoutesTask import LoadRoutesTask
-from examples.gtfs.src.tasks.LoadStopTimesTask import LoadStopTimesTask
-from examples.gtfs.src.tasks.LoadStopsTask import LoadStopsTask
-from examples.gtfs.src.tasks import LoadTripsTask
-from examples.gtfs.src.tasks.SchemaTask import SchemaTask
+from tasks.CreateSequenceTask import CreateSequenceTask
+from tasks.LoadAgenciesTask import LoadAgenciesTask
+from tasks.LoadCalendarTask import LoadCalendarTask
+from tasks.LoadRoutesTask import LoadRoutesTask
+from tasks.LoadStopTimesTask import LoadStopTimesTask
+from tasks.LoadStopsTask import LoadStopsTask
+from tasks.LoadTripsTask import LoadTripsTask
+from tasks.SchemaTask import SchemaTask
 
 # Load environment variables from .env file
 load_dotenv()

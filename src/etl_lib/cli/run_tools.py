@@ -55,7 +55,7 @@ def __driver(ctx):
     database_name = ctx.obj["database_name"]
     neo4j_password = ctx.obj["neo4j_password"]
     return GraphDatabase.driver(neo4j_uri, auth=(neo4j_user, neo4j_password), database=database_name,
-                                notifications_min_severity="OFF", user_agent="ETL CLI 0.1")
+                                notifications_min_severity="OFF", user_agent="ETL CLI")
 
 
 @click.group()
@@ -165,25 +165,57 @@ def detail(ctx, run_id, details):
             __print_details(driver, run_id)
 
 
+# noinspection PyTypeChecker
 @cli.command()
-@click.option('--run-id', required=False, help='Run ID to delete')
-@click.option('--since', help='Delete runs since a specific date')
-@click.option('--older', help='Delete runs older than a specific date')
+@click.option('--run-id', required=False, type=str, help='Run IDs to delete, works with comma separated list')
+@click.option('--before', type=click.DateTime(formats=["%Y-%m-%d"]), help='Delete runs before a specific date in format YYYY-MM-DD')
+@click.option('--older', help='Delete runs older than x days', type=int)
 @click.pass_context
-def delete(ctx, run_id, since, older):
+def delete(ctx, run_id, before, older):
     """
-    Delete runs based on run ID, date, or age. One and only one of --run-id, --since, or --older must be provided.
+    Delete runs based on run ID, date, or age. One and only one of --run-id, --before, or --older must be provided.
     """
     # Ensure mutual exclusivity
-    options = [run_id, since, older]
+    options = [run_id, before, older]
     if sum(bool(opt) for opt in options) != 1:
-        print("You must specify exactly one of --run-id, --since, or --older.")
+        print("You must specify exactly one of --run-id, --before, or --older.")
         return
 
     if run_id:
-        print(f"Deleting run ID: {run_id}")
-    elif since:
-        print(f"Deleting runs since: {since}")
+        ids = run_id.split(',')
+        delete_runs(ctx, ids)
+    elif before:
+        print(f"Deleting runs before: {before}")
+        with __driver(ctx) as driver:
+            record= driver.execute_query(
+                """MATCH (r:ETLRun) WHERE date(r.startTime) < date($before) 
+                RETURN collect(r.uuid) AS ids
+                """,
+                result_transformer_=neo4j.Result.single,
+                before=before)
+            ids = record[0]
+            delete_runs(ctx, ids)
+
     elif older:
         print(f"Deleting runs older than: {older}")
-    # Implement delete logic here
+        with __driver(ctx) as driver:
+            record = driver.execute_query(
+                """MATCH (r:ETLRun) WHERE date(r.startTime) < (date() - duration({days: $days})) 
+                RETURN collect(r.uuid) AS ids
+                """,
+                result_transformer_=neo4j.Result.single,
+                days=older)
+            ids = record[0]
+            delete_runs(ctx, ids)
+
+
+def delete_runs(ctx, ids):
+    print(f"Deleting run IDs: {ids}")
+    with __driver(ctx) as driver:
+        records, _, _ = driver.execute_query(
+            """
+            MATCH (r:ETLRun)-[*]->(n) WHERE r.uuid IN $ids
+            DETACH DELETE n
+            DETACH DELETE r
+            """, ids=ids, routing_=neo4j.RoutingControl.WRITE)
+    print(f"Deleted run IDs: {ids}  successfully")

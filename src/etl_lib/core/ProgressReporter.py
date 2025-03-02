@@ -3,7 +3,7 @@ from datetime import datetime
 
 from tabulate import tabulate
 
-from etl_lib.core.Task import Task, TaskGroup
+from etl_lib.core.Task import Task, TaskGroup, TaskReturn
 
 
 class ProgressReporter:
@@ -47,7 +47,7 @@ class ProgressReporter:
         self.logger.info(f"{'\t' * task.depth}starting {task.task_name()}")
         return task
 
-    def finished_task(self, task: Task, success: bool, summery: dict, error: str = None) -> Task:
+    def finished_task(self, task: Task, result: TaskReturn) -> Task:
         """
         Marks the task as finished.
 
@@ -55,23 +55,21 @@ class ProgressReporter:
 
         Args:
             task: Task to be marked as finished.
-            success: True if the task has successfully finished.
-            summery: statistics for this task (such as `nodes_created`)
-            error: If an exception occurred, the exception text should be provided here.
+            result: result of the task execution, such as status and summery information.
 
         Returns:
             Task to be marked as started.
         """
         task.end_time = datetime.now()
-        task.success = success
-        task.summery = summery
+        task.success = result.success
+        task.summery = result.summery
 
-        report = f"{'\t' * task.depth} finished {task.task_name()} in {task.end_time - task.start_time} with success: {success}"
-        if error is not None:
-            report += f", error: \n{error}"
+        report = f"{'\t' * task.depth} finished {task.task_name()} in {task.end_time - task.start_time} with success: {result.success}"
+        if result.error is not None:
+            report += f", error: \n{result.error}"
         else:
             # for the logger, remove entries with 0, but keep them in the original for reporting
-            cleaned_summery = {key: value for key, value in summery.items() if value != 0}
+            cleaned_summery = {key: value for key, value in result.summery.items() if value != 0}
             if len(cleaned_summery) > 0:
                 report += f"\n{tabulate([cleaned_summery], headers='keys', tablefmt='psql')}"
         self.logger.info(report)
@@ -168,9 +166,9 @@ class Neo4jProgressReporter(ProgressReporter):
                         start_time=task.start_time)
         return task
 
-    def finished_task(self, task: Task, success: bool, summery: dict, error: str = None) -> Task:
-        super().finished_task(task=task, success=success, summery=summery, error=error)
-        if success:
+    def finished_task(self, task: Task,  result: TaskReturn) -> Task:
+        super().finished_task(task=task, result=result)
+        if result.success:
             status = "success"
         else:
             status = "failure"
@@ -179,7 +177,7 @@ class Neo4jProgressReporter(ProgressReporter):
             MATCH (t:ETLTask {uuid:$id}) SET t.endTime = $end_time, t.status = $status, t.error = $error
             CREATE (s:ETLStats) SET s=$summery
             CREATE (t)-[:HAS_STATS]->(s)
-            """, id=task.uuid, end_time=task.end_time, summery=summery, status=status, error=error)
+            """, id=task.uuid, end_time=task.end_time, summery=result.summery, status=status, error=result.error)
         return task
 
     def __create_constraints(self):

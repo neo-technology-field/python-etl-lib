@@ -46,7 +46,8 @@ class TaskReturn:
 
         # Combine success values and errors
         combined_success = self.success and other.success
-        combined_error = f"{self.error or ''} | {other.error or ''}".strip(" |")
+        combined_error = None if not (self.error or other.error) \
+            else f"{self.error or ''} | {other.error or ''}".strip(" |")
 
         return TaskReturn(
             success=combined_success, summery=merged_summery, error=combined_error
@@ -99,12 +100,7 @@ class Task:
         except Exception as e:
             result = TaskReturn(success=False, summery={}, error=str(e))
 
-        self.context.reporter.finished_task(
-            task=self,
-            success=result.success,
-            summery=result.summery,
-            error=result.error,
-        )
+        self.context.reporter.finished_task(task=self,result=result)
 
         return result
 

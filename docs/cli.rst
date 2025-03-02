@@ -144,7 +144,7 @@ Delete
       --since, or --older must be provided.
 
     Options:
-      --run-id TEXT  Run ID to delete
-      --since TEXT   Delete runs since a specific date
-      --older TEXT   Delete runs older than a specific date
-      --help         Show this message and exit.
+      --run-id TEXT        Run IDs to delete, works with comma separated list
+      --before [%Y-%m-%d]  Delete runs before a specific date in format YYYY-MM-DD
+      --older INTEGER      Delete runs older than x days
+      --help               Show this message and exit.

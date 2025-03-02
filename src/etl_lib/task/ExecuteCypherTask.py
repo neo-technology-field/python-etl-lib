@@ -24,10 +24,10 @@ class ExecuteCypherTask(Task):
                 for query in self._query():
                     result = self.context.neo4j.query_database(session=session, query=query, **kwargs)
                     stats = merge_summery(stats, result.summery)
-                return TaskReturn(True, stats)
+                return TaskReturn(success=True, summery=stats)
             else:
                 result = self.context.neo4j.query_database(session=session, query=self._query(), **kwargs)
-                return TaskReturn(True, result.summery)
+                return TaskReturn(success=True, summery=result.summery)
 
     @abc.abstractmethod
     def _query(self) -> str | list[str]:

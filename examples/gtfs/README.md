@@ -1,9 +1,9 @@
 # Example pipeline to load a GTFS feed
 
-This directory contains an example pipeline to load https://gtfs.org/documentation/schedule/reference/[GTFS] feed data into Neo4j. The data model is re-used from the https://faboo.org/2021/01/loading-uk-gtfs/[Loading the UK GTFS data feed]
+This directory contains an example pipeline to load https://gtfs.org/documentation/schedule/reference/ [GTFS]feed data into Neo4j. The data model is re-used from the https://faboo.org/2021/01/loading-uk-gtfs/[Loading the UK GTFS data feed]
 blog post, rewriting the `LOAD CSV` used there to build a pipeline as a showcase.
 
-To run it, a GTFS feed needs to be placed into a directory.
+To run it, a GTFS feed needs to be placed into a directory. See https://gtfs.de/en/feeds/ for downloads.
 
 The `gtfs.py` is mostly about setting up a cli and loading/reading arguments and env variables.
 

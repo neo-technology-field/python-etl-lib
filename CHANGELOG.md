@@ -12,3 +12,5 @@
 
 ## [0.1.1]
 - added optional transformer to CypherBatchSource
+- the cli now actually does delete runs
+
