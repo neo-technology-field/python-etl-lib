@@ -5,9 +5,10 @@ from pathlib import Path
 import pytest
 from dotenv import load_dotenv
 from neo4j import GraphDatabase, WRITE_ACCESS
+from testcontainers.postgres import PostgresContainer
 
 from etl_lib.core.ETLContext import ETLContext
-from etl_lib.test_utils.utils import get_database_name, TestETLContext
+from etl_lib.test_utils.utils import get_database_name, TestETLContext, TestSQLETLContext
 
 test_env = Path(__file__).parent / "../../.env"
 load_dotenv(test_env)
@@ -64,3 +65,18 @@ def neo4j_driver_with_empty_db(neo4j_driver):
 @pytest.fixture
 def etl_context(neo4j_driver_with_empty_db, tmp_path) -> ETLContext:
     return TestETLContext(neo4j_driver_with_empty_db, tmp_path)
+
+
+
+@pytest.fixture(scope="session")
+def postgres_container():
+    """Starts a PostgreSQL TestContainer and provides a connection URL."""
+    with PostgresContainer("postgres:15") as postgres:
+        yield postgres
+
+
+@pytest.fixture(scope="session")
+def sql_context(postgres_container):
+    """Creates an ETLContext with an initialized SQLContext."""
+    return TestSQLETLContext(postgres_container.get_connection_url())
+

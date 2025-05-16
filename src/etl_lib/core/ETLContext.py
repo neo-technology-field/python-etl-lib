@@ -1,8 +1,25 @@
 import logging
 from typing import NamedTuple, Any
 
-from graphdatascience import GraphDataScience
+try:
+    from graphdatascience import GraphDataScience
+    gds_available = False
+except ImportError:
+    gds_available = False
+    logging.info("Graph Data Science not installed, skipping")
+    GraphDataScience = None
+
 from neo4j import GraphDatabase, WRITE_ACCESS, SummaryCounters
+
+try:
+    from sqlalchemy import create_engine
+    from sqlalchemy.engine import Engine
+    sqlalchemy_available = True
+except ImportError:
+    sqlalchemy_available = False
+    logging.info("SQL Alchemy not installed, skipping")
+    create_engine = None  # this and next line needed to prevent PyCharm warning
+    Engine = None
 
 from etl_lib.core.ProgressReporter import get_reporter
 
@@ -99,28 +116,38 @@ class Neo4jContext:
         else:
             return self.driver.session(database=database, default_access_mode=WRITE_ACCESS)
 
-    def gds(self, database=None) -> GraphDataScience:
-        """
-        Creates a new GraphDataScience client.
-
-        Args:
-            database: Name of the database to use for this dgs client.
-                If not provided, the database name provided during construction will be used.
-
-        Returns:
-            gds client.
-        """
-        if database is None:
-            return GraphDataScience.from_neo4j_driver(driver=self.driver, database=self.database)
-        else:
-            return GraphDataScience.from_neo4j_driver(driver=self.driver, database=database)
-
     def __neo4j_connect(self):
         self.driver = GraphDatabase.driver(uri=self.uri, auth=self.auth,
                                            notifications_min_severity="OFF")
         self.driver.verify_connectivity()
         self.logger.info(
             f"driver connected to instance at {self.uri} with username {self.auth[0]} and database {self.database}")
+
+def gds(neo4j_context) -> GraphDataScience:
+    """
+    Creates a new GraphDataScience client.
+
+    Args:
+        neo4j_context: Neo4j context containing driver and database name.
+
+    Returns:
+        gds client.
+    """
+    return GraphDataScience.from_neo4j_driver(driver=neo4j_context.driver, database=neo4j_context.database)
+
+
+if sqlalchemy_available:
+    class SQLContext:
+        def __init__(self, database_url: str, pool_size: int = 10, max_overflow: int = 20):
+            """
+            Initializes the SQL context with an SQLAlchemy engine.
+
+            Args:
+                database_url (str): SQLAlchemy connection URL.
+                pool_size (int): Number of connections to maintain in the pool.
+                max_overflow (int): Additional connections allowed beyond pool_size.
+            """
+            self.engine: Engine = create_engine(database_url, pool_size=pool_size, max_overflow=max_overflow)
 
 
 class ETLContext:
@@ -145,6 +172,11 @@ class ETLContext:
         self.neo4j = Neo4jContext(env_vars)
         self.__env_vars = env_vars
         self.reporter = get_reporter(self)
+        sql_uri = self.env("SQLALCHEMY_URI")
+        if sql_uri is not None and sqlalchemy_available:
+            self.sql = SQLContext(sql_uri)
+        if gds_available:
+            self.gds =gds(self.neo4j)
 
     def env(self, key: str) -> Any:
         """
@@ -154,7 +186,7 @@ class ETLContext:
             key: name of the entry to read.
 
         Returns:
-            va  lue of the entry, or None if the key is not in the dict.
+            value of the entry, or None if the key is not in the dict.
         """
         if key in self.__env_vars:
             return self.__env_vars[key]

@@ -6,7 +6,7 @@ from etl_lib.test_utils.utils import check_property_exists
 def test_GDSTask(etl_context):
 
     def gds_fun(etl_context):
-        with etl_context.neo4j.gds() as gds:
+        with etl_context.neo4j.gds as gds:
             gds.graph.drop("neo4j-offices", failIfMissing=False)
             g_office, project_result = gds.graph.project("neo4j-offices", "City", "FLY_TO")
             mutate_result = gds.pageRank.write(g_office, tolerance=0.5, writeProperty="rank")

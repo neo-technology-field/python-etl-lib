@@ -69,3 +69,5 @@ Splitting a task into sub-steps also simplifies testing, as each step (``BatchPr
 A dictionary containing batch metadata is passed between steps via ``BatchResults``. The keys in this dictionary depend on the processors involved. For instance, the ``csv`` processor used above would add a ``csv_lines_read`` entry, while the ``validator`` would add ``valid_rows`` and ``invalid_rows`` entries.
 
 The :class:`~etl_lib.core.ClosedLoopBatchProcessor.ClosedLoopBatchProcessor`, at the end of the chain, aggregates this information and sends it to the reporter. If database reporting is enabled, each processed batch will trigger an update, allowing real-time monitoring.
+
+The classes :class:`~etl_lib.task.data_loading.SQLLoad2Neo4jTask.SQLLoad2Neo4jTask` and :class:`~etl_lib.task.data_loading.CSVLoad2Neo4jTask.CSVLoad2Neo4jTask` use ``BatchProcessors`` to stream data from either an SQL database or a CSV file respectively, allowing for implementation of ETL pipelines with minimal effort.

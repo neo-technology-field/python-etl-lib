@@ -64,7 +64,7 @@ class ProgressReporter:
         task.success = result.success
         task.summery = result.summery
 
-        report = f"{'\t' * task.depth} finished {task.task_name()} in {task.end_time - task.start_time} with success: {result.success}"
+        report = f"finished {task.task_name()} in {task.end_time - task.start_time} with status: {'success' if result.success else 'failed'}"
         if result.error is not None:
             report += f", error: \n{result.error}"
         else:
@@ -85,7 +85,7 @@ class ProgressReporter:
             task: Task reporting updates.
             batches: Number of batches processed so far.
             expected_batches: Number of expected batches. Can be `None` if the overall number of
-                batches is not know before execution.
+                batches is not known before execution.
             stats: dict of statistics so far (such as `nodes_created`).
         """
         pass

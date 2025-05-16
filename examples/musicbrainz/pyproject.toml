@@ -1,0 +1,8 @@
+[project]
+name = "etl_lib-example-musicbrainz"
+version = "1.0"
+
+dependencies = [
+    "neo4j_etl_lib >= 0.0.3",
+    "sqlalchemy"
+]

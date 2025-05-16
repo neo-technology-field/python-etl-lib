@@ -4,8 +4,8 @@ from etl_lib.core.Task import Task, TaskReturn
 class CreateReportingConstraintsTask(Task):
     """Creates the constraint in the REPORTER_DATABASE database."""
 
-    def __init__(self, config):
-        super().__init__(config)
+    def __init__(self, context):
+        super().__init__(context)
 
     def run_internal(self, **kwargs) -> TaskReturn:
         database = self.context.env("REPORTER_DATABASE")

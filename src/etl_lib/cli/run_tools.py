@@ -67,7 +67,7 @@ def __driver(ctx):
 @click.pass_context
 def cli(ctx, neo4j_uri, neo4j_user, neo4j_password, log_file, database_name):
     """
-        Command-line tool to process files in INPUT_DIRECTORY.
+        Command-line tool for ETL pipelines.
 
         Environment variables can be configured via a .env file or overridden via CLI options:
 

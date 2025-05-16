@@ -8,3 +8,4 @@
 /docs/_build/
 /docs/_autosummary/
 /docs/source/*
+/examples/musicbrainz/venv/

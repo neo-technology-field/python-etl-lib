@@ -7,7 +7,7 @@ from _pytest.tmpdir import tmp_path
 from neo4j import Driver
 from neo4j.time import Date
 
-from etl_lib.core.ETLContext import QueryResult, Neo4jContext, ETLContext
+from etl_lib.core.ETLContext import QueryResult, Neo4jContext, ETLContext, SQLContext, gds
 from etl_lib.core.Task import Task
 
 
@@ -102,6 +102,7 @@ class TestNeo4jContext(Neo4jContext):
         self.logger = logging.getLogger(self.__class__.__name__)
         self.driver = driver
         self.database = get_database_name()
+        self.gds = gds(self)
 
 
 class TestETLContext(ETLContext):
@@ -116,6 +117,16 @@ class TestETLContext(ETLContext):
         if key in self.__env_vars:
             return self.__env_vars[key]
 
+class TestSQLETLContext(ETLContext):
+
+    def __init__(self, sql_uri):
+        self.logger = logging.getLogger(self.__class__.__name__)
+        self.reporter = DummyReporter()
+        self.sql = SQLContext(sql_uri)
+
+    def env(self, key: str) -> Any:
+        if key in self.__env_vars:
+            return self.__env_vars[key]
 
 class DummyReporter:
 
@@ -151,3 +162,10 @@ class DummyContext:
 
     def env(self, key: str) -> Any:
         pass
+
+class DummyPredecessor:
+    def __init__(self, batches):
+        self.batches = batches
+
+    def get_batch(self, batch_size):
+        yield from self.batches

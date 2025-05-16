@@ -14,19 +14,55 @@ from etl_lib.data_source.CSVBatchSource import CSVBatchSource
 
 
 class CSVLoad2Neo4jTask(Task):
-    """
+    '''
     Loads the specified CSV file to Neo4j.
 
     Uses BatchProcessors to read, validate and write to Neo4j.
     The validation step is using pydantic, hence a Pydantic model needs to be provided.
-    Rows that fail the validation, will be written to en error file. The location of the error file is determined as
+    Rows with fail validation will be written to en error file. The location of the error file is determined as
     follows:
 
-    If the context env vars hold an entry `ETL_ERROR_PATH` the file will be place there, with the name set to name
+    If the context env vars hold an entry `ETL_ERROR_PATH` the file will be placed there, with the name set to name
     of the provided filename appended with `.error.json`
 
-    If  `ETL_ERROR_PATH` is not set, the file will be placed in the same directory as the CSV file.
-    """
+    If `ETL_ERROR_PATH` is not set, the file will be placed in the same directory as the CSV file.
+
+    Example usage: (from the gtfs demo)
+
+    .. code-block:: python
+
+        class LoadStopsTask(CSVLoad2Neo4jTask):
+            class Stop(BaseModel):
+                id: str = Field(alias="stop_id")
+                name: str = Field(alias="stop_name")
+                latitude: float = Field(alias="stop_lat")
+                longitude: float = Field(alias="stop_lon")
+                platform_code: Optional[str] = None
+                parent_station: Optional[str] = None
+                type: Optional[str] = Field(alias="location_type", default=None)
+                timezone: Optional[str] = Field(alias="stop_timezone", default=None)
+                code: Optional[str] = Field(alias="stop_code", default=None)
+
+            def __init__(self, context: ETLContext, file: Path):
+                super().__init__(context, LoadStopsTask.Stop, file)
+
+            def task_name(self) -> str:
+                return f"{self.__class__.__name__}('{self.file}')"
+
+            def _query(self):
+                return """
+                       UNWIND $batch AS row
+                       MERGE (s:Stop {id: row.id})
+                         SET s.name = row.name,
+                             s.location= point({latitude: row.latitude, longitude: row.longitude}),
+                             s.platformCode= row.platform_code,
+                             s.parentStation= row.parent_station,
+                             s.type= row.type,
+                             s.timezone= row.timezone,
+                             s.code= row.code
+                      """
+
+    '''
     def __init__(self, context: ETLContext, model: Type[BaseModel], file: Path, batch_size: int = 5000):
         super().__init__(context)
         self.batch_size = batch_size
