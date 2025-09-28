@@ -1,5 +1,10 @@
-from typing import Generator, Callable, Optional
+import time
+from typing import Generator, Callable, Optional, List, Dict
+
+from psycopg2 import OperationalError as PsycopgOperationalError
 from sqlalchemy import text
+from sqlalchemy.exc import OperationalError as SAOperationalError, DBAPIError
+
 from etl_lib.core.BatchProcessor import BatchResults, BatchProcessor
 from etl_lib.core.ETLContext import ETLContext
 from etl_lib.core.Task import Task
@@ -25,36 +30,85 @@ class SQLBatchSource(BatchProcessor):
             kwargs: Arguments passed as parameters with the query.
         """
         super().__init__(context, task)
-        self.query = query
+        self.query = query.strip().rstrip(";")
         self.record_transformer = record_transformer
-        self.kwargs = kwargs  # Query parameters
+        self.kwargs = kwargs
 
-    def __read_records(self, conn, batch_size: int):
-        batch_ = []
-        result = conn.execute(text(self.query), self.kwargs)  # Safe execution with bound parameters
+    def _fetch_page(self, limit: int, offset: int) -> Optional[List[Dict]]:
+        """
+        Fetch a single batch of rows using LIMIT/OFFSET, with retry/backoff.
 
-        for row in result.mappings():  # Returns row as dict (like Neo4j's `record.data()`)
-            data = dict(row)  # Convert to dictionary
-            if self.record_transformer:
-                data = self.record_transformer(data)
-            batch_.append(data)
+        Each page is executed in its own transaction. On transient
+        disconnects or DB errors, it retries up to 3 times with exponential backoff.
 
-            if len(batch_) == batch_size:
-                yield batch_
-                batch_ = []  # Reset batch
+        Args:
+            limit: maximum number of rows to return.
+            offset: number of rows to skip before starting this page.
 
-        if batch_:
-            yield batch_
+        Returns:
+            A list of row dicts (after applying record_transformer, if any),
+            or None if no rows are returned.
+
+        Raises:
+            Exception: re-raises the last caught error on final failure.
+        """
+        paged_sql = f"{self.query} LIMIT :limit OFFSET :offset"
+        params = {**self.kwargs, "limit": limit, "offset": offset}
+        max_retries = 5
+        backoff = 2.0
+
+        for attempt in range(1, max_retries + 1):
+            try:
+                with self.context.sql.engine.connect() as conn:
+                    with conn.begin():
+                        rows = conn.execute(text(paged_sql), params).mappings().all()
+                result = [
+                    self.record_transformer(dict(r)) if self.record_transformer else dict(r)
+                    for r in rows
+                ]
+                return result if result else None
+
+            except (PsycopgOperationalError, SAOperationalError, DBAPIError) as err:
+
+                if attempt == max_retries:
+                    self.logger.error(
+                        f"Page fetch failed after {max_retries} attempts "
+                        f"(limit={limit}, offset={offset}): {err}"
+                    )
+                    raise
+
+                self.logger.warning(
+                    f"Transient DB error on page fetch {attempt}/{max_retries}: {err!r}, "
+                    f"retrying in {backoff:.1f}s"
+                )
+                time.sleep(backoff)
+                backoff *= 2
+
+        return None
 
     def get_batch(self, max_batch_size: int) -> Generator[BatchResults, None, None]:
         """
-        Fetches data in batches using an open transaction, similar to Neo4j's approach.
+        Yield successive batches until the query is exhausted.
+
+        Calls _fetch_page() repeatedly, advancing the offset by the
+        number of rows returned. Stops when no more rows are returned.
+
+        Args:
+            max_batch_size: upper limit on rows per batch.
+
+        Yields:
+            BatchResults for each non-empty page.
         """
-        with self.context.sql.engine.connect() as conn:  # Keep transaction open
-            with conn.begin():  # Ensures rollback on failure
-                for chunk in self.__read_records(conn, max_batch_size):
-                    yield BatchResults(
-                        chunk=chunk,
-                        statistics={"sql_rows_read": len(chunk)},
-                        batch_size=len(chunk)
-                    )
+        offset = 0
+        while True:
+            chunk = self._fetch_page(max_batch_size, offset)
+            if not chunk:
+                break
+
+            yield BatchResults(
+                chunk=chunk,
+                statistics={"sql_rows_read": len(chunk)},
+                batch_size=len(chunk),
+            )
+
+            offset += len(chunk)

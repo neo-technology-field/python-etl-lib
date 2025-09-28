@@ -7,7 +7,7 @@ from datetime import datetime
 
 class TaskReturn:
     """
-    Return object for the :py:func:`~Task.execute` function, transporting result information.
+    Return object for the :func:`~Task.execute` function, transporting result information.
     """
 
     success: bool
@@ -59,7 +59,7 @@ class Task:
     ETL job that can be executed.
 
     Provides reporting, time tracking and error handling.
-    Implementations must provide the :py:func:`~run_internal` function.
+    Implementations must provide the :func:`~run_internal` function.
     """
 
     def __init__(self, context):
@@ -67,16 +67,17 @@ class Task:
         Construct a Task object.
 
         Args:
-            context: :py:class:`etl_lib.core.ETLContext.ETLContext` instance. Will be available to subclasses.
+            context: :class:`~etl_lib.core.ETLContext.ETLContext` instance. Will be available to subclasses.
         """
         self.context = context
-        self.logger = logging.getLogger(self.__class__.__name__)
+        """:class:`~etl_lib.core.ETLContext.ETLContext` giving access to various resources."""
+        self.logger = logging.getLogger(f"{self.__class__.__module__}.{self.__class__.__name__}")
         self.uuid = str(uuid.uuid4())
         """Uniquely identifies a Task."""
         self.start_time: datetime
-        """Time when the :py:func:`~execute` was called., `None` before."""
+        """Time when the :func:`~execute` was called., `None` before."""
         self.end_time: datetime
-        """Time when the :py:func:`~execute` has finished., `None` before."""
+        """Time when the :func:`~execute` has finished., `None` before."""
         self.success: bool
         """True if the task has finished successful. False otherwise, `None` before the task has finished."""
         self.depth: int = 0
@@ -87,8 +88,9 @@ class Task:
         Executes the task.
 
         Implementations of this Interface should not overwrite this method, but provide the
-        Task functionality inside :py:func:`~run_internal` which will be called from here.
-        Will use the :py:class:`ProgressReporter` from the :py:attr:`~context` to report status updates.
+        Task functionality inside :func:`~run_internal` which will be called from here.
+        Will use the :class:`~etl_lib.core.ProgressReporter.ProgressReporter` from
+        :attr:`~etl_lib.core.Task.Task.context` to report status updates.
 
         Args:
             kwargs: will be passed to `run_internal`

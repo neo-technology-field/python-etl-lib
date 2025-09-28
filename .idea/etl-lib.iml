@@ -12,6 +12,13 @@
       <excludeFolder url="file://$MODULE_DIR$/venv" />
       <excludeFolder url="file://$MODULE_DIR$/docs/_autosummary" />
       <excludeFolder url="file://$MODULE_DIR$/docs/_build" />
+      <excludeFolder url="file://$MODULE_DIR$/docker" />
+      <excludeFolder url="file://$MODULE_DIR$/examples/musicbrainz/venv" />
+      <excludeFolder url="file://$MODULE_DIR$/examples/nyc-taxi/.venv/bin" />
+      <excludeFolder url="file://$MODULE_DIR$/examples/nyc-taxi/.venv/include" />
+      <excludeFolder url="file://$MODULE_DIR$/examples/nyc-taxi/.venv/lib" />
+      <excludeFolder url="file://$MODULE_DIR$/examples/nyc-taxi/venv/bin" />
+      <excludeFolder url="file://$MODULE_DIR$/examples/nyc-taxi/venv/lib" />
     </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />

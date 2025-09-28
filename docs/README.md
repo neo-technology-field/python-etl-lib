@@ -7,10 +7,9 @@ This is based on https://github.com/JamesALeedham/Sphinx-Autosummary-Recursion T
 
    `make html`
 
-## Run a web server:
+NOTE: to debug rst errors, run `sphinx-build -b html . _build/html -n -T -v -E --keep-going`
 
-   `python -m http.server`
+## Run live http review:
 
-## View the doc set locally in a browser at:
+   `make livehtml`
 
-   http://localhost:8000/_build/html/

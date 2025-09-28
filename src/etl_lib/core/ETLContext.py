@@ -1,19 +1,23 @@
 import logging
-from typing import NamedTuple, Any
+from typing import Any, Dict, List, NamedTuple
+
+from neo4j.exceptions import Neo4jError
 
 try:
     from graphdatascience import GraphDataScience
+
     gds_available = False
 except ImportError:
     gds_available = False
     logging.info("Graph Data Science not installed, skipping")
     GraphDataScience = None
 
-from neo4j import GraphDatabase, WRITE_ACCESS, SummaryCounters
+from neo4j import GraphDatabase, Session, WRITE_ACCESS, SummaryCounters
 
 try:
     from sqlalchemy import create_engine
     from sqlalchemy.engine import Engine
+
     sqlalchemy_available = True
 except ImportError:
     sqlalchemy_available = False
@@ -26,14 +30,29 @@ from etl_lib.core.ProgressReporter import get_reporter
 
 class QueryResult(NamedTuple):
     """Result of a query against the neo4j database."""
-    data: []
+    data: List[Any]
     """Data as returned from the query."""
-    summery: {}
+    summery: Dict[str, int]
     """Counters as reported by neo4j. Contains entries such as `nodes_created`, `nodes_deleted`, etc."""
 
 
 def append_results(r1: QueryResult, r2: QueryResult) -> QueryResult:
-    return QueryResult(r1.data + r2.data, r1.summery + r2.summery)
+    """
+    Appends two QueryResult objects, summing the values for duplicate keys in the summary.
+
+    Args:
+        r1: The first QueryResult object.
+        r2: The second QueryResult object to append.
+
+    Returns:
+        A new QueryResult object with combined data and summed summary counts.
+    """
+    combined_summery = r1.summery.copy()
+
+    for key, value in r2.summery.items():
+        combined_summery[key] = combined_summery.get(key, 0) + value
+
+    return QueryResult(r1.data + r2.data, combined_summery)
 
 
 class Neo4jContext:
@@ -51,37 +70,38 @@ class Neo4jContext:
         - `NEO4J_PASSWORD`.
         - `NEO4J_DATABASE`,
         """
-        self.logger = logging.getLogger(self.__class__.__name__)
+        self.logger = logging.getLogger(f"{self.__class__.__module__}.{self.__class__.__name__}")
         self.uri = env_vars["NEO4J_URI"]
         self.auth = (env_vars["NEO4J_USERNAME"],
                      env_vars["NEO4J_PASSWORD"])
         self.database = env_vars["NEO4J_DATABASE"]
         self.__neo4j_connect()
 
-    def query_database(self, session, query, **kwargs) -> QueryResult:
+    def query_database(self, session: Session, query, **kwargs) -> QueryResult:
         """
-        Executes a Cypher query on the Neo4j database.
-
-        Args:
-            session: Neo4j database session.
-            query: Cypher query either as a single query or as a list.
+        Executes Cypher and returns (records, counters) with retryable write semantics.
+        Accepts either a single query string or a list of queries.
+        Does not work with CALL {} IN TRANSACTION queries.
         """
         if isinstance(query, list):
-            results = []
-            for single_query in query:
-                result = self.query_database(session, single_query, **kwargs)
-                results = append_results(results, result)
+            results = None
+            for single in query:
+                part = self.query_database(session, single, **kwargs)
+                results = append_results(results, part) if results is not None else part
             return results
-        else:
-            try:
-                res = session.run(query, **kwargs)
-                counters = res.consume().counters
 
-                return QueryResult(res, self.__counters_2_dict(counters))
+        def _tx(tx, q, params):
+            res = tx.run(q, **params)
+            records = list(res)
+            counters = res.consume().counters
+            return records, counters
 
-            except Exception as e:
-                self.logger.error(e)
-                raise e
+        try:
+            records, counters = session.execute_write(_tx, query, kwargs)
+            return QueryResult(records, self.__counters_2_dict(counters))
+        except Neo4jError as e:
+            self.logger.error(e)
+            raise
 
     @staticmethod
     def __counters_2_dict(counters: SummaryCounters):
@@ -123,6 +143,7 @@ class Neo4jContext:
         self.logger.info(
             f"driver connected to instance at {self.uri} with username {self.auth[0]} and database {self.database}")
 
+
 def gds(neo4j_context) -> GraphDataScience:
     """
     Creates a new GraphDataScience client.
@@ -147,14 +168,26 @@ if sqlalchemy_available:
                 pool_size (int): Number of connections to maintain in the pool.
                 max_overflow (int): Additional connections allowed beyond pool_size.
             """
-            self.engine: Engine = create_engine(database_url, pool_size=pool_size, max_overflow=max_overflow)
+            self.engine: Engine = create_engine(
+                database_url,
+                pool_pre_ping=True,
+                pool_size=pool_size,
+                max_overflow=max_overflow,
+                pool_recycle=1800,  # recycle connections older than 30m
+                connect_args={
+                    # turn on TCP keepalives on the client socket:
+                    "keepalives": 1,
+                    "keepalives_idle": 60,  # after 60s of idle
+                    "keepalives_interval": 10,  # probe every 10s
+                    "keepalives_count": 5,  # give up after 5 failed probes
+                })
 
 
 class ETLContext:
     """
     General context information.
 
-    Will be passed to all :py:class:`etl_lib.core.Task` to provide access to environment variables and functionally
+    Will be passed to all :class:`~etl_lib.core.Task.Task` to provide access to environment variables and functionally
     deemed general enough that all parts of the ETL pipeline would need it.
     """
 
@@ -163,12 +196,12 @@ class ETLContext:
         Create a new ETLContext.
 
         Args:
-            env_vars: Environment variables. Stored internally and can be accessed via :py:func:`~env` .
+            env_vars: Environment variables. Stored internally and can be accessed via :func:`~env` .
 
-        The context created will contain an :py:class:`~Neo4jContext` and a :py:class:`ProgressReporter`.
+        The context created will contain an :class:`~Neo4jContext` and a :class:`~etl_lib.core.ProgressReporter.ProgressReporter`.
         See there for keys used from the provided `env_vars` dict.
         """
-        self.logger = logging.getLogger(self.__class__.__name__)
+        self.logger = logging.getLogger(f"{self.__class__.__module__}.{self.__class__.__name__}")
         self.neo4j = Neo4jContext(env_vars)
         self.__env_vars = env_vars
         self.reporter = get_reporter(self)
@@ -176,7 +209,7 @@ class ETLContext:
         if sql_uri is not None and sqlalchemy_available:
             self.sql = SQLContext(sql_uri)
         if gds_available:
-            self.gds =gds(self.neo4j)
+            self.gds = gds(self.neo4j)
 
     def env(self, key: str) -> Any:
         """
@@ -190,3 +223,4 @@ class ETLContext:
         """
         if key in self.__env_vars:
             return self.__env_vars[key]
+        return None

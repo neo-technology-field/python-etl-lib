@@ -11,7 +11,7 @@ This is actually a series of steps, such as:
 
 Ideally, this would be done in batches of rows to allow processing of large files without excessive memory usage.
 
-Additionally, there would be a lot of duplicated code for each implementation of such a task.
+Splitting Tasks into steps allows to reuse steps in different tasks.
 
 To address this, tasks can be composed using :class:`~etl_lib.core.BatchProcessor.BatchProcessor`.
 

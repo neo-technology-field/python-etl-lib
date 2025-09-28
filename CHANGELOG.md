@@ -14,3 +14,5 @@
 - added optional transformer to CypherBatchSource
 - the cli now actually does delete runs
 
+## [0.2.0]
+- added support for SQL data sources

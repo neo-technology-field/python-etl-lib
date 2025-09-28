@@ -68,7 +68,7 @@ Each ETL run creates an independent subgraph. The following diagram illustrates 
 
 .. image:: _static/images/schema.png
 
-Green nodes represent :class:`~etl_lib.core.Task.Task`, while blue nodes represent :class:`~etl_lib.core.Task.TaskGroups`.
+Green nodes represent :class:`~etl_lib.core.Task.Task`, while blue nodes represent :class:`~etl_lib.core.Task.TaskGroup`.
 
 ``ETLStats`` nodes are created upon task completion and store summary information. For tasks with child tasks, the ``ETLStats`` node aggregates data from all children. To view the overall summary for a pipeline run, refer to the ``ETLStats`` node attached to the ``ETLRun`` node.
 

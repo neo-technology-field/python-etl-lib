@@ -1,0 +1,3 @@
+VendorID,tpep_pickup_datetime,tpep_dropoff_datetime,passenger_count,trip_distance,PULocationID,DOLocationID,total_amount
+1,2023-01-01 00:05:00,2023-01-01 00:15:00,1,2.5,138,239,12.5
+2,2023-01-01 01:20:00,2023-01-01 01:35:00,2,3.8,132,41,15.7

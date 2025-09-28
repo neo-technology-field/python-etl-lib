@@ -34,6 +34,8 @@ class ValidationBatchProcessor(BatchProcessor):
                 Each row in this file will contain the original data together with all validation errors for this row.
         """
         super().__init__(context, task, predecessor)
+        if model is not None and error_file is None:
+            raise ValueError('you must provide error file if the model is specified')
         self.error_file = error_file
         self.model = model
 

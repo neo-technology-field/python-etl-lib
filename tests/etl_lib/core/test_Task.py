@@ -61,7 +61,7 @@ def test_parallel_task_group(etl_context):
                 MERGE (prev:{label} {{id: id-1}})
                 CREATE (d:{label} {{id: id}})
                 CREATE (prev)-[:NEXT]->(d)
-            }} IN TRANSACTIONS OF 5000 ROWS
+            }}
             """
 
     class DummyTask1(ExecuteCypherTask):

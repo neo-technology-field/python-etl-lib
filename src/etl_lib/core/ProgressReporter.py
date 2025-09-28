@@ -4,6 +4,7 @@ from datetime import datetime
 from tabulate import tabulate
 
 from etl_lib.core.Task import Task, TaskGroup, TaskReturn
+from etl_lib.core.utils import add_sigint_handler
 
 
 class ProgressReporter:
@@ -18,7 +19,7 @@ class ProgressReporter:
 
     def __init__(self, context):
         self.context = context
-        self.logger = logging.getLogger(self.__class__.__name__)
+        self.logger = logging.getLogger(f"{self.__class__.__module__}.{self.__class__.__name__}")
 
     def register_tasks(self, main: Task):
         """
@@ -119,13 +120,16 @@ class Neo4jProgressReporter(ProgressReporter):
             database: Name of the database to write the status updates to.
         """
         super().__init__(context)
+        self.run_uuid = None
         self.database = database
         self.logger.info(f"progress reporting to database: {self.database}")
         self.__create_constraints()
+        self._register_shutdown_handler()
 
     def register_tasks(self, root: Task, **kwargs):
         super().register_tasks(root)
 
+        self.run_uuid = root.uuid
         with self.context.neo4j.session(self.database) as session:
             order = 0
             session.run(
@@ -166,7 +170,7 @@ class Neo4jProgressReporter(ProgressReporter):
                         start_time=task.start_time)
         return task
 
-    def finished_task(self, task: Task,  result: TaskReturn) -> Task:
+    def finished_task(self, task: Task, result: TaskReturn) -> Task:
         super().finished_task(task=task, result=result)
         if result.success:
             status = "success"
@@ -189,6 +193,21 @@ class Neo4jProgressReporter(ProgressReporter):
         with self.context.neo4j.session(self.database) as session:
             session.run("MATCH (t:ETLTask {uuid:$id}) SET t.batches =$batches, t.expected_batches =$expected_batches",
                         id=task.uuid, batches=batches, expected_batches=expected_batches)
+
+    def _register_shutdown_handler(self):
+        def shutdown_handler(signum, frame):
+            self.logger.warning("SIGINT received, waiting for running tasks to abort.")
+            with self.context.neo4j.session(self.database) as session:
+                cnt = session.run("""
+                MATCH path=(r:ETLRun {uuid: $runId})-[*]->() 
+                WITH [task in nodes(path) WHERE task:ETLTask AND task.status IN ['open', 'running'] | task] AS tasks
+                UNWIND tasks AS task
+                SET task.status = 'aborted'
+                RETURN count(task) AS cnt
+                """, runId=self.run_uuid
+                ).single()['cnt']
+            self.logger.info(f"marked {cnt} tasks as aborted.")
+        add_sigint_handler(shutdown_handler)
 
 
 def get_reporter(context) -> ProgressReporter:

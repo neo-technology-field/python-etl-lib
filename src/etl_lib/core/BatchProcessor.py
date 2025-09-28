@@ -2,7 +2,7 @@ import abc
 import logging
 import sys
 from dataclasses import dataclass, field
-from typing import Generator
+from typing import Generator, List, Any
 
 from etl_lib.core.Task import Task
 from etl_lib.core.utils import merge_summery
@@ -13,7 +13,7 @@ class BatchResults:
     """
     Return object of the :py:func:`~BatchProcessor.get_batch` method, wrapping a batched data together with meta information.
     """
-    chunk: []
+    chunk: List[Any]
     """The batch of data."""
     statistics: dict = field(default_factory=dict)
     """`dict` of statistic information, such as row processed, nodes writen, .."""
@@ -38,11 +38,11 @@ def append_result(org: BatchResults, stats: dict) -> BatchResults:
                         batch_size=org.batch_size)
 
 
-class BatchProcessor:
+class BatchProcessor(abc.ABC):
     """
     Allows assembly of :py:class:`etl_lib.core.Task.Task` out of smaller building blocks.
 
-    This way, functionally such as reading from a CSV file, writing to a database or validation
+    This way, functionally, such as reading from a CSV file, writing to a database or validation
     can be implemented and tested independently and re-used.
 
     BatchProcessors form, a linked list, where each processor only knows about its predecessor.
@@ -57,17 +57,17 @@ class BatchProcessor:
         Constructs a new :py:class:`etl_lib.core.BatchProcessor` instance.
 
         Args:
-            context: :py:class:`etl_lib.core.ETLContext.ETLContext` instance. Will be available to subclasses.
+            context: :py:class:`etl_lib.core.ETLContext.ETLContext` instance. It Will be available to subclasses.
             task: :py:class:`etl_lib.core.Task.Task` this processor is part of.
                 Needed for status reporting only.
             predecessor: Source of batches for this processor.
-                Can be `None` of no predecessor is needed (such as when this processor is the start of the queue.
+                Can be `None` if no predecessor is needed (such as when this processor is the start of the queue).
         """
         self.context = context
         """:py:class:`etl_lib.core.ETLContext.ETLContext` instance. Providing access to general facilities."""
         self.predecessor = predecessor
         """Predecessor, used as a source of batches."""
-        self.logger = logging.getLogger(self.__class__.__name__)
+        self.logger = logging.getLogger(f"{self.__class__.__module__}.{self.__class__.__name__}")
         self.task = task
         """The :py:class:`etl_lib.core.Task.Task` owning instance."""
 

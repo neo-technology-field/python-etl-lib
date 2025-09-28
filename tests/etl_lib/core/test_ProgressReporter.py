@@ -6,7 +6,7 @@ from neo4j import Driver
 from etl_lib.core.ETLContext import ETLContext
 from etl_lib.core.ProgressReporter import Neo4jProgressReporter
 from etl_lib.core.Task import Task, TaskReturn, TaskGroup
-from test_utils.utils import get_database_name, TestNeo4jContext
+from etl_lib.test_utils.utils import TestNeo4jContext, get_database_name
 
 
 class TestETLContext(ETLContext):

@@ -1,4 +1,6 @@
 import logging
+import os
+import signal
 
 
 def merge_summery(summery_1: dict, summery_2: dict) -> dict:
@@ -12,17 +14,56 @@ def merge_summery(summery_1: dict, summery_2: dict) -> dict:
 
 def setup_logging(log_file=None):
     """
-    Set up logging to console and optionally to a log file.
-
-    :param log_file: Path to the log file
-    :type log_file: str, optional
+    Set up the logging. INFO is used for the root logger.
+    Via ETL_LIB_LOG_LEVEL environment variable, the log level of the library itself can be set to another level.
+    It also defaults to INFO.
     """
-    handlers = [logging.StreamHandler()]
-    if log_file:
-        handlers.append(logging.FileHandler(log_file))
+    fmt = '%(asctime)s - %(levelname)s - %(name)s - [%(threadName)s] - %(message)s'
+    formatter = logging.Formatter(fmt)
 
-    logging.basicConfig(
-        level=logging.INFO,
-        format='%(asctime)s - %(levelname)s - %(message)s',
-        handlers=handlers
-    )
+    root_handlers = [logging.StreamHandler()]
+    if log_file:
+        root_handlers.append(logging.FileHandler(log_file))
+    for h in root_handlers:
+        h.setLevel(logging.INFO)
+        h.setFormatter(formatter)
+    logging.basicConfig(level=logging.INFO, handlers=root_handlers, force=True)
+
+    raw = os.getenv("ETL_LIB_LOG_LEVEL", "INFO")
+    try:
+        etl_level = int(raw) if str(raw).isdigit() else getattr(logging, str(raw).upper())
+    except Exception:
+        etl_level = logging.DEBUG
+
+    etl_logger = logging.getLogger('etl_lib')
+    etl_logger.setLevel(etl_level)
+    etl_logger.propagate = False
+    etl_logger.handlers.clear()
+
+    dbg_console = logging.StreamHandler()
+    dbg_console.setLevel(logging.NOTSET)
+    dbg_console.setFormatter(formatter)
+    etl_logger.addHandler(dbg_console)
+
+    if log_file:
+        dbg_file = logging.FileHandler(log_file)
+        dbg_file.setLevel(logging.NOTSET)
+        dbg_file.setFormatter(formatter)
+        etl_logger.addHandler(dbg_file)
+
+
+def add_sigint_handler(handler_to_add):
+    """
+    Register handler_to_add(signum, frame) to run on Ctrl-C,
+    chaining any previously registered handler afterward.
+    """
+    old_handler = signal.getsignal(signal.SIGINT)
+
+    def chained_handler(signum, frame):
+        # first, run the new handler
+        handler_to_add(signum, frame)
+        # then, if there was an old handler, call it
+        if callable(old_handler):
+            old_handler(signum, frame)
+
+    signal.signal(signal.SIGINT, chained_handler)

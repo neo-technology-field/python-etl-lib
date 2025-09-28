@@ -1,0 +1,13 @@
+[project]
+name = "etl-lib-example-nyc-taxi"
+version = "0.1.0"
+description = "Example project demonstrating etl-lib for parallel loading NYC Yellow Taxi data into Neo4j"
+authors = [{name="Bert Radke", email="bert.radke@pm.me"}]
+requires-python = ">=3.10"
+dependencies = [
+    "neo4j-etl-lib",
+    "neo4j-rust-ext",
+    "pydantic",
+    "click",
+    "python-dotenv",
+]

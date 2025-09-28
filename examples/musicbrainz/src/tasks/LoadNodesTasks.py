@@ -5,7 +5,7 @@ class LoadAreaTask(SQLLoad2Neo4jTask):
     def _sql_query(self) -> str:
         return """
                SELECT ar.id AS area_id, ar.name
-               FROM area ar; \
+               FROM area ar ORDER BY ar.id;
                """
 
     def _cypher_query(self) -> str:
@@ -24,7 +24,7 @@ class LoadAreaTypeTask(SQLLoad2Neo4jTask):
         return """
                SELECT at.id   AS area_type_id,
                       at.name AS area_type_name
-               FROM area_type at;
+               FROM area_type at ORDER BY at.id;
                """
 
     def _cypher_query(self) -> str:
@@ -57,7 +57,8 @@ class LoadArtistAliasTask(SQLLoad2Neo4jTask):
                       at.name      AS alias_type
                FROM artist_alias aa
                         LEFT JOIN artist_alias_type at
-               ON aa.type = at.id;
+               ON aa.type = at.id
+               ORDER BY aa.id;
                """
 
     def _cypher_query(self) -> str:
@@ -76,7 +77,7 @@ class LoadArtistCreditTask(SQLLoad2Neo4jTask):
     def _sql_query(self) -> str:
         return """
                SELECT ac.id AS artist_credit_id, ac.name AS credit_name
-               FROM artist_credit ac;
+               FROM artist_credit ac ORDER BY ac.id;
                """
 
     def _cypher_query(self) -> str:
@@ -106,7 +107,7 @@ class LoadArtistTask(SQLLoad2Neo4jTask):
                                                                                                   COALESCE(a.end_date_month, 1),
                                                                                                   COALESCE(a.end_date_day, 1))
                           END AS end_date
-               FROM artist a;
+               FROM artist a ORDER BY a.id;
                """
 
     def _cypher_query(self) -> str:
@@ -125,7 +126,7 @@ class LoadArtistTypeTask(SQLLoad2Neo4jTask):
         return """
                SELECT at.id   AS artist_type_id,
                       at.name AS artist_type_name
-               FROM artist_type at;
+               FROM artist_type at ORDER BY at.id;
                """
 
     def _cypher_query(self) -> str:
@@ -154,7 +155,7 @@ class LoadLabelTask(SQLLoad2Neo4jTask):
                                                                   COALESCE(l.end_date_day, 1))
                           END AS end_date,
                       l.comment
-               FROM label l;
+               FROM label l ORDER BY l.id;
                """
 
     def _cypher_query(self) -> str:
@@ -173,7 +174,7 @@ class LoadMediumFormatTask(SQLLoad2Neo4jTask):
         return """
                SELECT mf.id   AS medium_format_id,
                       mf.name AS format_name
-               FROM medium_format mf;
+               FROM medium_format mf ORDER BY mf.id;
                """
 
     def _cypher_query(self) -> str:
@@ -191,7 +192,7 @@ class LoadMediumTask(SQLLoad2Neo4jTask):
     def _sql_query(self) -> str:
         return """
                SELECT m.id AS medium_id, m.position, m.name AS medium_name, m.track_count
-               FROM medium m;
+               FROM medium m ORDER BY m.id;
                """
 
     def _cypher_query(self) -> str:
@@ -209,8 +210,7 @@ class LoadRecordingTask(SQLLoad2Neo4jTask):
     def _sql_query(self) -> str:
         return """
                SELECT r.id AS recording_id, r.name AS recording_title, r.length
-               FROM recording r; \
-               """
+               FROM recording r ORDER BY r.id;"""
 
     def _cypher_query(self) -> str:
         return """
@@ -227,7 +227,7 @@ class LoadReleaseTask(SQLLoad2Neo4jTask):
     def _sql_query(self) -> str:
         return """
                SELECT r.id AS release_id, r.name AS release_title, r.barcode
-               FROM release r;
+               FROM release r ORDER BY r.id;
                """
 
     def _cypher_query(self) -> str:
@@ -245,7 +245,7 @@ class LoadTrackTask(SQLLoad2Neo4jTask):
     def _sql_query(self) -> str:
         return """
                SELECT t.id AS track_id, t.position, t.number, t.name AS track_name, t.length
-               FROM track t;
+               FROM track t ORDER BY t.id;
                """
 
     def _cypher_query(self) -> str:
@@ -263,8 +263,7 @@ class LoadWorkTask(SQLLoad2Neo4jTask):
     def _sql_query(self) -> str:
         return """
                SELECT w.id AS work_id, w.name AS work_name
-               FROM work w; \
-               """
+               FROM work w ORDER BY w.id;"""
 
     def _cypher_query(self) -> str:
         return """
@@ -282,7 +281,7 @@ class LoadWorkTypeTask(SQLLoad2Neo4jTask):
         return """
                SELECT wt.id   AS work_type_id,
                       wt.name AS work_type_name
-               FROM work_type wt;
+               FROM work_type wt ORDER BY wt.id;
                """
 
     def _cypher_query(self) -> str:

@@ -67,7 +67,7 @@ class CSVLoad2Neo4jTask(Task):
         super().__init__(context)
         self.batch_size = batch_size
         self.model = model
-        self.logger = logging.getLogger(self.__class__.__name__)
+        self.logger = logging.getLogger(f"{self.__class__.__module__}.{self.__class__.__name__}")
         self.file = file
 
     def run_internal(self, **kwargs) -> TaskReturn:
