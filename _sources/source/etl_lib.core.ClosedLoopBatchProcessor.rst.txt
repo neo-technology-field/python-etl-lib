@@ -1,0 +1,7 @@
+etl\_lib.core.ClosedLoopBatchProcessor module
+=============================================
+
+.. automodule:: etl_lib.core.ClosedLoopBatchProcessor
+   :members:
+   :show-inheritance:
+   :undoc-members:

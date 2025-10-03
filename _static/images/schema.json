@@ -1,0 +1,510 @@
+{
+  "style": {
+    "font-family": "Nunito Sans",
+    "background-color": "#F2F2F2",
+    "background-image": "",
+    "background-size": "100%",
+    "node-color": "#4C8EDA",
+    "border-width": 0,
+    "border-color": "#000000",
+    "radius": 75,
+    "node-padding": 5,
+    "node-margin": 2,
+    "outside-position": "auto",
+    "node-icon-image": "",
+    "node-background-image": "",
+    "icon-position": "inside",
+    "icon-size": 64,
+    "caption-position": "inside",
+    "caption-max-width": 200,
+    "caption-color": "#ffffff",
+    "caption-font-size": 20,
+    "caption-font-weight": "normal",
+    "label-position": "inside",
+    "label-display": "bare",
+    "label-color": "#ffffff",
+    "label-background-color": "#848484",
+    "label-border-color": "#848484",
+    "label-border-width": 3,
+    "label-font-size": 20,
+    "label-padding": 5,
+    "label-margin": 4,
+    "directionality": "directed",
+    "detail-position": "above",
+    "detail-orientation": "parallel",
+    "arrow-width": 3,
+    "arrow-color": "#848484",
+    "margin-start": 5,
+    "margin-end": 5,
+    "margin-peer": 20,
+    "attachment-start": "normal",
+    "attachment-end": "normal",
+    "relationship-icon-image": "",
+    "type-color": "#848484",
+    "type-background-color": "#F2F2F2",
+    "type-border-color": "#848484",
+    "type-border-width": 0,
+    "type-font-size": 21,
+    "type-padding": 5,
+    "property-position": "outside",
+    "property-alignment": "colon",
+    "property-color": "#848484",
+    "property-font-size": 20,
+    "property-font-weight": "normal"
+  },
+  "nodes": [
+    {
+      "id": "n0",
+      "position": {
+        "x": -20,
+        "y": -342
+      },
+      "caption": "main",
+      "labels": [
+        "ETLTask",
+        "ETLRun"
+      ],
+      "properties": {},
+      "style": {
+        "node-color": "#0c797d"
+      }
+    },
+    {
+      "id": "n1",
+      "position": {
+        "x": -324.5,
+        "y": -74.5
+      },
+      "caption": "init",
+      "labels": [
+        "ETLTask"
+      ],
+      "properties": {
+        "uuid": "",
+        "order": "",
+        "name": "",
+        "task": "",
+        "status": "open, running, success, failure",
+        "start_time": "",
+        "end_time": "",
+        "error": "",
+        "type": "Task, TaskGroup"
+      },
+      "style": {
+        "node-color": "#0c797d"
+      }
+    },
+    {
+      "id": "n2",
+      "position": {
+        "x": -20,
+        "y": 197.5
+      },
+      "caption": "LoadCSV",
+      "labels": [
+        "ETLTask"
+      ],
+      "properties": {},
+      "style": {
+        "node-color": "#0c797d"
+      }
+    },
+    {
+      "id": "n3",
+      "position": {
+        "x": 447.2207053417047,
+        "y": -72.25
+      },
+      "caption": "PostProcessing",
+      "labels": [
+        "ETLTask"
+      ],
+      "properties": {},
+      "style": {
+        "node-color": "#0c797d"
+      }
+    },
+    {
+      "id": "n4",
+      "position": {
+        "x": -324.5,
+        "y": 197.5
+      },
+      "caption": "schema",
+      "labels": [
+        "ETLTask"
+      ],
+      "properties": {},
+      "style": {}
+    },
+    {
+      "id": "n5",
+      "position": {
+        "x": -274.5,
+        "y": 452
+      },
+      "caption": "LoadAgency",
+      "labels": [
+        "ETLTask"
+      ],
+      "properties": {},
+      "style": {}
+    },
+    {
+      "id": "n6",
+      "position": {
+        "x": -20,
+        "y": 557.4173516239528
+      },
+      "caption": "LoadTrips",
+      "labels": [
+        "ETLTask"
+      ],
+      "properties": {},
+      "style": {}
+    },
+    {
+      "id": "n7",
+      "position": {
+        "x": 234.5,
+        "y": 452
+      },
+      "caption": "LoadStops",
+      "labels": [
+        "ETLTask"
+      ],
+      "properties": {},
+      "style": {}
+    },
+    {
+      "id": "n8",
+      "position": {
+        "x": 472.81121899220204,
+        "y": 417.03895425509313
+      },
+      "caption": "LoadStopTimes",
+      "labels": [
+        "ETLTask"
+      ],
+      "properties": {},
+      "style": {}
+    },
+    {
+      "id": "n9",
+      "position": {
+        "x": 706.4891599234294,
+        "y": 77.43871204513701
+      },
+      "caption": "CreateSequence",
+      "labels": [
+        "ETLTask"
+      ],
+      "properties": {},
+      "style": {}
+    },
+    {
+      "id": "n10",
+      "position": {
+        "x": -587.0995520110234,
+        "y": 349.1119220426396
+      },
+      "caption": "",
+      "style": {
+        "node-color": "#aea1ff"
+      },
+      "labels": [
+        "ETLStats"
+      ],
+      "properties": {}
+    },
+    {
+      "id": "n11",
+      "position": {
+        "x": -498.15979318923155,
+        "y": 675.6597931892316
+      },
+      "caption": "",
+      "style": {
+        "node-color": "#aea1ff"
+      },
+      "labels": [
+        "ETLStats"
+      ],
+      "properties": {}
+    },
+    {
+      "id": "n12",
+      "position": {
+        "x": 146.89037202761475,
+        "y": 846.4799552698532
+      },
+      "caption": "",
+      "style": {
+        "node-color": "#aea1ff"
+      },
+      "labels": [
+        "ETLStats"
+      ],
+      "properties": {}
+    },
+    {
+      "id": "n13",
+      "position": {
+        "x": 472.81121899220204,
+        "y": 690.311218992202
+      },
+      "caption": "",
+      "style": {
+        "node-color": "#aea1ff"
+      },
+      "labels": [
+        "ETLStats"
+      ],
+      "properties": {}
+    },
+    {
+      "id": "n14",
+      "position": {
+        "x": 779.4279658636975,
+        "y": 553.631461428376
+      },
+      "caption": "",
+      "style": {
+        "node-color": "#aea1ff"
+      },
+      "labels": [
+        "ETLStats"
+      ],
+      "properties": {}
+    },
+    {
+      "id": "n15",
+      "position": {
+        "x": 1034.8443549410827,
+        "y": 267.0146722783912
+      },
+      "caption": "",
+      "style": {
+        "node-color": "#aea1ff"
+      },
+      "labels": [
+        "ETLStats"
+      ],
+      "properties": {}
+    },
+    {
+      "id": "n16",
+      "position": {
+        "x": 706.4891599234294,
+        "y": -273.3103869951878
+      },
+      "caption": "",
+      "style": {
+        "node-color": "#aea1ff"
+      },
+      "labels": [
+        "ETLStats"
+      ],
+      "properties": {}
+    },
+    {
+      "id": "n17",
+      "position": {
+        "x": 309.6809774254569,
+        "y": 131.4147984018753
+      },
+      "caption": "",
+      "style": {
+        "node-color": "#aea1ff"
+      },
+      "labels": [
+        "ETLStats"
+      ],
+      "properties": {}
+    },
+    {
+      "id": "n18",
+      "position": {
+        "x": -652.2702985579004,
+        "y": -72.25
+      },
+      "caption": "",
+      "style": {
+        "node-color": "#aea1ff"
+      },
+      "labels": [
+        "ETLStats"
+      ],
+      "properties": {}
+    },
+    {
+      "id": "n19",
+      "position": {
+        "x": 337.028794346944,
+        "y": -423.60919826743225
+      },
+      "caption": "",
+      "style": {
+        "node-color": "#aea1ff"
+      },
+      "labels": [
+        "ETLStats"
+      ],
+      "properties": {}
+    }
+  ],
+  "relationships": [
+    {
+      "id": "n1",
+      "type": "HAS_SUB_TASK",
+      "style": {},
+      "properties": {},
+      "fromId": "n0",
+      "toId": "n2"
+    },
+    {
+      "id": "n2",
+      "fromId": "n0",
+      "toId": "n3",
+      "type": "HAS_SUB_TASK",
+      "properties": {},
+      "style": {}
+    },
+    {
+      "id": "n3",
+      "fromId": "n1",
+      "toId": "n4",
+      "type": "HAS_SUB_TASK",
+      "properties": {},
+      "style": {}
+    },
+    {
+      "id": "n5",
+      "fromId": "n2",
+      "toId": "n6",
+      "type": "HAS_SUB_TASK",
+      "properties": {},
+      "style": {}
+    },
+    {
+      "id": "n6",
+      "fromId": "n2",
+      "toId": "n7",
+      "type": "HAS_SUB_TASK",
+      "properties": {},
+      "style": {}
+    },
+    {
+      "id": "n7",
+      "fromId": "n2",
+      "toId": "n8",
+      "type": "HAS_SUB_TASK",
+      "properties": {},
+      "style": {}
+    },
+    {
+      "id": "n8",
+      "fromId": "n3",
+      "toId": "n9",
+      "type": "HAS_SUB_TASK",
+      "properties": {},
+      "style": {}
+    },
+    {
+      "id": "n9",
+      "type": "HAS_SUB_TASK",
+      "style": {},
+      "properties": {},
+      "fromId": "n0",
+      "toId": "n1"
+    },
+    {
+      "id": "n12",
+      "type": "HAS_SUB_TASK",
+      "style": {},
+      "properties": {},
+      "fromId": "n2",
+      "toId": "n5"
+    },
+    {
+      "id": "n13",
+      "type": "HAS_STATS",
+      "style": {},
+      "properties": {},
+      "fromId": "n4",
+      "toId": "n10"
+    },
+    {
+      "id": "n14",
+      "type": "HAS_STATS",
+      "style": {},
+      "properties": {},
+      "fromId": "n5",
+      "toId": "n11"
+    },
+    {
+      "id": "n15",
+      "type": "HAS_STATS",
+      "style": {},
+      "properties": {},
+      "fromId": "n6",
+      "toId": "n12"
+    },
+    {
+      "id": "n16",
+      "type": "HAS_STATS",
+      "style": {},
+      "properties": {},
+      "fromId": "n7",
+      "toId": "n13"
+    },
+    {
+      "id": "n17",
+      "type": "HAS_STATS",
+      "style": {},
+      "properties": {},
+      "fromId": "n8",
+      "toId": "n14"
+    },
+    {
+      "id": "n18",
+      "type": "HAS_STATS",
+      "style": {},
+      "properties": {},
+      "fromId": "n9",
+      "toId": "n15"
+    },
+    {
+      "id": "n19",
+      "type": "HAS_STATS",
+      "style": {},
+      "properties": {},
+      "fromId": "n3",
+      "toId": "n16"
+    },
+    {
+      "id": "n20",
+      "type": "HAS_STATS",
+      "style": {},
+      "properties": {},
+      "fromId": "n2",
+      "toId": "n17"
+    },
+    {
+      "id": "n21",
+      "type": "HAS_STATS",
+      "style": {},
+      "properties": {},
+      "fromId": "n1",
+      "toId": "n18"
+    },
+    {
+      "id": "n22",
+      "type": "HAS_STATS",
+      "style": {},
+      "properties": {},
+      "fromId": "n0",
+      "toId": "n19"
+    }
+  ]
+}

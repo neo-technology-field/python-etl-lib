@@ -1,0 +1,18 @@
+etl\_lib.cli package
+====================
+
+Submodules
+----------
+
+.. toctree::
+   :maxdepth: 4
+
+   etl_lib.cli.run_tools
+
+Module contents
+---------------
+
+.. automodule:: etl_lib.cli
+   :members:
+   :show-inheritance:
+   :undoc-members:

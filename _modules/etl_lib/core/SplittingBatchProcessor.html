@@ -1,0 +1,395 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>etl_lib.core.SplittingBatchProcessor &mdash; neo4j-etl-lib 0.3.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/graphviz.css?v=4ae1632d" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/readthedocs-custom.css" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=e259d695"></script>
+      <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            neo4j-etl-lib
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../index.html">Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../batching.html">Batching and Streaming</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../parallel.html">Parallel Processing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../reporting.html">Reporting</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../validation.html">Validation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../data-sources.html">Data Sources</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../data-sinks.html">Data Sinks</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../configuration.html">Configuration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../testing.html">Testing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../cli.html">CLI</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../source/etl_lib.html">API Reference</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">neo4j-etl-lib</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">etl_lib.core.SplittingBatchProcessor</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for etl_lib.core.SplittingBatchProcessor</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">Generator</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Tuple</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">etl_lib.core.BatchProcessor</span><span class="w"> </span><span class="kn">import</span> <span class="n">BatchProcessor</span><span class="p">,</span> <span class="n">BatchResults</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">etl_lib.core.utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">merge_summery</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">tabulate</span><span class="w"> </span><span class="kn">import</span> <span class="n">tabulate</span>
+
+
+<div class="viewcode-block" id="tuple_id_extractor">
+<a class="viewcode-back" href="../../../source/etl_lib.core.SplittingBatchProcessor.html#etl_lib.core.SplittingBatchProcessor.tuple_id_extractor">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">tuple_id_extractor</span><span class="p">(</span><span class="n">table_size</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">10</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">Tuple</span><span class="p">[</span><span class="nb">str</span> <span class="o">|</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">str</span> <span class="o">|</span> <span class="nb">int</span><span class="p">]],</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Create an ID extractor function for tuple items, using the last decimal digit of each element.</span>
+<span class="sd">    The output is a `(row, col)` tuple within a `table_size x table_size` grid (default 10x10).</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        table_size: The dimension of the grid (number of rows/cols). Defaults to 10.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        A callable that maps a tuple `(a, b)` to a tuple `(row, col)` using the last digit of `a` and `b`.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">extractor</span><span class="p">(</span><span class="n">item</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Any</span><span class="p">,</span> <span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]:</span>
+        <span class="n">a</span><span class="p">,</span> <span class="n">b</span> <span class="o">=</span> <span class="n">item</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">row</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">a</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+            <span class="n">col</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">b</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Failed to extract ID from item </span><span class="si">{</span><span class="n">item</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">row</span><span class="p">,</span> <span class="n">col</span>
+
+    <span class="n">extractor</span><span class="o">.</span><span class="n">table_size</span> <span class="o">=</span> <span class="n">table_size</span>
+    <span class="k">return</span> <span class="n">extractor</span></div>
+
+
+
+<div class="viewcode-block" id="dict_id_extractor">
+<a class="viewcode-back" href="../../../source/etl_lib.core.SplittingBatchProcessor.html#etl_lib.core.SplittingBatchProcessor.dict_id_extractor">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">dict_id_extractor</span><span class="p">(</span>
+        <span class="n">table_size</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">10</span><span class="p">,</span>
+        <span class="n">start_key</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;start&quot;</span><span class="p">,</span>
+        <span class="n">end_key</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;end&quot;</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]],</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Build an ID extractor for dict rows. The extractor reads two fields (configurable via</span>
+<span class="sd">    `start_key` and `end_key`) and returns (row, col) based on the last decimal digit of each.</span>
+<span class="sd">    Range validation remains the responsibility of the SplittingBatchProcessor.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        table_size: Informational hint carried on the extractor; used by callers to sanity-check.</span>
+<span class="sd">        start_key: Field name for the start node identifier.</span>
+<span class="sd">        end_key: Field name for the end node identifier.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Callable[[Mapping[str, Any]], tuple[int, int]]: Maps {start_key, end_key} → (row, col).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">extractor</span><span class="p">(</span><span class="n">item</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]:</span>
+        <span class="n">missing</span> <span class="o">=</span> <span class="p">[</span><span class="n">k</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="p">(</span><span class="n">start_key</span><span class="p">,</span> <span class="n">end_key</span><span class="p">)</span> <span class="k">if</span> <span class="n">k</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">item</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">missing</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">KeyError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Item missing required keys: </span><span class="si">{</span><span class="s1">&#39;, &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">missing</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">row</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">item</span><span class="p">[</span><span class="n">start_key</span><span class="p">])[</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+            <span class="n">col</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">item</span><span class="p">[</span><span class="n">end_key</span><span class="p">])[</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Failed to extract ID from item </span><span class="si">{</span><span class="n">item</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">row</span><span class="p">,</span> <span class="n">col</span>
+
+    <span class="n">extractor</span><span class="o">.</span><span class="n">table_size</span> <span class="o">=</span> <span class="n">table_size</span>
+    <span class="k">return</span> <span class="n">extractor</span></div>
+
+
+
+<div class="viewcode-block" id="SplittingBatchProcessor">
+<a class="viewcode-back" href="../../../source/etl_lib.core.SplittingBatchProcessor.html#etl_lib.core.SplittingBatchProcessor.SplittingBatchProcessor">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">SplittingBatchProcessor</span><span class="p">(</span><span class="n">BatchProcessor</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    BatchProcessor that splits incoming BatchResults into non-overlapping partitions based</span>
+<span class="sd">    on row/col indices extracted by the id_extractor, and emits full or remaining batches</span>
+<span class="sd">    using the mix-and-batch algorithm from https://neo4j.com/blog/developer/mix-and-batch-relationship-load/</span>
+<span class="sd">    Each emitted batch is a list of per-cell lists (array of arrays), so callers</span>
+<span class="sd">    can process each partition (other name for a cell) in parallel.</span>
+
+<span class="sd">    A batch for a schedule group is  emitted when all cells in that group have at least `batch_size` items.</span>
+<span class="sd">    In addition, when a cell/partition reaches 3x the configured max_batch_size, the group is emitted to avoid</span>
+<span class="sd">    overflowing the buffer when the distribution per cell is uneven.</span>
+<span class="sd">    Leftovers are flushed after source exhaustion.</span>
+<span class="sd">    Emitted batches never exceed the configured max_batch_size.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="SplittingBatchProcessor.__init__">
+<a class="viewcode-back" href="../../../source/etl_lib.core.SplittingBatchProcessor.html#etl_lib.core.SplittingBatchProcessor.SplittingBatchProcessor.__init__">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">context</span><span class="p">,</span> <span class="n">table_size</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">id_extractor</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">Any</span><span class="p">],</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]],</span>
+                 <span class="n">task</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">predecessor</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">context</span><span class="p">,</span> <span class="n">task</span><span class="p">,</span> <span class="n">predecessor</span><span class="p">)</span>
+
+        <span class="c1"># If the extractor carries an expected table size, use or validate it</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">id_extractor</span><span class="p">,</span> <span class="s2">&quot;table_size&quot;</span><span class="p">):</span>
+            <span class="n">expected_size</span> <span class="o">=</span> <span class="n">id_extractor</span><span class="o">.</span><span class="n">table_size</span>
+            <span class="k">if</span> <span class="n">table_size</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">table_size</span> <span class="o">=</span> <span class="n">expected_size</span>  <span class="c1"># determine table size from extractor if not provided</span>
+            <span class="k">elif</span> <span class="n">table_size</span> <span class="o">!=</span> <span class="n">expected_size</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Mismatch between provided table_size (</span><span class="si">{</span><span class="n">table_size</span><span class="si">}</span><span class="s2">) and &quot;</span>
+                                 <span class="sa">f</span><span class="s2">&quot;id_extractor table_size (</span><span class="si">{</span><span class="n">expected_size</span><span class="si">}</span><span class="s2">).&quot;</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">table_size</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;table_size must be specified if id_extractor has no defined table_size&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">table_size</span> <span class="o">=</span> <span class="n">table_size</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_id_extractor</span> <span class="o">=</span> <span class="n">id_extractor</span>
+
+        <span class="c1"># Initialize 2D buffer for partitions</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">buffer</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="n">Any</span><span class="p">]]]</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="n">i</span><span class="p">:</span> <span class="p">{</span><span class="n">j</span><span class="p">:</span> <span class="p">[]</span> <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">table_size</span><span class="p">)}</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">table_size</span><span class="p">)</span>
+        <span class="p">}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__module__</span><span class="si">}</span><span class="s2">.</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span></div>
+
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_generate_batch_schedule</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]]]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Create diagonal stripes (row, col) partitions to ensure no overlapping IDs</span>
+<span class="sd">        across emitted batches.</span>
+<span class="sd">        Example grid:</span>
+<span class="sd">                 ||  0  |  1  |  2</span>
+<span class="sd">            =====++=====+=====+=====</span>
+<span class="sd">              0  ||  0  |  1  |  2</span>
+<span class="sd">            -----++-----+-----+----</span>
+<span class="sd">              1  ||  2  |  0  |  1</span>
+<span class="sd">            -----++-----+-----+-----</span>
+<span class="sd">              2  ||  1  |  2  |  0</span>
+
+<span class="sd">        would return [[(0, 0), (1, 1), (2, 2)], [(0, 1), (1, 2), (2, 0)], [(0, 2), (1, 0), (2, 1)]]</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">schedule</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]]]</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">shift</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">table_size</span><span class="p">):</span>
+            <span class="n">partition</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]]</span> <span class="o">=</span> <span class="p">[</span>
+                <span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="p">(</span><span class="n">i</span> <span class="o">+</span> <span class="n">shift</span><span class="p">)</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">table_size</span><span class="p">)</span>
+                <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">table_size</span><span class="p">)</span>
+            <span class="p">]</span>
+            <span class="n">schedule</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">partition</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">schedule</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_flush_group</span><span class="p">(</span>
+            <span class="bp">self</span><span class="p">,</span>
+            <span class="n">partitions</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]],</span>
+            <span class="n">batch_size</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+            <span class="n">statistics</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Generator</span><span class="p">[</span><span class="n">BatchResults</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Extract up to `batch_size` items from each cell in `partitions`, remove them from the buffer,</span>
+<span class="sd">        and yield a BatchResults whose chunks is a list of per-cell lists from these partitions.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            partitions: Cell coordinates forming a diagonal group from the schedule.</span>
+<span class="sd">            batch_size: Max number of items to take from each cell.</span>
+<span class="sd">            statistics: Stats dict to attach to this emission (use {} for interim waves).</span>
+<span class="sd">                        The &quot;final&quot; emission will pass the accumulated stats here.</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Debug-only: prints a 2D matrix of cell sizes when logger is in DEBUG.</span>
+<span class="sd">            - batch_size in the returned BatchResults equals the number of emitted items.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_log_buffer_matrix</span><span class="p">(</span><span class="n">partition</span><span class="o">=</span><span class="n">partitions</span><span class="p">)</span>
+
+        <span class="n">cell_chunks</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">row</span><span class="p">,</span> <span class="n">col</span> <span class="ow">in</span> <span class="n">partitions</span><span class="p">:</span>
+            <span class="n">q</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">buffer</span><span class="p">[</span><span class="n">row</span><span class="p">][</span><span class="n">col</span><span class="p">]</span>
+            <span class="n">take</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">batch_size</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">q</span><span class="p">))</span>
+            <span class="n">part</span> <span class="o">=</span> <span class="n">q</span><span class="p">[:</span><span class="n">take</span><span class="p">]</span>
+            <span class="n">cell_chunks</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">part</span><span class="p">)</span>
+            <span class="c1"># remove flushed items</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">buffer</span><span class="p">[</span><span class="n">row</span><span class="p">][</span><span class="n">col</span><span class="p">]</span> <span class="o">=</span> <span class="n">q</span><span class="p">[</span><span class="n">take</span><span class="p">:]</span>
+
+        <span class="n">emitted</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">c</span><span class="p">)</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">cell_chunks</span><span class="p">)</span>
+
+        <span class="n">result</span> <span class="o">=</span> <span class="n">BatchResults</span><span class="p">(</span>
+            <span class="n">chunk</span><span class="o">=</span><span class="n">cell_chunks</span><span class="p">,</span>
+            <span class="n">statistics</span><span class="o">=</span><span class="n">statistics</span> <span class="ow">or</span> <span class="p">{},</span>
+            <span class="n">batch_size</span><span class="o">=</span><span class="n">emitted</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="k">yield</span> <span class="n">result</span>
+
+<div class="viewcode-block" id="SplittingBatchProcessor.get_batch">
+<a class="viewcode-back" href="../../../source/etl_lib.core.SplittingBatchProcessor.html#etl_lib.core.SplittingBatchProcessor.SplittingBatchProcessor.get_batch">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_batch</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">max_batch__size</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Generator</span><span class="p">[</span><span class="n">BatchResults</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Consume upstream batches, split data across cells, and emit diagonal partitions:</span>
+<span class="sd">          - During streaming: emit a full partition when all its cells have &gt;= max_batch__size.</span>
+<span class="sd">          - Also during streaming: if any cell in a partition builds up beyond a &#39;burst&#39; threshold</span>
+<span class="sd">            (3 * of max_batch__size), emit that partition early, taking up to max_batch__size</span>
+<span class="sd">            from each cell.</span>
+<span class="sd">          - After source exhaustion: flush leftovers in waves capped at max_batch__size per cell.</span>
+
+<span class="sd">        Statistics policy:</span>
+<span class="sd">          * Every emission except the last carries {}.</span>
+<span class="sd">          * The last emission carries the accumulated upstream stats (unfiltered).</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">schedule</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_generate_batch_schedule</span><span class="p">()</span>
+
+        <span class="n">accum_stats</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="n">pending</span><span class="p">:</span> <span class="n">BatchResults</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>  <span class="c1"># hold back the most recent emission so we know what&#39;s final</span>
+
+        <span class="n">burst_threshold</span> <span class="o">=</span> <span class="mi">3</span> <span class="o">*</span> <span class="n">max_batch__size</span>
+
+        <span class="k">for</span> <span class="n">upstream</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">predecessor</span><span class="o">.</span><span class="n">get_batch</span><span class="p">(</span><span class="n">max_batch__size</span><span class="p">):</span>
+            <span class="c1"># accumulate upstream stats (unfiltered)</span>
+            <span class="k">if</span> <span class="n">upstream</span><span class="o">.</span><span class="n">statistics</span><span class="p">:</span>
+                <span class="n">accum_stats</span> <span class="o">=</span> <span class="n">merge_summery</span><span class="p">(</span><span class="n">accum_stats</span><span class="p">,</span> <span class="n">upstream</span><span class="o">.</span><span class="n">statistics</span><span class="p">)</span>
+
+            <span class="c1"># add data to cells</span>
+            <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">upstream</span><span class="o">.</span><span class="n">chunk</span><span class="p">:</span>
+                <span class="n">r</span><span class="p">,</span> <span class="n">c</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_id_extractor</span><span class="p">(</span><span class="n">item</span><span class="p">)</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="mi">0</span> <span class="o">&lt;=</span> <span class="n">r</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">table_size</span> <span class="ow">and</span> <span class="mi">0</span> <span class="o">&lt;=</span> <span class="n">c</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">table_size</span><span class="p">):</span>
+                    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;partition id out of range: </span><span class="si">{</span><span class="p">(</span><span class="n">r</span><span class="p">,</span><span class="w"> </span><span class="n">c</span><span class="p">)</span><span class="si">}</span><span class="s2"> for table_size=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">table_size</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">buffer</span><span class="p">[</span><span class="n">r</span><span class="p">][</span><span class="n">c</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">item</span><span class="p">)</span>
+
+            <span class="c1"># process partitions</span>
+            <span class="k">for</span> <span class="n">partition</span> <span class="ow">in</span> <span class="n">schedule</span><span class="p">:</span>
+                <span class="c1"># normal full flush when all cells are ready</span>
+                <span class="k">if</span> <span class="nb">all</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">buffer</span><span class="p">[</span><span class="n">r</span><span class="p">][</span><span class="n">c</span><span class="p">])</span> <span class="o">&gt;=</span> <span class="n">max_batch__size</span> <span class="k">for</span> <span class="n">r</span><span class="p">,</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">partition</span><span class="p">):</span>
+                    <span class="n">br</span> <span class="o">=</span> <span class="nb">next</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_flush_group</span><span class="p">(</span><span class="n">partition</span><span class="p">,</span> <span class="n">max_batch__size</span><span class="p">,</span> <span class="n">statistics</span><span class="o">=</span><span class="p">{}))</span>
+                    <span class="k">if</span> <span class="n">pending</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                        <span class="k">yield</span> <span class="n">pending</span>
+                    <span class="n">pending</span> <span class="o">=</span> <span class="n">br</span>
+                    <span class="k">continue</span>
+
+                <span class="c1"># burst flush if any cell backlog explodes</span>
+                <span class="n">hot_cells</span> <span class="o">=</span> <span class="p">[(</span><span class="n">r</span><span class="p">,</span> <span class="n">c</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">buffer</span><span class="p">[</span><span class="n">r</span><span class="p">][</span><span class="n">c</span><span class="p">]))</span> <span class="k">for</span> <span class="n">r</span><span class="p">,</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">partition</span> <span class="k">if</span>
+                             <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">buffer</span><span class="p">[</span><span class="n">r</span><span class="p">][</span><span class="n">c</span><span class="p">])</span> <span class="o">&gt;=</span> <span class="n">burst_threshold</span><span class="p">]</span>
+                <span class="k">if</span> <span class="n">hot_cells</span><span class="p">:</span>
+                    <span class="n">top_r</span><span class="p">,</span> <span class="n">top_c</span><span class="p">,</span> <span class="n">top_len</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">hot_cells</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
+                        <span class="s2">&quot;burst flush: partition=</span><span class="si">%s</span><span class="s2"> threshold=</span><span class="si">%d</span><span class="s2"> top_cell=(</span><span class="si">%d</span><span class="s2">,</span><span class="si">%d</span><span class="s2"> len=</span><span class="si">%d</span><span class="s2">)&quot;</span><span class="p">,</span>
+                        <span class="n">partition</span><span class="p">,</span> <span class="n">burst_threshold</span><span class="p">,</span> <span class="n">top_r</span><span class="p">,</span> <span class="n">top_c</span><span class="p">,</span> <span class="n">top_len</span>
+                    <span class="p">)</span>
+                    <span class="n">br</span> <span class="o">=</span> <span class="nb">next</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_flush_group</span><span class="p">(</span><span class="n">partition</span><span class="p">,</span> <span class="n">max_batch__size</span><span class="p">,</span> <span class="n">statistics</span><span class="o">=</span><span class="p">{}))</span>
+                    <span class="k">if</span> <span class="n">pending</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                        <span class="k">yield</span> <span class="n">pending</span>
+                    <span class="n">pending</span> <span class="o">=</span> <span class="n">br</span>
+
+        <span class="c1"># source exhausted: drain leftovers in capped waves (respecting batch size)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;start flushing leftovers&quot;</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">partition</span> <span class="ow">in</span> <span class="p">(</span><span class="n">p</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">schedule</span> <span class="k">if</span> <span class="nb">any</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">buffer</span><span class="p">[</span><span class="n">r</span><span class="p">][</span><span class="n">c</span><span class="p">]</span> <span class="k">for</span> <span class="n">r</span><span class="p">,</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">p</span><span class="p">)):</span>
+            <span class="k">while</span> <span class="nb">any</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">buffer</span><span class="p">[</span><span class="n">r</span><span class="p">][</span><span class="n">c</span><span class="p">]</span> <span class="k">for</span> <span class="n">r</span><span class="p">,</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">partition</span><span class="p">):</span>
+                <span class="n">br</span> <span class="o">=</span> <span class="nb">next</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_flush_group</span><span class="p">(</span><span class="n">partition</span><span class="p">,</span> <span class="n">max_batch__size</span><span class="p">,</span> <span class="n">statistics</span><span class="o">=</span><span class="p">{}))</span>
+                <span class="k">if</span> <span class="n">pending</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="k">yield</span> <span class="n">pending</span>
+                <span class="n">pending</span> <span class="o">=</span> <span class="n">br</span>
+
+        <span class="c1"># final emission carries accumulated stats once</span>
+        <span class="k">if</span> <span class="n">pending</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">yield</span> <span class="n">BatchResults</span><span class="p">(</span><span class="n">chunk</span><span class="o">=</span><span class="n">pending</span><span class="o">.</span><span class="n">chunk</span><span class="p">,</span> <span class="n">statistics</span><span class="o">=</span><span class="n">accum_stats</span><span class="p">,</span> <span class="n">batch_size</span><span class="o">=</span><span class="n">pending</span><span class="o">.</span><span class="n">batch_size</span><span class="p">)</span></div>
+
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_log_buffer_matrix</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">partition</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Dumps a compact 2D matrix of per-cell sizes (len of each buffer) when DEBUG is enabled.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">isEnabledFor</span><span class="p">(</span><span class="n">logging</span><span class="o">.</span><span class="n">DEBUG</span><span class="p">):</span>
+            <span class="k">return</span>
+
+        <span class="n">counts</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="p">[</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">buffer</span><span class="p">[</span><span class="n">r</span><span class="p">][</span><span class="n">c</span><span class="p">])</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">table_size</span><span class="p">)]</span>
+            <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">table_size</span><span class="p">)</span>
+        <span class="p">]</span>
+        <span class="n">marks</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">partition</span><span class="p">)</span>
+
+        <span class="n">pad</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">table_size</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)))</span>
+        <span class="n">col_headers</span> <span class="o">=</span> <span class="p">[</span><span class="sa">f</span><span class="s2">&quot;c</span><span class="si">{</span><span class="n">c</span><span class="si">:</span><span class="s2">0</span><span class="si">{</span><span class="n">pad</span><span class="si">}</span><span class="s2">d</span><span class="si">}</span><span class="s2">&quot;</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">table_size</span><span class="p">)]</span>
+
+        <span class="n">rows</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">table_size</span><span class="p">):</span>
+            <span class="n">row_label</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;r</span><span class="si">{</span><span class="n">r</span><span class="si">:</span><span class="s2">0</span><span class="si">{</span><span class="n">pad</span><span class="si">}</span><span class="s2">d</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="n">row_vals</span> <span class="o">=</span> <span class="p">[</span><span class="sa">f</span><span class="s2">&quot;[</span><span class="si">{</span><span class="n">v</span><span class="si">}</span><span class="s2">]&quot;</span> <span class="k">if</span> <span class="p">(</span><span class="n">r</span><span class="p">,</span> <span class="n">c</span><span class="p">)</span> <span class="ow">in</span> <span class="n">marks</span> <span class="k">else</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">v</span><span class="si">}</span><span class="s2">&quot;</span> <span class="k">for</span> <span class="n">c</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">counts</span><span class="p">[</span><span class="n">r</span><span class="p">])]</span>
+            <span class="n">rows</span><span class="o">.</span><span class="n">append</span><span class="p">([</span><span class="n">row_label</span><span class="p">,</span> <span class="o">*</span><span class="n">row_vals</span><span class="p">])</span>
+
+        <span class="n">table</span> <span class="o">=</span> <span class="n">tabulate</span><span class="p">(</span>
+            <span class="n">rows</span><span class="p">,</span>
+            <span class="n">headers</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="o">*</span><span class="n">col_headers</span><span class="p">],</span>
+            <span class="n">tablefmt</span><span class="o">=</span><span class="s2">&quot;psql&quot;</span><span class="p">,</span>
+            <span class="n">stralign</span><span class="o">=</span><span class="s2">&quot;right&quot;</span><span class="p">,</span>
+            <span class="n">disable_numparse</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;buffer matrix:</span><span class="se">\n</span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">table</span><span class="p">)</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright .</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

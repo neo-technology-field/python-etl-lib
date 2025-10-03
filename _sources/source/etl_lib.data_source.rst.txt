@@ -1,0 +1,20 @@
+etl\_lib.data\_source package
+=============================
+
+Submodules
+----------
+
+.. toctree::
+   :maxdepth: 4
+
+   etl_lib.data_source.CSVBatchSource
+   etl_lib.data_source.CypherBatchSource
+   etl_lib.data_source.SQLBatchSource
+
+Module contents
+---------------
+
+.. automodule:: etl_lib.data_source
+   :members:
+   :show-inheritance:
+   :undoc-members:
