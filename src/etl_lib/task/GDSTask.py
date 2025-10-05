@@ -28,11 +28,14 @@ class GDSTask(Task):
         Function that uses the gds client to perform tasks. See the following example:
 
         def gds_fun(etl_context):
-            with etl_context.neo4j.gds() as gds:
-                gds.graph.drop("neo4j-offices", failIfMissing=False)
-                g_office, project_result = gds.graph.project("neo4j-offices", "City", "FLY_TO")
-                mutate_result = gds.pageRank.mutate(g_office, tolerance=0.5, mutateProperty="rank")
-                return TaskReturn(success=True, summery=transform_dict(mutate_result.to_dict()))
+            gds =  etl_context.neo4j.gds
+            gds.graph.drop("neo4j-offices", failIfMissing=False)
+            g_office, project_result = gds.graph.project("neo4j-offices", "City", "FLY_TO")
+            mutate_result = gds.pageRank.write(g_office, tolerance=0.5, writeProperty="rank")
+            return TaskReturn(success=True, summery=transform_dict(mutate_result.to_dict()))
+
+        Notes: Do *NOT* use `etl_context.neo4j.gds` with a context manager. The GDS client closes the underlying
+            connection when exiting the context.
 
         :param context: The ETLContext to use. Provides the gds client to the func via `etl_context.neo4j.gds()`
         :param func: a function that expects a param `etl_context` and returns a `TaskReturn` object.

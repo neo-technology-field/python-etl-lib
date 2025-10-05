@@ -16,3 +16,12 @@
 
 ## [0.2.0]
 - added support for SQL data sources
+
+## [0.3.0]
+- added parallel processing using Mix and Batch approach
+
+## [0.3.1]
+- fixed incompatibilities with older python versions
+- now actually works from 3.10 onwards just as it claims
+- added nox tests to automatically test with Python version 3.10 onwards
+- added nox tests to run tests with the Neo4j LTS and latest

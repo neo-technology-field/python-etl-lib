@@ -45,7 +45,7 @@ class ProgressReporter:
             The task that was provided.
         """
         task.start_time = datetime.now()
-        self.logger.info(f"{'\t' * task.depth}starting {task.task_name()}")
+        self.logger.info(f"{' ' * (4 * task.depth)}starting {task.task_name()}")
         return task
 
     def finished_task(self, task: Task, result: TaskReturn) -> Task:

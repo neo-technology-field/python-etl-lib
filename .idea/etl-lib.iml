@@ -19,6 +19,7 @@
       <excludeFolder url="file://$MODULE_DIR$/examples/nyc-taxi/.venv/lib" />
       <excludeFolder url="file://$MODULE_DIR$/examples/nyc-taxi/venv/bin" />
       <excludeFolder url="file://$MODULE_DIR$/examples/nyc-taxi/venv/lib" />
+      <excludeFolder url="file://$MODULE_DIR$/.nox" />
     </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />

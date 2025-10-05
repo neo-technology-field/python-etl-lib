@@ -1,6 +1,6 @@
 import pytest
 from etl_lib.core.ETLContext import QueryResult, append_results
-from etl_lib.test_utils.utils import TestETLContext
+from etl_lib.test_utils.utils import MockETLContext
 from neo4j.exceptions import Neo4jError
 
 
@@ -57,7 +57,7 @@ def test_append_results_with_both_empty():
     assert result.summery == {}
 
 
-def test_query_database_single_query(etl_context: TestETLContext):
+def test_query_database_single_query(etl_context: MockETLContext):
     """Test that a single Cypher query returns the expected QueryResult."""
     query = "CREATE (n:TestNode {name: 'test'}) RETURN n.name as name"
 
@@ -71,7 +71,7 @@ def test_query_database_single_query(etl_context: TestETLContext):
     assert "relationships_created" in result.summery
 
 
-def test_query_database_list_of_queries(etl_context: TestETLContext):
+def test_query_database_list_of_queries(etl_context: MockETLContext):
     """Test that a list of Cypher queries is executed sequentially and results are appended."""
     queries = [
         "CREATE (n:Node1) RETURN n",
@@ -92,7 +92,7 @@ def test_query_database_list_of_queries(etl_context: TestETLContext):
     assert result.summery.get("relationships_deleted", 0) == 0
 
 
-def test_query_database_error_handling(etl_context: TestETLContext):
+def test_query_database_error_handling(etl_context: MockETLContext):
     """Test that Neo4jError is raised for an invalid query."""
     invalid_query = "CREATE (n:TestNode RETURN n"  # Missing closing parenthesis
 
@@ -101,7 +101,7 @@ def test_query_database_error_handling(etl_context: TestETLContext):
             etl_context.neo4j.query_database(session, invalid_query)
 
 
-def test_query_database_with_parameters(etl_context: TestETLContext):
+def test_query_database_with_parameters(etl_context: MockETLContext):
     """Test that parameters are correctly passed to the query."""
     query = "CREATE (n:TestNode {name: $name}) RETURN n.name as name"
     params = {"name": "ParametrizedNode"}
@@ -113,13 +113,12 @@ def test_query_database_with_parameters(etl_context: TestETLContext):
     assert result.data[0]["name"] == "ParametrizedNode"
 
 
-def test_gds_context_creation(etl_context: TestETLContext):
+def test_gds_context_creation(etl_context: MockETLContext):
     """Test that the GDS client is correctly created from the Neo4j context."""
     # This test is conditional on gds_available being True.
-    if hasattr(etl_context, "gds"):
+    if hasattr(etl_context.neo4j, "gds"):
         # The return value of GraphDataScience.from_neo4j_driver is a client object.
         # We can't really inspect it much here without making a call, so this is a basic check.
-        assert etl_context.gds is not None
-        assert etl_context.gds.driver is etl_context.neo4j.driver
+        assert etl_context.neo4j.gds is not None
     else:
         pytest.skip("Graph Data Science not available, skipping test")

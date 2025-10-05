@@ -7,7 +7,7 @@ from dotenv import load_dotenv
 from neo4j import GraphDatabase, WRITE_ACCESS
 
 from etl_lib.core.ETLContext import ETLContext
-from etl_lib.test_utils.utils import TestETLContext, get_database_name
+from etl_lib.test_utils.utils import MockETLContext, get_database_name
 
 test_env = Path(__file__).parent / "../../.env"
 load_dotenv(test_env)
@@ -64,6 +64,6 @@ def neo4j_driver_with_empty_db(neo4j_driver):
 
 @pytest.fixture
 def etl_context(neo4j_driver_with_empty_db, tmp_path) -> ETLContext:
-    return TestETLContext(neo4j_driver_with_empty_db, tmp_path)
+    return MockETLContext(neo4j_driver_with_empty_db, tmp_path)
 
 # DOC_INCLUDE_END_HERE

@@ -22,11 +22,11 @@ dynamic = ["version", "description"]
 keywords = ["etl", "graph", "database"]
 
 dependencies = [
-    "pydantic>=2.10.5; python_version >= '3.8'",
-    "neo4j-rust-ext>=5.27.0; python_version >= '3.7'",
-    "python-dotenv>=1.0.1; python_version >= '3.8'",
-    "tabulate>=0.9.0; python_version >= '3.7'",
-    "click>=8.1.8; python_version >= '3.7'",
+    "pydantic>=2.10.5; python_version >= '3.10'",
+    "neo4j-rust-ext>=5.27.0,<6; python_version >= '3.10'",
+    "python-dotenv>=1.0.1; python_version >= '3.10'",
+    "tabulate>=0.9.0; python_version >= '3.10'",
+    "click>=8.1.8; python_version >= '3.10'",
     "pydantic[email_validator]"
 ]
 
@@ -40,6 +40,11 @@ dev = [
 ]
 gds = ["graphdatascience>=1.13; python_version >= '3.9'"]
 sql = ["sqlalchemy"]
+
+# Local-only multy-version testing, install via `pip install ".[dev,nox]"`
+nox = [
+    "nox>=2024.0.0"
+]
 
 [project.urls]
 Home = "https://github.com/neo-technology-field/python-etl-lib"

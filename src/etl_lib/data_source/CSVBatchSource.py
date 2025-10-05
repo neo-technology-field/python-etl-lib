@@ -30,7 +30,7 @@ class CSVBatchSource(BatchProcessor):
         self.csv_file = csv_file
         self.kwargs = kwargs
 
-    def get_batch(self, max_batch__size: int) -> Generator[BatchResults]:
+    def get_batch(self, max_batch__size: int) -> Generator[BatchResults, None, None]:
         for batch_size, chunks_ in self.__read_csv(self.csv_file, batch_size=max_batch__size, **self.kwargs):
             yield BatchResults(chunk=chunks_, statistics={"csv_lines_read": batch_size}, batch_size=batch_size)
 

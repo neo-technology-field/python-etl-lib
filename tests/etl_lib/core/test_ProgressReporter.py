@@ -6,21 +6,21 @@ from neo4j import Driver
 from etl_lib.core.ETLContext import ETLContext
 from etl_lib.core.ProgressReporter import Neo4jProgressReporter
 from etl_lib.core.Task import Task, TaskReturn, TaskGroup
-from etl_lib.test_utils.utils import TestNeo4jContext, get_database_name
+from etl_lib.test_utils.utils import MockNeo4jContext, get_database_name
 
 
-class TestETLContext(ETLContext):
+class MockETLContext(ETLContext):
 
     def __init__(self, driver: Driver):
         self.logger = logging.getLogger(self.__class__.__name__)
         self.__env_vars = {}
-        self.neo4j = TestNeo4jContext(driver)
+        self.neo4j = MockNeo4jContext(driver)
         self.reporter = Neo4jProgressReporter(self, get_database_name())
 
 
 @pytest.fixture
 def context(neo4j_driver_with_empty_db) -> ETLContext:
-    return TestETLContext(neo4j_driver_with_empty_db)
+    return MockETLContext(neo4j_driver_with_empty_db)
 
 
 class Task1(Task):

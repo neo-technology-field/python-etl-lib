@@ -7,7 +7,7 @@ from _pytest.tmpdir import tmp_path
 from neo4j import Driver
 from neo4j.time import Date
 
-from etl_lib.core.ETLContext import QueryResult, Neo4jContext, ETLContext, SQLContext, gds
+from etl_lib.core.ETLContext import ETLContext, Neo4jContext, QueryResult, SQLContext, gds
 from etl_lib.core.Task import Task
 
 
@@ -96,7 +96,7 @@ def get_database_name():
             raise Exception("define NEO4J_TEST_DATABASE environment variable")
 
 
-class TestNeo4jContext(Neo4jContext):
+class MockNeo4jContext(Neo4jContext):
 
     def __init__(self, driver: Driver):
         self.logger = logging.getLogger(self.__class__.__name__)
@@ -105,28 +105,31 @@ class TestNeo4jContext(Neo4jContext):
         self.gds = gds(self)
 
 
-class TestETLContext(ETLContext):
+class MockETLContext(ETLContext):
 
     def __init__(self, driver: Driver, tmp_path):
         self.logger = logging.getLogger(self.__class__.__name__)
         self.__env_vars = {"ETL_ERROR_PATH": tmp_path}
-        self.neo4j = TestNeo4jContext(driver)
+        self.neo4j = MockNeo4jContext(driver)
         self.reporter = DummyReporter()
 
     def env(self, key: str) -> Any:
         if key in self.__env_vars:
             return self.__env_vars[key]
 
-class TestSQLETLContext(ETLContext):
+
+class MockSQLETLContext(ETLContext):
 
     def __init__(self, sql_uri):
         self.logger = logging.getLogger(self.__class__.__name__)
         self.reporter = DummyReporter()
+        self.__env_vars = {}
         self.sql = SQLContext(sql_uri)
 
     def env(self, key: str) -> Any:
         if key in self.__env_vars:
             return self.__env_vars[key]
+
 
 class DummyReporter:
 
@@ -162,6 +165,7 @@ class DummyContext:
 
     def env(self, key: str) -> Any:
         pass
+
 
 class DummyPredecessor:
     def __init__(self, batches):

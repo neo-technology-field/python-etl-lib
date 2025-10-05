@@ -72,6 +72,7 @@ def setup_test_nodes(combined_context, setup_rel_pairs_table):
 
 
 class TestRelationLoad(ParallelSQLLoad2Neo4jTask):
+    __test__ = False # prevent pytest from picking this up
     def __init__(self, context):
         super().__init__(context, batch_size=2, table_size=10, max_workers=3, prefetch=2)
 

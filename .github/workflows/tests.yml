@@ -1,0 +1,61 @@
+name: tests (py310–py313 + neo4j LTS/latest)
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  # A) Python matrix — runs against latest Neo4j
+  python-versions:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.10", "3.11", "3.12", "3.13"]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+
+      - name: Upgrade pip
+        run: python -m pip install -U pip
+
+      - name: Install package + dev deps
+        run: pip install ".[dev]"
+
+      - name: Run tests (latest Neo4j)
+        env:
+          # Use enterprise image to get APOC + GDS from the bundle
+          NEO4J_TEST_CONTAINER: neo4j:2025.09.0-enterprise
+        run: pytest -q
+
+  # B) Neo4j matrix
+  neo4j-versions:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        neo4j: ["5.26", "2025.09.0"]  # LTS + Latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: pip
+
+      - name: Upgrade pip
+        run: python -m pip install -U pip
+
+      - name: Install package + dev deps
+        run: pip install ".[dev]"
+
+      - name: Run tests against ${{ matrix.neo4j }}
+        env:
+          NEO4J_TEST_CONTAINER: neo4j:${{ matrix.neo4j }}-enterprise
+        run: pytest -q

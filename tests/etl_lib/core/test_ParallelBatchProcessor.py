@@ -147,7 +147,7 @@ def test_parallel_processing_fail_fast(etl_context):
                 )
 
     proc = ParallelBatchProcessor(
-        context=None,
+        context=etl_context,
         worker_factory=lambda: FailingWorker(context=etl_context),
         predecessor=pred,
         max_workers=2,
