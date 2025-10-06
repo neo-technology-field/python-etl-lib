@@ -1,61 +1,58 @@
-name: tests (py310–py313 + neo4j LTS/latest)
+name: tests
 
 on:
   push:
   pull_request:
 
 jobs:
-  # A) Python matrix — runs against latest Neo4j
-  python-versions:
+  # Read Python versions from noxfile.py once, then reuse in matrices
+  discover:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    outputs:
+      py_versions: ${{ steps.get.outputs.py_versions }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+      - name: Install nox (for importing noxfile cleanly)
+        run: python -m pip install -U pip nox
+      - id: get
+        name: Export Python versions from noxfile.py
+        run: |
+          echo "py_versions=$(python noxfile.py --print-py-versions)" >> "$GITHUB_OUTPUT"
+
+  # Matrix over Python versions — nox runs tests vs latest Neo4j
+  python-versions:
+    needs: discover
+    runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
-        python-version: ["3.10", "3.11", "3.12", "3.13"]
+        python-version: ${{ fromJSON(needs.discover.outputs.py_versions) }}
     steps:
       - uses: actions/checkout@v4
-
       - uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
           cache: pip
+      - name: Install nox
+        run: python -m pip install -U pip nox
+      - name: Run tests (this interpreter)
+        run: nox -s py -p "${{ matrix.python-version }}"
 
-      - name: Upgrade pip
-        run: python -m pip install -U pip
-
-      - name: Install package + dev deps
-        run: pip install ".[dev]"
-
-      - name: Run tests (latest Neo4j)
-        env:
-          # Use enterprise image to get APOC + GDS from the bundle
-          NEO4J_TEST_CONTAINER: neo4j:2025.09.0-enterprise
-        run: pytest -q
-
-  # B) Neo4j matrix
-  neo4j-versions:
+  # Neo4j variants — single Python; nox runs both LTS + latest sequentially
+  neo4j-variants:
+    needs: discover
     runs-on: ubuntu-latest
-    timeout-minutes: 45
-    strategy:
-      fail-fast: false
-      matrix:
-        neo4j: ["5.26", "2025.09.0"]  # LTS + Latest
     steps:
       - uses: actions/checkout@v4
-
       - uses: actions/setup-python@v5
         with:
           python-version: "3.13"
           cache: pip
-
-      - name: Upgrade pip
-        run: python -m pip install -U pip
-
-      - name: Install package + dev deps
-        run: pip install ".[dev]"
-
-      - name: Run tests against ${{ matrix.neo4j }}
-        env:
-          NEO4J_TEST_CONTAINER: neo4j:${{ matrix.neo4j }}-enterprise
-        run: pytest -q
+      - name: Install nox
+        run: python -m pip install -U pip nox
+      - name: Run tests against Neo4j LTS + latest
+        run: nox -s neo4j
