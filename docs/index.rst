@@ -9,6 +9,7 @@
    validation
    data-sources
    data-sinks
+   processing
    configuration
    testing
    cli
