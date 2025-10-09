@@ -1,0 +1,7 @@
+etl\_lib.task.ExecuteCypherTask module
+======================================
+
+.. automodule:: etl_lib.task.ExecuteCypherTask
+   :members:
+   :show-inheritance:
+   :undoc-members:

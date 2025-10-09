@@ -1,0 +1,7 @@
+etl\_lib.core.ProgressReporter module
+=====================================
+
+.. automodule:: etl_lib.core.ProgressReporter
+   :members:
+   :show-inheritance:
+   :undoc-members:
