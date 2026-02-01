@@ -13,7 +13,7 @@ import nox
 PY_VERSIONS = ["3.10", "3.11", "3.12", "3.13"]
 
 LTS_NEO4J = "5.26-enterprise"
-LATEST_NEO4J = "2025.09.0-enterprise"
+LATEST_NEO4J = "2025.12.1-enterprise"
 NEO4J_IMAGES = [LTS_NEO4J, LATEST_NEO4J]
 
 

@@ -9,41 +9,38 @@ from etl_lib.core.utils import merge_summery
 
 class ParallelBatchResult(BatchResults):
     """
-    Represents a batch split into parallelizable partitions.
+    Represents one *wave* produced by the splitter.
 
-    `chunk` is a list of lists, each sub-list is a partition.
+    `chunk` is a list of bucket-batches. Each sub-list is processed by one worker instance.
     """
     pass
 
 
 class ParallelBatchProcessor(BatchProcessor):
     """
-    BatchProcessor that runs worker threads over partitions of batches.
-
-    Receives a special BatchResult (:py:class:`ParallelBatchResult`) from the predecessor.
-    All chunks in a ParallelBatchResult it receives can be processed in parallel.
-    See :py:class:`etl_lib.core.SplittingBatchProcessor` on how to produce them.
-    Prefetches the next ParallelBatchResults from its predecessor.
-    The actual processing of the batches is deferred to the configured worker.
+    BatchProcessor that runs a worker over the bucket-batches of each ParallelBatchResult
+    in parallel threads, while prefetching the next ParallelBatchResult from its predecessor.
 
     Note:
-        - The predecessor must emit `ParallelBatchResult` instances.
+        - The predecessor must emit `ParallelBatchResult` instances (waves).
+        - This processor collects the BatchResults from all workers for one wave and merges them
+          into one BatchResults.
+        - The returned BatchResults will not obey the max_batch_size from get_batch() because
+          it represents the full wave.
 
     Args:
         context: ETL context.
-        worker_factory: A zero-arg callable that returns a new BatchProcessor
-                        each time it's called. This processor is responsible for the processing pf the batches.
+        worker_factory: A zero-arg callable that returns a new BatchProcessor each time it's called.
         task: optional Task for reporting.
-        predecessor: upstream BatchProcessor that must emit ParallelBatchResult.
-        max_workers: number of parallel threads for partitions.
-        prefetch: number of ParallelBatchResults to prefetch from the predecessor.
+        predecessor: upstream BatchProcessor that must emit ParallelBatchResult See
+                :class:`~etl_lib.core.SplittingBatchProcessor.SplittingBatchProcessor`.
+        max_workers: number of parallel threads for bucket processing.
+        prefetch: number of waves to prefetch.
 
     Behavior:
-        - For every ParallelBatchResult, spins up `max_workers` threads.
-        - Each thread calls its own worker from `worker_factory()`, with its
-          partition wrapped by `SingleBatchWrapper`.
-        - Collects and merges their BatchResults in a fail-fast manner: on first
-          exception, logs the error, cancels remaining threads, and raises an exception.
+        - For every wave, spins up `max_workers` threads.
+        - Each thread processes one bucket-batch using a fresh worker from `worker_factory()`.
+        - Collects and merges worker results in a fail-fast manner.
     """
 
     def __init__(
@@ -59,122 +56,95 @@ class ParallelBatchProcessor(BatchProcessor):
         self.worker_factory = worker_factory
         self.max_workers = max_workers
         self.prefetch = prefetch
-        self._batches_done = 0
 
-    def _process_parallel(self, pbr: ParallelBatchResult) -> BatchResults:
+    def _process_wave(self, wave: ParallelBatchResult) -> BatchResults:
         """
-        Run one worker per partition in `pbr.chunk`, merge their outputs, and include upstream
-        statistics from `pbr.statistics` so counters (e.g., valid/invalid rows from validation)
-        are preserved through the parallel stage.
+        Process one wave: run one worker per bucket-batch and merge their BatchResults.
 
-        Progress reporting:
-          - After each partition completes, report batch count only
+        Statistics:
+            `wave.statistics` is used as the initial merged stats, then merged with each worker's stats.
         """
-        merged_stats = dict(pbr.statistics or {})
+        merged_stats = dict(wave.statistics or {})
         merged_chunk = []
         total = 0
 
-        parts_total = len(pbr.chunk)
-        partitions_done = 0
+        self.logger.debug(f"Processing wave with {len(wave.chunk)} buckets")
 
-        self.logger.debug(f"Processing pbr of len {parts_total}")
-        with ThreadPoolExecutor(max_workers=self.max_workers, thread_name_prefix='PBP_worker_') as pool:
-            futures = [pool.submit(self._process_partition, part) for part in pbr.chunk]
+        with ThreadPoolExecutor(max_workers=self.max_workers, thread_name_prefix="PBP_worker_") as pool:
+            futures = [pool.submit(self._process_bucket_batch, bucket_batch) for bucket_batch in wave.chunk]
             try:
                 for f in as_completed(futures):
                     out = f.result()
-
-                    # Merge into this PBR's cumulative result (returned downstream)
                     merged_stats = merge_summery(merged_stats, out.statistics or {})
                     total += out.batch_size
                     merged_chunk.extend(out.chunk if isinstance(out.chunk, list) else [out.chunk])
-
-                    partitions_done += 1
-                    self.context.reporter.report_progress(
-                        task=self.task,
-                        batches=self._batches_done,
-                        expected_batches=None,
-                        stats={},
-                    )
-
             except Exception as e:
                 for g in futures:
                     g.cancel()
                 pool.shutdown(cancel_futures=True)
-                raise RuntimeError("partition processing failed") from e
+                raise RuntimeError("bucket processing failed") from e
 
-        self.logger.debug(f"Finished processing pbr with {merged_stats}")
+        self.logger.debug(f"Finished wave with stats={merged_stats}")
         return BatchResults(chunk=merged_chunk, statistics=merged_stats, batch_size=total)
 
     def get_batch(self, max_batch_size: int) -> Generator[BatchResults, None, None]:
         """
-        Pulls ParallelBatchResult batches from the predecessor, prefetching
-        up to `prefetch` ahead, processes each batch's partitions in
-        parallel threads, and yields a flattened BatchResults. The predecessor
-        can run ahead while the current batch is processed.
+        Pull waves from the predecessor (prefetching up to `prefetch` ahead), process each wave's
+        buckets in parallel, and yield one flattened BatchResults per wave.
         """
-        pbr_queue: queue.Queue[ParallelBatchResult | object] = queue.Queue(self.prefetch)
+        wave_queue: queue.Queue[ParallelBatchResult | object] = queue.Queue(self.prefetch)
         SENTINEL = object()
         exc: BaseException | None = None
 
         def producer():
             nonlocal exc
             try:
-                for pbr in self.predecessor.get_batch(max_batch_size):
+                for wave in self.predecessor.get_batch(max_batch_size):
                     self.logger.debug(
-                        f"adding pgr {pbr.statistics} / {len(pbr.chunk)} to queue of size {pbr_queue.qsize()}"
+                        f"adding wave stats={wave.statistics} buckets={len(wave.chunk)} to queue size={wave_queue.qsize()}"
                     )
-                    pbr_queue.put(pbr)
+                    wave_queue.put(wave)
             except BaseException as e:
                 exc = e
             finally:
-                pbr_queue.put(SENTINEL)
+                wave_queue.put(SENTINEL)
 
-        threading.Thread(target=producer, daemon=True, name='prefetcher').start()
+        threading.Thread(target=producer, daemon=True, name="prefetcher").start()
 
         while True:
-            pbr = pbr_queue.get()
-            if pbr is SENTINEL:
+            wave = wave_queue.get()
+            if wave is SENTINEL:
                 if exc is not None:
                     self.logger.error("Upstream producer failed", exc_info=True)
                     raise exc
                 break
-            result = self._process_parallel(pbr)
-            yield result
+            yield self._process_wave(wave)
 
     class SingleBatchWrapper(BatchProcessor):
         """
-        Simple BatchProcessor that returns the batch it receives via init.
-        Will be used as predecessor for the worker
+        Simple BatchProcessor that returns exactly one batch (the bucket-batch passed in via init).
+        Used as predecessor for the per-bucket worker.
         """
 
         def __init__(self, context, batch: List[Any]):
             super().__init__(context=context, predecessor=None)
             self._batch = batch
 
-        def get_batch(self, max_batch__size: int) -> Generator[BatchResults, None, None]:
-            # Ignores max_size; yields exactly one BatchResults containing the whole batch
+        def get_batch(self, max_size: int) -> Generator[BatchResults, None, None]:
             yield BatchResults(
                 chunk=self._batch,
                 statistics={},
-                batch_size=len(self._batch)
+                batch_size=len(self._batch),
             )
 
-    def _process_partition(self, partition):
+    def _process_bucket_batch(self, bucket_batch):
         """
-        Processes one partition of items by:
-          1. Wrapping it in SingleBatchWrapper
-          2. Instantiating a fresh worker via worker_factory()
-          3. Setting the worker's predecessor to the wrapper
-          4. Running exactly one batch and returning its BatchResults
-
-        Raises whatever exception the worker raises, allowing _process_parallel
-        to handle fail-fast behavior.
+        Process one bucket-batch by running a fresh worker over it.
         """
-        self.logger.debug("Processing partition")
-        wrapper = self.SingleBatchWrapper(self.context, partition)
+        self.logger.debug(f"Processing batch w/ size {len(bucket_batch)}")
+        wrapper = self.SingleBatchWrapper(self.context, bucket_batch)
         worker = self.worker_factory()
         worker.predecessor = wrapper
-        result = next(worker.get_batch(len(partition)))
-        self.logger.debug(f"finished processing partition with {result.statistics}")
+        result = next(worker.get_batch(len(bucket_batch)))
+        self.logger.debug(f"Finished bucket batch stats={result.statistics}")
         return result

@@ -172,15 +172,8 @@ if sqlalchemy_available:
                 database_url,
                 pool_pre_ping=True,
                 pool_size=pool_size,
-                max_overflow=max_overflow,
-                pool_recycle=1800,  # recycle connections older than 30m
-                connect_args={
-                    # turn on TCP keepalives on the client socket:
-                    "keepalives": 1,
-                    "keepalives_idle": 60,  # after 60s of idle
-                    "keepalives_interval": 10,  # probe every 10s
-                    "keepalives_count": 5,  # give up after 5 failed probes
-                })
+                max_overflow=max_overflow
+            )
 
 
 class ETLContext:

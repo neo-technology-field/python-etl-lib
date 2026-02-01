@@ -29,3 +29,5 @@
 /examples/nyc-taxi/src/etl_lib_example_nyc_taxi.egg-info/SOURCES.txt
 /examples/nyc-taxi/src/etl_lib_example_nyc_taxi.egg-info/top_level.txt
 /.idea/csv-editor.xml
+/.coverage
+/.idea/libraries/my_test_package.xml

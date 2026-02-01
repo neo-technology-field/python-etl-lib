@@ -25,3 +25,7 @@
 - now actually works from 3.10 onwards just as it claims
 - added nox tests to automatically test with Python version 3.10 onwards
 - added nox tests to run tests with the Neo4j LTS and latest
+
+## [0.3.2]
+- changed most of the parallel processing logic to also work with mono-partite graphs
+- minor adjustments

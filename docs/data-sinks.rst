@@ -41,3 +41,8 @@ Example usage:
         SET n += row
     """)
 
+
+SQL
+---
+
+The :class:`~etl_lib.data_sink.CypherBatchSink.SQLBatchSink` writes batches of data to a SQL database using the provided SQL query.

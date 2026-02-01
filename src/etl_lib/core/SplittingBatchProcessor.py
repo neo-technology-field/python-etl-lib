@@ -16,6 +16,10 @@ def tuple_id_extractor(table_size: int = 10) -> Callable[[Tuple[str | int, str |
 
     Returns:
         A callable that maps a tuple `(a, b)` to a tuple `(row, col)` using the last digit of `a` and `b`.
+
+    Notes:
+        This extractor does not validate the returned indices. Range validation is performed by
+        :class:`~etl_lib.core.SplittingBatchProcessor.SplittingBatchProcessor`.
     """
 
     def extractor(item: Tuple[Any, Any]) -> Tuple[int, int]:
@@ -39,15 +43,14 @@ def dict_id_extractor(
     """
     Build an ID extractor for dict rows. The extractor reads two fields (configurable via
     `start_key` and `end_key`) and returns (row, col) based on the last decimal digit of each.
-    Range validation remains the responsibility of the SplittingBatchProcessor.
 
     Args:
-        table_size: Informational hint carried on the extractor; used by callers to sanity-check.
+        table_size: Informational hint carried on the extractor.
         start_key: Field name for the start node identifier.
         end_key: Field name for the end node identifier.
 
     Returns:
-        Callable[[Mapping[str, Any]], tuple[int, int]]: Maps {start_key, end_key} → (row, col).
+        Callable that maps {start_key, end_key} → (row, col).
     """
 
     def extractor(item: Dict[str, Any]) -> Tuple[int, int]:
@@ -65,180 +68,224 @@ def dict_id_extractor(
     return extractor
 
 
+def canonical_integer_id_extractor(
+        table_size: int = 10,
+        start_key: str = "start",
+        end_key: str = "end",
+) -> Callable[[Dict[str, Any]], Tuple[int, int]]:
+    """
+    ID extractor for integer IDs with canonical folding.
+
+    - Uses Knuth's multiplicative hashing to scatter sequential integers across the grid.
+    - Canonical folding ensures (A,B) and (B,A) land in the same bucket by folding the lower
+      triangle into the upper triangle (row <= col).
+
+    The extractor marks itself as mono-partite by setting `extractor.monopartite = True`.
+    """
+    MAGIC = 2654435761
+
+    def extractor(item: Dict[str, Any]) -> Tuple[int, int]:
+        try:
+            s_val = item[start_key]
+            e_val = item[end_key]
+
+            s_hash = (s_val * MAGIC) & 0xffffffff
+            e_hash = (e_val * MAGIC) & 0xffffffff
+
+            row = s_hash % table_size
+            col = e_hash % table_size
+
+            if row > col:
+                row, col = col, row
+
+            return row, col
+        except KeyError:
+            raise KeyError(f"Item missing keys: {start_key} or {end_key}")
+        except Exception as e:
+            raise ValueError(f"Failed to extract ID: {e}")
+
+    extractor.table_size = table_size
+    extractor.monopartite = True
+    return extractor
+
+
 class SplittingBatchProcessor(BatchProcessor):
     """
-    BatchProcessor that splits incoming BatchResults into non-overlapping partitions based
-    on row/col indices extracted by the id_extractor, and emits full or remaining batches
-    using the mix-and-batch algorithm from https://neo4j.com/blog/developer/mix-and-batch-relationship-load/
-    Each emitted batch is a list of per-cell lists (array of arrays), so callers
-    can process each partition (other name for a cell) in parallel.
+    Streaming wave scheduler for mix-and-batch style loading.
 
-    A batch for a schedule group is  emitted when all cells in that group have at least `batch_size` items.
-    In addition, when a cell/partition reaches 3x the configured max_batch_size, the group is emitted to avoid
-    overflowing the buffer when the distribution per cell is uneven.
-    Leftovers are flushed after source exhaustion.
-    Emitted batches never exceed the configured max_batch_size.
+    Incoming rows are assigned to buckets via an `id_extractor(item) -> (row, col)` inside a
+    `table_size x table_size` grid. The processor emits waves; each wave contains bucket-batches
+    that are safe to process concurrently under the configured non-overlap rule.
+
+    Non-overlap rules
+    -----------------
+    - Bi-partite (default): within a wave, no two buckets share a row index and no two buckets share a col index.
+    - Mono-partite: within a wave, no node index is used more than once (row/col indices are the same domain).
+      Enable by setting `id_extractor.monopartite = True` (as done by `canonical_integer_id_extractor`).
+
+    Emission strategy
+    -----------------
+    - During streaming: emit a wave when at least one bucket is full (>= max_batch_size).
+      The wave is then filled with additional non-overlapping buckets that are near-full to
+      keep parallelism high without producing tiny batches.
+    - If a bucket backlog grows beyond a burst threshold, emit a burst wave to bound memory.
+    - After source exhaustion: flush leftovers in capped waves (max_batch_size per bucket).
+
+    Statistics policy
+    -----------------
+    - Every emission except the last carries {}.
+    - The last emission carries the accumulated upstream statistics (unfiltered).
     """
 
-    def __init__(self, context, table_size: int, id_extractor: Callable[[Any], Tuple[int, int]],
-                 task=None, predecessor=None):
+    def __init__(
+            self,
+            context,
+            table_size: int,
+            id_extractor: Callable[[Any], Tuple[int, int]],
+            task=None,
+            predecessor=None,
+            near_full_ratio: float = 0.85,
+            burst_multiplier: int = 25,
+    ):
         super().__init__(context, task, predecessor)
 
-        # If the extractor carries an expected table size, use or validate it
         if hasattr(id_extractor, "table_size"):
             expected_size = id_extractor.table_size
             if table_size is None:
-                table_size = expected_size  # determine table size from extractor if not provided
+                table_size = expected_size
             elif table_size != expected_size:
-                raise ValueError(f"Mismatch between provided table_size ({table_size}) and "
-                                 f"id_extractor table_size ({expected_size}).")
+                raise ValueError(
+                    f"Mismatch between provided table_size ({table_size}) and id_extractor table_size ({expected_size})."
+                )
         elif table_size is None:
             raise ValueError("table_size must be specified if id_extractor has no defined table_size")
+
+        if not (0 < near_full_ratio <= 1.0):
+            raise ValueError(f"near_full_ratio must be in (0, 1], got {near_full_ratio}")
+        if burst_multiplier < 1:
+            raise ValueError(f"burst_multiplier must be >= 1, got {burst_multiplier}")
+
         self.table_size = table_size
         self._id_extractor = id_extractor
+        self._monopartite = bool(getattr(id_extractor, "monopartite", False))
 
-        # Initialize 2D buffer for partitions
+        self.near_full_ratio = float(near_full_ratio)
+        self.burst_multiplier = int(burst_multiplier)
+
         self.buffer: Dict[int, Dict[int, List[Any]]] = {
-            i: {j: [] for j in range(self.table_size)} for i in range(self.table_size)
+            r: {c: [] for c in range(self.table_size)}
+            for r in range(self.table_size)
         }
         self.logger = logging.getLogger(f"{self.__class__.__module__}.{self.__class__.__name__}")
 
-    def _generate_batch_schedule(self) -> List[List[Tuple[int, int]]]:
+    def _bucket_claims(self, row: int, col: int) -> Tuple[Any, ...]:
         """
-        Create diagonal stripes (row, col) partitions to ensure no overlapping IDs
-        across emitted batches.
-        Example grid:
-                 ||  0  |  1  |  2
-            =====++=====+=====+=====
-              0  ||  0  |  1  |  2
-            -----++-----+-----+----
-              1  ||  2  |  0  |  1
-            -----++-----+-----+-----
-              2  ||  1  |  2  |  0
+        Return the resource claims a bucket consumes within a wave.
 
-        would return [[(0, 0), (1, 1), (2, 2)], [(0, 1), (1, 2), (2, 0)], [(0, 2), (1, 0), (2, 1)]]
+        - Bi-partite: claims (row-slot, col-slot)
+        - Mono-partite: claims node indices touched by the bucket
         """
-        schedule: List[List[Tuple[int, int]]] = []
-        for shift in range(self.table_size):
-            partition: List[Tuple[int, int]] = [
-                (i, (i + shift) % self.table_size)
-                for i in range(self.table_size)
-            ]
-            schedule.append(partition)
-        return schedule
+        if self._monopartite:
+            return (row,) if row == col else (row, col)
+        return ("row", row), ("col", col)
 
-    def _flush_group(
+    def _all_bucket_sizes(self) -> List[Tuple[int, int, int]]:
+        """
+        Return all non-empty buckets as (size, row, col).
+        """
+        out: List[Tuple[int, int, int]] = []
+        for r in range(self.table_size):
+            for c in range(self.table_size):
+                n = len(self.buffer[r][c])
+                if n > 0:
+                    out.append((n, r, c))
+        return out
+
+    def _select_wave(self, *, min_bucket_len: int, seed: List[Tuple[int, int]] | None = None) -> List[Tuple[int, int]]:
+        """
+        Greedy wave scheduler: pick a non-overlapping set of buckets with len >= min_bucket_len.
+
+        If `seed` is provided, it is taken as fixed and the wave is extended greedily.
+        """
+        candidates: List[Tuple[int, int, int]] = []
+        for r in range(self.table_size):
+            for c in range(self.table_size):
+                n = len(self.buffer[r][c])
+                if n >= min_bucket_len:
+                    candidates.append((n, r, c))
+
+        if not candidates and not seed:
+            return []
+
+        candidates.sort(key=lambda x: (-x[0], x[1], x[2]))
+
+        used: set[Any] = set()
+        wave: List[Tuple[int, int]] = []
+
+        if seed:
+            for r, c in seed:
+                claims = self._bucket_claims(r, c)
+                used.update(claims)
+                wave.append((r, c))
+
+        for _, r, c in candidates:
+            if (r, c) in wave:
+                continue
+            claims = self._bucket_claims(r, c)
+            if any(claim in used for claim in claims):
+                continue
+            wave.append((r, c))
+            used.update(claims)
+            if len(wave) >= self.table_size:
+                break
+
+        return wave
+
+    def _find_hottest_bucket(self, *, threshold: int) -> Tuple[int, int, int] | None:
+        """
+        Find the single hottest bucket (largest backlog) whose size is >= threshold.
+        Returns (row, col, size) or None.
+        """
+        best: Tuple[int, int, int] | None = None
+        for r in range(self.table_size):
+            for c in range(self.table_size):
+                n = len(self.buffer[r][c])
+                if n < threshold:
+                    continue
+                if best is None or n > best[2]:
+                    best = (r, c, n)
+        return best
+
+    def _flush_wave(
             self,
-            partitions: List[Tuple[int, int]],
-            batch_size: int,
+            wave: List[Tuple[int, int]],
+            max_batch_size: int,
             statistics: Dict[str, Any] | None = None,
-    ) -> Generator[BatchResults, None, None]:
+    ) -> BatchResults:
         """
-        Extract up to `batch_size` items from each cell in `partitions`, remove them from the buffer,
-        and yield a BatchResults whose chunks is a list of per-cell lists from these partitions.
-
-        Args:
-            partitions: Cell coordinates forming a diagonal group from the schedule.
-            batch_size: Max number of items to take from each cell.
-            statistics: Stats dict to attach to this emission (use {} for interim waves).
-                        The "final" emission will pass the accumulated stats here.
-
-        Notes:
-            - Debug-only: prints a 2D matrix of cell sizes when logger is in DEBUG.
-            - batch_size in the returned BatchResults equals the number of emitted items.
+        Extract up to `max_batch_size` items from each bucket in `wave`, remove them from the buffer,
+        and return a BatchResults whose chunk is a list of per-bucket lists (aligned with `wave`).
         """
-        self._log_buffer_matrix(partition=partitions)
+        self._log_buffer_matrix(wave=wave)
 
-        cell_chunks: List[List[Any]] = []
-        for row, col in partitions:
-            q = self.buffer[row][col]
-            take = min(batch_size, len(q))
-            part = q[:take]
-            cell_chunks.append(part)
-            # remove flushed items
-            self.buffer[row][col] = q[take:]
+        bucket_batches: List[List[Any]] = []
+        for r, c in wave:
+            q = self.buffer[r][c]
+            take = min(max_batch_size, len(q))
+            bucket_batches.append(q[:take])
+            self.buffer[r][c] = q[take:]
 
-        emitted = sum(len(c) for c in cell_chunks)
+        emitted = sum(len(b) for b in bucket_batches)
 
-        result = BatchResults(
-            chunk=cell_chunks,
+        return BatchResults(
+            chunk=bucket_batches,
             statistics=statistics or {},
             batch_size=emitted,
         )
-        yield result
 
-    def get_batch(self, max_batch__size: int) -> Generator[BatchResults, None, None]:
+    def _log_buffer_matrix(self, *, wave: List[Tuple[int, int]]) -> None:
         """
-        Consume upstream batches, split data across cells, and emit diagonal partitions:
-          - During streaming: emit a full partition when all its cells have >= max_batch__size.
-          - Also during streaming: if any cell in a partition builds up beyond a 'burst' threshold
-            (3 * of max_batch__size), emit that partition early, taking up to max_batch__size
-            from each cell.
-          - After source exhaustion: flush leftovers in waves capped at max_batch__size per cell.
-
-        Statistics policy:
-          * Every emission except the last carries {}.
-          * The last emission carries the accumulated upstream stats (unfiltered).
-        """
-        schedule = self._generate_batch_schedule()
-
-        accum_stats: Dict[str, Any] = {}
-        pending: BatchResults | None = None  # hold back the most recent emission so we know what's final
-
-        burst_threshold = 3 * max_batch__size
-
-        for upstream in self.predecessor.get_batch(max_batch__size):
-            # accumulate upstream stats (unfiltered)
-            if upstream.statistics:
-                accum_stats = merge_summery(accum_stats, upstream.statistics)
-
-            # add data to cells
-            for item in upstream.chunk:
-                r, c = self._id_extractor(item)
-                if not (0 <= r < self.table_size and 0 <= c < self.table_size):
-                    raise ValueError(f"partition id out of range: {(r, c)} for table_size={self.table_size}")
-                self.buffer[r][c].append(item)
-
-            # process partitions
-            for partition in schedule:
-                # normal full flush when all cells are ready
-                if all(len(self.buffer[r][c]) >= max_batch__size for r, c in partition):
-                    br = next(self._flush_group(partition, max_batch__size, statistics={}))
-                    if pending is not None:
-                        yield pending
-                    pending = br
-                    continue
-
-                # burst flush if any cell backlog explodes
-                hot_cells = [(r, c, len(self.buffer[r][c])) for r, c in partition if
-                             len(self.buffer[r][c]) >= burst_threshold]
-                if hot_cells:
-                    top_r, top_c, top_len = max(hot_cells, key=lambda x: x[2])
-                    self.logger.debug(
-                        "burst flush: partition=%s threshold=%d top_cell=(%d,%d len=%d)",
-                        partition, burst_threshold, top_r, top_c, top_len
-                    )
-                    br = next(self._flush_group(partition, max_batch__size, statistics={}))
-                    if pending is not None:
-                        yield pending
-                    pending = br
-
-        # source exhausted: drain leftovers in capped waves (respecting batch size)
-        self.logger.debug("start flushing leftovers")
-        for partition in (p for p in schedule if any(self.buffer[r][c] for r, c in p)):
-            while any(self.buffer[r][c] for r, c in partition):
-                br = next(self._flush_group(partition, max_batch__size, statistics={}))
-                if pending is not None:
-                    yield pending
-                pending = br
-
-        # final emission carries accumulated stats once
-        if pending is not None:
-            yield BatchResults(chunk=pending.chunk, statistics=accum_stats, batch_size=pending.batch_size)
-
-    def _log_buffer_matrix(self, *, partition: List[Tuple[int, int]]) -> None:
-        """
-        Dumps a compact 2D matrix of per-cell sizes (len of each buffer) when DEBUG is enabled.
+        Dumps a compact 2D matrix of per-bucket sizes (len of each buffer) when DEBUG is enabled.
         """
         if not self.logger.isEnabledFor(logging.DEBUG):
             return
@@ -247,7 +294,7 @@ class SplittingBatchProcessor(BatchProcessor):
             [len(self.buffer[r][c]) for c in range(self.table_size)]
             for r in range(self.table_size)
         ]
-        marks = set(partition)
+        marks = set(wave)
 
         pad = max(2, len(str(self.table_size - 1)))
         col_headers = [f"c{c:0{pad}d}" for c in range(self.table_size)]
@@ -266,3 +313,79 @@ class SplittingBatchProcessor(BatchProcessor):
             disable_numparse=True,
         )
         self.logger.debug("buffer matrix:\n%s", table)
+
+    def get_batch(self, max_batch_size: int) -> Generator[BatchResults, None, None]:
+        """
+        Consume upstream batches, bucket incoming rows, and emit waves of non-overlapping buckets.
+
+        Streaming behavior:
+          - If at least one bucket is full (>= max_batch_size), emit a wave seeded with full buckets
+            and extended with near-full buckets to keep parallelism high.
+          - If a bucket exceeds a burst threshold, emit a burst wave (seeded by the hottest bucket)
+            and extended with near-full buckets.
+
+        End-of-stream behavior:
+          - Flush leftovers in capped waves (max_batch_size per bucket).
+
+        Statistics policy:
+          * Every emission except the last carries {}.
+          * The last emission carries the accumulated upstream stats (unfiltered).
+        """
+        if self.predecessor is None:
+            return
+
+        accum_stats: Dict[str, Any] = {}
+        pending: BatchResults | None = None
+
+        near_full_threshold = max(1, int(max_batch_size * self.near_full_ratio))
+        burst_threshold = self.burst_multiplier * max_batch_size
+
+        for upstream in self.predecessor.get_batch(max_batch_size):
+            if upstream.statistics:
+                accum_stats = merge_summery(accum_stats, upstream.statistics)
+
+            for item in upstream.chunk:
+                r, c = self._id_extractor(item)
+                if self._monopartite and r > c:
+                    r, c = c, r
+                if not (0 <= r < self.table_size and 0 <= c < self.table_size):
+                    raise ValueError(f"bucket id out of range: {(r, c)} for table_size={self.table_size}")
+                self.buffer[r][c].append(item)
+
+            while True:
+                full_seed = self._select_wave(min_bucket_len=max_batch_size)
+                if not full_seed:
+                    break
+                wave = self._select_wave(min_bucket_len=near_full_threshold, seed=full_seed)
+                br = self._flush_wave(wave, max_batch_size, statistics={})
+                if pending is not None:
+                    yield pending
+                pending = br
+
+            while True:
+                hot = self._find_hottest_bucket(threshold=burst_threshold)
+                if hot is None:
+                    break
+                hot_r, hot_c, hot_n = hot
+                wave = self._select_wave(min_bucket_len=near_full_threshold, seed=[(hot_r, hot_c)])
+                self.logger.debug(
+                    "burst flush: hottest_bucket=(%d,%d len=%d) threshold=%d near_full_threshold=%d wave_size=%d",
+                    hot_r, hot_c, hot_n, burst_threshold, near_full_threshold, len(wave)
+                )
+                br = self._flush_wave(wave, max_batch_size, statistics={})
+                if pending is not None:
+                    yield pending
+                pending = br
+
+        self.logger.debug("start flushing leftovers")
+        while True:
+            wave = self._select_wave(min_bucket_len=1)
+            if not wave:
+                break
+            br = self._flush_wave(wave, max_batch_size, statistics={})
+            if pending is not None:
+                yield pending
+            pending = br
+
+        if pending is not None:
+            yield BatchResults(chunk=pending.chunk, statistics=accum_stats, batch_size=pending.batch_size)
