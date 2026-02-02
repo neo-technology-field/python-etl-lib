@@ -90,9 +90,8 @@ jobs:
 
       - name: Install Dependencies
         run: |
-          python -m pip install --upgrade pip pip-tools
-          pip-compile --extra dev,gds pyproject.toml
-          pip-sync
+          python -m pip install --upgrade pip
+          python -m pip install -e ".[dev,gds]"
 
       - name: Build and Publish Package
         uses: conchylicultor/pypi-build-publish@v1
@@ -110,12 +109,3 @@ jobs:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: docs/_build/html
           force_orphan: true
-#
-#      - name: Trigger ReadTheDocs Build for Versioned Docs
-#        env:
-#          READTHEDOCS_TOKEN: ${{ secrets.READTHEDOCS_TOKEN }}
-#        run: |
-#          curl -X POST \
-#            -H "Authorization: Token $READTHEDOCS_TOKEN" \
-#            -d "branches=main" \
-#            https://readthedocs.org/api/v3/projects/neo4j-etl-lib/builds/
