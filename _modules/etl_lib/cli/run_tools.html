@@ -1,0 +1,337 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>etl_lib.cli.run_tools &mdash; neo4j-etl-lib 0.3.2 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/graphviz.css?v=4ae1632d" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/readthedocs-custom.css" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=71d9d8e6"></script>
+      <script src="../../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            neo4j-etl-lib
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../index.html">Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../batching.html">Batching and Streaming</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../parallel.html">Parallel Processing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../reporting.html">Reporting</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../validation.html">Validation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../data-sources.html">Data Sources</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../data-sinks.html">Data Sinks</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../processing.html">Data Processing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../configuration.html">Configuration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../testing.html">Testing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../cli.html">CLI</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../source/etl_lib.html">API Reference</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">neo4j-etl-lib</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">etl_lib.cli.run_tools</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for etl_lib.cli.run_tools</h1><div class="highlight"><pre>
+<span></span><span class="kn">from</span><span class="w"> </span><span class="nn">datetime</span><span class="w"> </span><span class="kn">import</span> <span class="n">datetime</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">click</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">neo4j</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">neo4j</span><span class="w"> </span><span class="kn">import</span> <span class="n">GraphDatabase</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">neo4j.time</span><span class="w"> </span><span class="kn">import</span> <span class="n">DateTime</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">tabulate</span><span class="w"> </span><span class="kn">import</span> <span class="n">tabulate</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">__convert_date_time</span><span class="p">(</span><span class="n">input_date_time</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">datetime</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="k">if</span> <span class="n">input_date_time</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">None</span>
+    <span class="k">return</span> <span class="n">input_date_time</span><span class="o">.</span><span class="n">to_native</span><span class="p">()</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s2">&quot;%Y-%m-</span><span class="si">%d</span><span class="s2"> %H:%M&quot;</span><span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">__duration_from_start_end</span><span class="p">(</span><span class="n">start_time</span><span class="p">:</span> <span class="n">DateTime</span> <span class="o">|</span> <span class="kc">None</span><span class="p">,</span> <span class="n">end_time</span><span class="p">:</span> <span class="n">DateTime</span> <span class="o">|</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="k">if</span> <span class="n">start_time</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">end_time</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">None</span>
+
+    <span class="c1"># Convert neo4j.time.DateTime to native Python datetime</span>
+    <span class="n">start_time</span> <span class="o">=</span> <span class="n">start_time</span><span class="o">.</span><span class="n">to_native</span><span class="p">()</span>
+    <span class="n">end_time</span> <span class="o">=</span> <span class="n">end_time</span><span class="o">.</span><span class="n">to_native</span><span class="p">()</span>
+
+    <span class="c1"># Calculate the duration as a timedelta</span>
+    <span class="n">duration</span> <span class="o">=</span> <span class="n">end_time</span> <span class="o">-</span> <span class="n">start_time</span>
+
+    <span class="c1"># Extract hours, minutes, and seconds</span>
+    <span class="n">total_seconds</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">duration</span><span class="o">.</span><span class="n">total_seconds</span><span class="p">())</span>
+    <span class="n">hours</span> <span class="o">=</span> <span class="n">total_seconds</span> <span class="o">//</span> <span class="mi">3600</span>
+    <span class="n">minutes</span> <span class="o">=</span> <span class="p">(</span><span class="n">total_seconds</span> <span class="o">%</span> <span class="mi">3600</span><span class="p">)</span> <span class="o">//</span> <span class="mi">60</span>
+    <span class="n">seconds</span> <span class="o">=</span> <span class="n">total_seconds</span> <span class="o">%</span> <span class="mi">60</span>
+
+    <span class="c1"># Format as HH:MM:SS</span>
+    <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">hours</span><span class="si">}</span><span class="s2">:</span><span class="si">{</span><span class="n">minutes</span><span class="si">:</span><span class="s2">02</span><span class="si">}</span><span class="s2">:</span><span class="si">{</span><span class="n">seconds</span><span class="si">:</span><span class="s2">02</span><span class="si">}</span><span class="s2">&quot;</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">__print_details</span><span class="p">(</span><span class="n">driver</span><span class="p">,</span> <span class="n">run_id</span><span class="p">):</span>
+    <span class="n">records</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">driver</span><span class="o">.</span><span class="n">execute_query</span><span class="p">(</span><span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">    MATCH (:ETLRun {uuid : $id})-[:HAS_SUB_TASK*]-&gt;(task)-[:HAS_STATS]-&gt;(stats)</span>
+<span class="s2">    WITH task, stats ORDER BY task.order ASC</span>
+<span class="s2">    RETURN task.task AS task, task.status AS status, properties(stats) AS stats</span>
+<span class="s2">    &quot;&quot;&quot;</span><span class="p">,</span> <span class="nb">id</span><span class="o">=</span><span class="n">run_id</span><span class="p">,</span> <span class="n">routing_</span><span class="o">=</span><span class="n">neo4j</span><span class="o">.</span><span class="n">RoutingControl</span><span class="o">.</span><span class="n">READ</span><span class="p">)</span>
+
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Showing detailed stats for each task. Task without non-zero stats are omitted.&quot;</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">record</span> <span class="ow">in</span> <span class="n">records</span><span class="p">:</span>
+        <span class="n">rows</span> <span class="o">=</span> <span class="p">[(</span><span class="n">key</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span> <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">record</span><span class="p">[</span><span class="s2">&quot;stats&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="n">value</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">rows</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Showing statistics for Task &#39;</span><span class="si">{</span><span class="n">record</span><span class="p">[</span><span class="s1">&#39;task&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&#39; with status &#39;</span><span class="si">{</span><span class="n">record</span><span class="p">[</span><span class="s1">&#39;status&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&#39;&quot;</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="n">tabulate</span><span class="p">(</span><span class="n">rows</span><span class="p">,</span> <span class="n">headers</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;Name&quot;</span><span class="p">,</span> <span class="s2">&quot;Value&quot;</span><span class="p">],</span> <span class="n">tablefmt</span><span class="o">=</span><span class="s1">&#39;psql&#39;</span><span class="p">))</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">__driver</span><span class="p">(</span><span class="n">ctx</span><span class="p">):</span>
+    <span class="n">neo4j_uri</span> <span class="o">=</span> <span class="n">ctx</span><span class="o">.</span><span class="n">obj</span><span class="p">[</span><span class="s2">&quot;neo4j_uri&quot;</span><span class="p">]</span>
+    <span class="n">neo4j_user</span> <span class="o">=</span> <span class="n">ctx</span><span class="o">.</span><span class="n">obj</span><span class="p">[</span><span class="s2">&quot;neo4j_user&quot;</span><span class="p">]</span>
+    <span class="n">database_name</span> <span class="o">=</span> <span class="n">ctx</span><span class="o">.</span><span class="n">obj</span><span class="p">[</span><span class="s2">&quot;database_name&quot;</span><span class="p">]</span>
+    <span class="n">neo4j_password</span> <span class="o">=</span> <span class="n">ctx</span><span class="o">.</span><span class="n">obj</span><span class="p">[</span><span class="s2">&quot;neo4j_password&quot;</span><span class="p">]</span>
+    <span class="k">return</span> <span class="n">GraphDatabase</span><span class="o">.</span><span class="n">driver</span><span class="p">(</span><span class="n">neo4j_uri</span><span class="p">,</span> <span class="n">auth</span><span class="o">=</span><span class="p">(</span><span class="n">neo4j_user</span><span class="p">,</span> <span class="n">neo4j_password</span><span class="p">),</span> <span class="n">database</span><span class="o">=</span><span class="n">database_name</span><span class="p">,</span>
+                                <span class="n">notifications_min_severity</span><span class="o">=</span><span class="s2">&quot;OFF&quot;</span><span class="p">,</span> <span class="n">user_agent</span><span class="o">=</span><span class="s2">&quot;ETL CLI&quot;</span><span class="p">)</span>
+
+
+<span class="nd">@click</span><span class="o">.</span><span class="n">group</span><span class="p">()</span>
+<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s1">&#39;--neo4j-uri&#39;</span><span class="p">,</span> <span class="n">envvar</span><span class="o">=</span><span class="s1">&#39;NEO4J_URI&#39;</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Neo4j database URI&#39;</span><span class="p">)</span>
+<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s1">&#39;--neo4j-user&#39;</span><span class="p">,</span> <span class="n">envvar</span><span class="o">=</span><span class="s1">&#39;NEO4J_USERNAME&#39;</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Neo4j username&#39;</span><span class="p">)</span>
+<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s1">&#39;--neo4j-password&#39;</span><span class="p">,</span> <span class="n">envvar</span><span class="o">=</span><span class="s1">&#39;NEO4J_PASSWORD&#39;</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Neo4j password&#39;</span><span class="p">)</span>
+<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s1">&#39;--log-file&#39;</span><span class="p">,</span> <span class="n">envvar</span><span class="o">=</span><span class="s1">&#39;LOG_FILE&#39;</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Path to the log file&#39;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s1">&#39;--database-name&#39;</span><span class="p">,</span> <span class="n">envvar</span><span class="o">=</span><span class="s1">&#39;DATABASE_NAME&#39;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="s1">&#39;neo4j&#39;</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Neo4j database name (default: neo4j)&#39;</span><span class="p">)</span>
+<span class="nd">@click</span><span class="o">.</span><span class="n">pass_context</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">cli</span><span class="p">(</span><span class="n">ctx</span><span class="p">,</span> <span class="n">neo4j_uri</span><span class="p">,</span> <span class="n">neo4j_user</span><span class="p">,</span> <span class="n">neo4j_password</span><span class="p">,</span> <span class="n">log_file</span><span class="p">,</span> <span class="n">database_name</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Command-line tool for ETL pipelines.</span>
+
+<span class="sd">        Environment variables can be configured via a .env file or overridden via CLI options:</span>
+
+<span class="sd">        \b</span>
+<span class="sd">        - NEO4J_URI: Neo4j database URI</span>
+<span class="sd">        - NEO4J_USERNAME: Neo4j username</span>
+<span class="sd">        - NEO4J_PASSWORD: Neo4j password</span>
+<span class="sd">        - LOG_FILE: Path to the log file</span>
+<span class="sd">        - DATABASE_NAME: Neo4j database name (default: neo4j)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+    <span class="c1"># Validate Neo4j connection details</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">neo4j_uri</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">neo4j_user</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">neo4j_password</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span>
+            <span class="s2">&quot;Neo4j connection details are incomplete. Please provide NEO4J_URL, NEO4J_USER, and NEO4J_PASSWORD.&quot;</span><span class="p">)</span>
+        <span class="k">return</span>
+
+    <span class="n">ctx</span><span class="o">.</span><span class="n">ensure_object</span><span class="p">(</span><span class="nb">dict</span><span class="p">)</span>
+    <span class="n">ctx</span><span class="o">.</span><span class="n">obj</span><span class="p">[</span><span class="s1">&#39;neo4j_uri&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">neo4j_uri</span>
+    <span class="n">ctx</span><span class="o">.</span><span class="n">obj</span><span class="p">[</span><span class="s1">&#39;neo4j_user&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">neo4j_user</span>
+    <span class="n">ctx</span><span class="o">.</span><span class="n">obj</span><span class="p">[</span><span class="s1">&#39;neo4j_password&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">neo4j_password</span>
+    <span class="n">ctx</span><span class="o">.</span><span class="n">obj</span><span class="p">[</span><span class="s1">&#39;database_name&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">database_name</span>
+    <span class="n">ctx</span><span class="o">.</span><span class="n">obj</span><span class="p">[</span><span class="s1">&#39;log_file&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">log_file</span>
+
+
+<span class="nd">@cli</span><span class="o">.</span><span class="n">command</span><span class="p">()</span>
+<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s2">&quot;--number-runs&quot;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Number of rows to process, defaults to 10&quot;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
+<span class="nd">@click</span><span class="o">.</span><span class="n">pass_context</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">query</span><span class="p">(</span><span class="n">ctx</span><span class="p">,</span> <span class="n">number_runs</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Retrieve the list of the last x ETL runs from the database and display them.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Listing runs in database &#39;</span><span class="si">{</span><span class="n">ctx</span><span class="o">.</span><span class="n">obj</span><span class="p">[</span><span class="s1">&#39;database_name&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&#39;&quot;</span><span class="p">)</span>
+    <span class="k">with</span> <span class="n">__driver</span><span class="p">(</span><span class="n">ctx</span><span class="p">)</span> <span class="k">as</span> <span class="n">driver</span><span class="p">:</span>
+        <span class="n">records</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">driver</span><span class="o">.</span><span class="n">execute_query</span><span class="p">(</span><span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">            MATCH (r:ETLRun:ETLTask) </span>
+<span class="s2">            WITH r, r.name AS name, r.uuid AS id, r.startTime AS startTime, r.endTime AS endTime</span>
+<span class="s2">            CALL (r) {</span>
+<span class="s2">              MATCH (r)-[:HAS_STATS]-&gt;(stats)</span>
+<span class="s2">              WITH [k IN keys(stats) | stats[k] ] AS stats</span>
+<span class="s2">              UNWIND stats AS stat</span>
+<span class="s2">              RETURN sum(stat) AS changes</span>
+<span class="s2">              }</span>
+<span class="s2">            ORDER BY startTime DESC LIMIT $number_runs</span>
+<span class="s2">            RETURN name, id, startTime, endTime, changes</span>
+<span class="s2">        &quot;&quot;&quot;</span><span class="p">,</span> <span class="n">number_runs</span><span class="o">=</span><span class="n">number_runs</span><span class="p">,</span> <span class="n">routing_</span><span class="o">=</span><span class="n">neo4j</span><span class="o">.</span><span class="n">RoutingControl</span><span class="o">.</span><span class="n">READ</span><span class="p">)</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="p">{</span>
+                <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="n">record</span><span class="p">[</span><span class="s2">&quot;name&quot;</span><span class="p">],</span> <span class="s2">&quot;ID&quot;</span><span class="p">:</span> <span class="n">record</span><span class="p">[</span><span class="s2">&quot;id&quot;</span><span class="p">],</span>
+                <span class="s2">&quot;startTime&quot;</span><span class="p">:</span> <span class="n">__convert_date_time</span><span class="p">(</span><span class="n">record</span><span class="p">[</span><span class="s2">&quot;startTime&quot;</span><span class="p">]),</span>
+                <span class="s2">&quot;endTime&quot;</span><span class="p">:</span> <span class="n">__convert_date_time</span><span class="p">(</span><span class="n">record</span><span class="p">[</span><span class="s2">&quot;endTime&quot;</span><span class="p">]),</span>
+                <span class="s2">&quot;changes&quot;</span><span class="p">:</span> <span class="n">record</span><span class="p">[</span><span class="s2">&quot;changes&quot;</span><span class="p">]</span>
+            <span class="p">}</span> <span class="k">for</span> <span class="n">record</span> <span class="ow">in</span> <span class="n">records</span><span class="p">]</span>
+
+        <span class="nb">print</span><span class="p">(</span><span class="n">tabulate</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">headers</span><span class="o">=</span><span class="s1">&#39;keys&#39;</span><span class="p">,</span> <span class="n">tablefmt</span><span class="o">=</span><span class="s1">&#39;psql&#39;</span><span class="p">))</span>
+
+
+<span class="nd">@cli</span><span class="o">.</span><span class="n">command</span><span class="p">()</span>
+<span class="nd">@click</span><span class="o">.</span><span class="n">argument</span><span class="p">(</span><span class="s1">&#39;run-id&#39;</span><span class="p">,</span> <span class="n">required</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s2">&quot;--details&quot;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">is_flag</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Show stats for each task&quot;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">bool</span><span class="p">)</span>
+<span class="nd">@click</span><span class="o">.</span><span class="n">pass_context</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">detail</span><span class="p">(</span><span class="n">ctx</span><span class="p">,</span> <span class="n">run_id</span><span class="p">,</span> <span class="n">details</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Show a breakdown of the task for the specified run, including statistics.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Showing details for run ID: </span><span class="si">{</span><span class="n">run_id</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="k">with</span> <span class="n">__driver</span><span class="p">(</span><span class="n">ctx</span><span class="p">)</span> <span class="k">as</span> <span class="n">driver</span><span class="p">:</span>
+        <span class="n">records</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">driver</span><span class="o">.</span><span class="n">execute_query</span><span class="p">(</span><span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">        MATCH (r:ETLRun {uuid : $id})-[:HAS_SUB_TASK*]-&gt;(task) </span>
+<span class="s2">        WITH task ORDER BY task.order ASC</span>
+<span class="s2">        CALL (task) {</span>
+<span class="s2">          MATCH (task)-[:HAS_STATS]-&gt;(stats)</span>
+<span class="s2">          WITH [k IN keys(stats) | stats[k] ] AS stats</span>
+<span class="s2">          UNWIND stats AS stat</span>
+<span class="s2">          RETURN sum(stat) AS changes</span>
+<span class="s2">        }</span>
+<span class="s2">        RETURN </span>
+<span class="s2">          task.task AS task, task.status AS status,</span>
+<span class="s2">          task.batches + &#39; / &#39; + coalesce(task.expected_batches, &#39;-&#39;) AS batches, </span>
+<span class="s2">          task.startTime AS startTime,  task.endTime AS endTime, changes</span>
+<span class="s2">        &quot;&quot;&quot;</span><span class="p">,</span> <span class="nb">id</span><span class="o">=</span><span class="n">run_id</span><span class="p">,</span> <span class="n">routing_</span><span class="o">=</span><span class="n">neo4j</span><span class="o">.</span><span class="n">RoutingControl</span><span class="o">.</span><span class="n">READ</span><span class="p">)</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="p">{</span>
+                <span class="s2">&quot;task&quot;</span><span class="p">:</span> <span class="n">record</span><span class="p">[</span><span class="s2">&quot;task&quot;</span><span class="p">],</span>
+                <span class="s2">&quot;status&quot;</span><span class="p">:</span> <span class="n">record</span><span class="p">[</span><span class="s2">&quot;status&quot;</span><span class="p">],</span>
+                <span class="s2">&quot;batches&quot;</span><span class="p">:</span> <span class="n">record</span><span class="p">[</span><span class="s2">&quot;batches&quot;</span><span class="p">],</span>
+                <span class="s2">&quot;duration&quot;</span><span class="p">:</span> <span class="n">__duration_from_start_end</span><span class="p">(</span><span class="n">record</span><span class="p">[</span><span class="s2">&quot;startTime&quot;</span><span class="p">],</span> <span class="n">record</span><span class="p">[</span><span class="s2">&quot;endTime&quot;</span><span class="p">]),</span>
+                <span class="s2">&quot;changes&quot;</span><span class="p">:</span> <span class="n">record</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;changes&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+            <span class="p">}</span>
+            <span class="k">for</span> <span class="n">record</span> <span class="ow">in</span> <span class="n">records</span>
+        <span class="p">]</span>
+
+        <span class="nb">print</span><span class="p">(</span><span class="n">tabulate</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">headers</span><span class="o">=</span><span class="s1">&#39;keys&#39;</span><span class="p">,</span> <span class="n">tablefmt</span><span class="o">=</span><span class="s1">&#39;psql&#39;</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">details</span><span class="p">:</span>
+            <span class="n">__print_details</span><span class="p">(</span><span class="n">driver</span><span class="p">,</span> <span class="n">run_id</span><span class="p">)</span>
+
+
+<span class="c1"># noinspection PyTypeChecker</span>
+<span class="nd">@cli</span><span class="o">.</span><span class="n">command</span><span class="p">()</span>
+<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s1">&#39;--run-id&#39;</span><span class="p">,</span> <span class="n">required</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Run IDs to delete, works with comma separated list&#39;</span><span class="p">)</span>
+<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s1">&#39;--before&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="n">click</span><span class="o">.</span><span class="n">DateTime</span><span class="p">(</span><span class="n">formats</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;%Y-%m-</span><span class="si">%d</span><span class="s2">&quot;</span><span class="p">]),</span> <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Delete runs before a specific date in format YYYY-MM-DD&#39;</span><span class="p">)</span>
+<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span><span class="s1">&#39;--older&#39;</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Delete runs older than x days&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
+<span class="nd">@click</span><span class="o">.</span><span class="n">pass_context</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">delete</span><span class="p">(</span><span class="n">ctx</span><span class="p">,</span> <span class="n">run_id</span><span class="p">,</span> <span class="n">before</span><span class="p">,</span> <span class="n">older</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Delete runs based on run ID, date, or age. One and only one of --run-id, --before, or --older must be provided.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Ensure mutual exclusivity</span>
+    <span class="n">options</span> <span class="o">=</span> <span class="p">[</span><span class="n">run_id</span><span class="p">,</span> <span class="n">before</span><span class="p">,</span> <span class="n">older</span><span class="p">]</span>
+    <span class="k">if</span> <span class="nb">sum</span><span class="p">(</span><span class="nb">bool</span><span class="p">(</span><span class="n">opt</span><span class="p">)</span> <span class="k">for</span> <span class="n">opt</span> <span class="ow">in</span> <span class="n">options</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;You must specify exactly one of --run-id, --before, or --older.&quot;</span><span class="p">)</span>
+        <span class="k">return</span>
+
+    <span class="k">if</span> <span class="n">run_id</span><span class="p">:</span>
+        <span class="n">ids</span> <span class="o">=</span> <span class="n">run_id</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;,&#39;</span><span class="p">)</span>
+        <span class="n">delete_runs</span><span class="p">(</span><span class="n">ctx</span><span class="p">,</span> <span class="n">ids</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">before</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Deleting runs before: </span><span class="si">{</span><span class="n">before</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">with</span> <span class="n">__driver</span><span class="p">(</span><span class="n">ctx</span><span class="p">)</span> <span class="k">as</span> <span class="n">driver</span><span class="p">:</span>
+            <span class="n">record</span><span class="o">=</span> <span class="n">driver</span><span class="o">.</span><span class="n">execute_query</span><span class="p">(</span>
+<span class="w">                </span><span class="sd">&quot;&quot;&quot;MATCH (r:ETLRun) WHERE date(r.startTime) &lt; date($before) </span>
+<span class="sd">                RETURN collect(r.uuid) AS ids</span>
+<span class="sd">                &quot;&quot;&quot;</span><span class="p">,</span>
+                <span class="n">result_transformer_</span><span class="o">=</span><span class="n">neo4j</span><span class="o">.</span><span class="n">Result</span><span class="o">.</span><span class="n">single</span><span class="p">,</span>
+                <span class="n">before</span><span class="o">=</span><span class="n">before</span><span class="p">)</span>
+            <span class="n">ids</span> <span class="o">=</span> <span class="n">record</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="n">delete_runs</span><span class="p">(</span><span class="n">ctx</span><span class="p">,</span> <span class="n">ids</span><span class="p">)</span>
+
+    <span class="k">elif</span> <span class="n">older</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Deleting runs older than: </span><span class="si">{</span><span class="n">older</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">with</span> <span class="n">__driver</span><span class="p">(</span><span class="n">ctx</span><span class="p">)</span> <span class="k">as</span> <span class="n">driver</span><span class="p">:</span>
+            <span class="n">record</span> <span class="o">=</span> <span class="n">driver</span><span class="o">.</span><span class="n">execute_query</span><span class="p">(</span>
+<span class="w">                </span><span class="sd">&quot;&quot;&quot;MATCH (r:ETLRun) WHERE date(r.startTime) &lt; (date() - duration({days: $days})) </span>
+<span class="sd">                RETURN collect(r.uuid) AS ids</span>
+<span class="sd">                &quot;&quot;&quot;</span><span class="p">,</span>
+                <span class="n">result_transformer_</span><span class="o">=</span><span class="n">neo4j</span><span class="o">.</span><span class="n">Result</span><span class="o">.</span><span class="n">single</span><span class="p">,</span>
+                <span class="n">days</span><span class="o">=</span><span class="n">older</span><span class="p">)</span>
+            <span class="n">ids</span> <span class="o">=</span> <span class="n">record</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="n">delete_runs</span><span class="p">(</span><span class="n">ctx</span><span class="p">,</span> <span class="n">ids</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="delete_runs">
+<a class="viewcode-back" href="../../../source/etl_lib.cli.run_tools.html#etl_lib.cli.run_tools.delete_runs">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">delete_runs</span><span class="p">(</span><span class="n">ctx</span><span class="p">,</span> <span class="n">ids</span><span class="p">):</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Deleting run IDs: </span><span class="si">{</span><span class="n">ids</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="k">with</span> <span class="n">__driver</span><span class="p">(</span><span class="n">ctx</span><span class="p">)</span> <span class="k">as</span> <span class="n">driver</span><span class="p">:</span>
+        <span class="n">records</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">driver</span><span class="o">.</span><span class="n">execute_query</span><span class="p">(</span>
+<span class="w">            </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">            MATCH (r:ETLRun)-[*]-&gt;(n) WHERE r.uuid IN $ids</span>
+<span class="sd">            DETACH DELETE n</span>
+<span class="sd">            DETACH DELETE r</span>
+<span class="sd">            &quot;&quot;&quot;</span><span class="p">,</span> <span class="n">ids</span><span class="o">=</span><span class="n">ids</span><span class="p">,</span> <span class="n">routing_</span><span class="o">=</span><span class="n">neo4j</span><span class="o">.</span><span class="n">RoutingControl</span><span class="o">.</span><span class="n">WRITE</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Deleted run IDs: </span><span class="si">{</span><span class="n">ids</span><span class="si">}</span><span class="s2">  successfully&quot;</span><span class="p">)</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright .</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

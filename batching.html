@@ -1,0 +1,175 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Batching and Streaming &mdash; neo4j-etl-lib 0.3.2 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="_static/graphviz.css?v=4ae1632d" />
+      <link rel="stylesheet" type="text/css" href="_static/readthedocs-custom.css" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=71d9d8e6"></script>
+      <script src="_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Parallel Processing" href="parallel.html" />
+    <link rel="prev" title="Welcome to the neo4j-etl-lib documentation" href="index.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            neo4j-etl-lib
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="index.html">Documentation</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Batching and Streaming</a></li>
+<li class="toctree-l1"><a class="reference internal" href="parallel.html">Parallel Processing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="reporting.html">Reporting</a></li>
+<li class="toctree-l1"><a class="reference internal" href="validation.html">Validation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="data-sources.html">Data Sources</a></li>
+<li class="toctree-l1"><a class="reference internal" href="data-sinks.html">Data Sinks</a></li>
+<li class="toctree-l1"><a class="reference internal" href="processing.html">Data Processing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="configuration.html">Configuration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="testing.html">Testing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="cli.html">CLI</a></li>
+<li class="toctree-l1"><a class="reference internal" href="source/etl_lib.html">API Reference</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">neo4j-etl-lib</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Batching and Streaming</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/batching.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="batching-and-streaming">
+<h1>Batching and Streaming<a class="headerlink" href="#batching-and-streaming" title="Link to this heading"></a></h1>
+<p>As outlined in <a class="reference internal" href="index.html#overview"><span class="std std-ref">Overview</span></a>, <a class="reference internal" href="source/etl_lib.core.Task.html#etl_lib.core.Task.Task" title="etl_lib.core.Task.Task"><code class="xref py py-class docutils literal notranslate"><span class="pre">Task</span></code></a> and <a class="reference internal" href="source/etl_lib.core.Task.html#etl_lib.core.Task.TaskGroup" title="etl_lib.core.Task.TaskGroup"><code class="xref py py-class docutils literal notranslate"><span class="pre">TaskGroup</span></code></a> let you compose pipelines. A typical task would be ‘load a CSV file into the database’.</p>
+<p>This is actually a series of steps, such as:</p>
+<ul class="simple">
+<li><p>Read the CSV data</p></li>
+<li><p>Validate each row</p></li>
+<li><p>Import the rows into the database</p></li>
+</ul>
+<p>Ideally, this would be done in batches of rows to allow processing of large files without excessive memory usage.</p>
+<p>Splitting Tasks into steps allows to reuse steps in different tasks.</p>
+<p>To address this, tasks can be composed using <a class="reference internal" href="source/etl_lib.core.BatchProcessor.html#etl_lib.core.BatchProcessor.BatchProcessor" title="etl_lib.core.BatchProcessor.BatchProcessor"><code class="xref py py-class docutils literal notranslate"><span class="pre">BatchProcessor</span></code></a>.</p>
+<p>The <a class="reference internal" href="source/etl_lib.core.BatchProcessor.html#etl_lib.core.BatchProcessor.BatchProcessor.__init__" title="etl_lib.core.BatchProcessor.BatchProcessor.__init__"><code class="xref py py-func docutils literal notranslate"><span class="pre">__init__()</span></code></a> constructor takes a predecessor instance. This predecessor serves as the data source during calls to <a class="reference internal" href="source/etl_lib.core.BatchProcessor.html#etl_lib.core.BatchProcessor.BatchProcessor.get_batch" title="etl_lib.core.BatchProcessor.BatchProcessor.get_batch"><code class="xref py py-func docutils literal notranslate"><span class="pre">get_batch()</span></code></a>. This function returns a <code class="docutils literal notranslate"><span class="pre">Generator</span></code> of <a class="reference internal" href="source/etl_lib.core.BatchProcessor.html#etl_lib.core.BatchProcessor.BatchResults" title="etl_lib.core.BatchProcessor.BatchResults"><code class="xref py py-class docutils literal notranslate"><span class="pre">BatchResults</span></code></a>, enabling the creation of a chain of batch processors.
+The final component in the chain initiates the processing and sets the <code class="docutils literal notranslate"><span class="pre">max_batch_size</span></code> for the entire chain.</p>
+<p>The <a class="reference internal" href="source/etl_lib.core.ClosedLoopBatchProcessor.html#etl_lib.core.ClosedLoopBatchProcessor.ClosedLoopBatchProcessor" title="etl_lib.core.ClosedLoopBatchProcessor.ClosedLoopBatchProcessor"><code class="xref py py-class docutils literal notranslate"><span class="pre">ClosedLoopBatchProcessor</span></code></a> is a convenient implementation for this final step, integrating batching with logging and reporting functionality.</p>
+<p>For the CSV loading task mentioned above, see the figure below:</p>
+digraph example {
+     rankdir=RL;
+     node [ shape=record ];
+
+     csv [
+         label = &quot;csv|&lt;get_batch&gt;get_batch&quot;;
+     ];
+
+     validator [
+         label = &quot;validator|&lt;get_batch&gt;get_batch&quot;;
+     ];
+
+     cypher [
+         label = &quot;cypher|&lt;get_batch&gt;get_batch&quot;;
+     ];
+
+     end [
+         label = &quot;end|&lt;get_batch&gt;get_batch&quot;;
+     ];
+
+     end:get_batch -&gt; cypher:get_batch -&gt; validator:get_batch -&gt; csv:get_batch;
+}<p>An implementation of this can be found in <a class="reference internal" href="source/etl_lib.task.data_loading.CSVLoad2Neo4jTask.html#etl_lib.task.data_loading.CSVLoad2Neo4jTask.CSVLoad2Neo4jTask" title="etl_lib.task.data_loading.CSVLoad2Neo4jTask.CSVLoad2Neo4jTask"><code class="xref py py-class docutils literal notranslate"><span class="pre">CSVLoad2Neo4jTask</span></code></a>:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">run_internal</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">TaskReturn</span><span class="p">:</span>
+    <span class="n">error_file</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">file</span><span class="o">.</span><span class="n">with_suffix</span><span class="p">(</span><span class="s2">&quot;.error.json&quot;</span><span class="p">)</span>
+
+    <span class="n">csv</span> <span class="o">=</span> <span class="n">CSVBatchProcessor</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">file</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">context</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span>
+    <span class="n">validator</span> <span class="o">=</span> <span class="n">ValidationBatchProcessor</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">context</span><span class="p">,</span> <span class="bp">self</span><span class="p">,</span> <span class="n">csv</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">,</span> <span class="n">error_file</span><span class="p">)</span>
+    <span class="n">cypher</span> <span class="o">=</span> <span class="n">CypherBatchProcessor</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">context</span><span class="p">,</span> <span class="bp">self</span><span class="p">,</span> <span class="n">validator</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_query</span><span class="p">())</span>
+    <span class="n">end</span> <span class="o">=</span> <span class="n">ClosedLoopBatchProcessor</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">context</span><span class="p">,</span> <span class="bp">self</span><span class="p">,</span> <span class="n">cypher</span><span class="p">)</span>
+    <span class="n">result</span> <span class="o">=</span> <span class="nb">next</span><span class="p">(</span><span class="n">end</span><span class="o">.</span><span class="n">get_batch</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">batch_size</span><span class="p">))</span>
+
+    <span class="k">return</span> <span class="n">TaskReturn</span><span class="p">(</span><span class="kc">True</span><span class="p">,</span> <span class="n">result</span><span class="o">.</span><span class="n">statistics</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>If validation is not needed, the <code class="docutils literal notranslate"><span class="pre">validator</span></code> can simply be removed or substituted with another implementation.</p>
+<p>The library provides several <code class="docutils literal notranslate"><span class="pre">BatchProcessor</span></code> implementations to build tasks from.</p>
+<p>Splitting a task into sub-steps also simplifies testing, as each step (<code class="docutils literal notranslate"><span class="pre">BatchProcessor</span></code>) can be tested in isolation.</p>
+<p>A dictionary containing batch metadata is passed between steps via <code class="docutils literal notranslate"><span class="pre">BatchResults</span></code>. The keys in this dictionary depend on the processors involved. For instance, the <code class="docutils literal notranslate"><span class="pre">csv</span></code> processor used above would add a <code class="docutils literal notranslate"><span class="pre">csv_lines_read</span></code> entry, while the <code class="docutils literal notranslate"><span class="pre">validator</span></code> would add <code class="docutils literal notranslate"><span class="pre">valid_rows</span></code> and <code class="docutils literal notranslate"><span class="pre">invalid_rows</span></code> entries.</p>
+<p>The <a class="reference internal" href="source/etl_lib.core.ClosedLoopBatchProcessor.html#etl_lib.core.ClosedLoopBatchProcessor.ClosedLoopBatchProcessor" title="etl_lib.core.ClosedLoopBatchProcessor.ClosedLoopBatchProcessor"><code class="xref py py-class docutils literal notranslate"><span class="pre">ClosedLoopBatchProcessor</span></code></a>, at the end of the chain, aggregates this information and sends it to the reporter. If database reporting is enabled, each processed batch will trigger an update, allowing real-time monitoring.</p>
+<p>The classes <a class="reference internal" href="source/etl_lib.task.data_loading.SQLLoad2Neo4jTask.html#etl_lib.task.data_loading.SQLLoad2Neo4jTask.SQLLoad2Neo4jTask" title="etl_lib.task.data_loading.SQLLoad2Neo4jTask.SQLLoad2Neo4jTask"><code class="xref py py-class docutils literal notranslate"><span class="pre">SQLLoad2Neo4jTask</span></code></a> and <a class="reference internal" href="source/etl_lib.task.data_loading.CSVLoad2Neo4jTask.html#etl_lib.task.data_loading.CSVLoad2Neo4jTask.CSVLoad2Neo4jTask" title="etl_lib.task.data_loading.CSVLoad2Neo4jTask.CSVLoad2Neo4jTask"><code class="xref py py-class docutils literal notranslate"><span class="pre">CSVLoad2Neo4jTask</span></code></a> use <code class="docutils literal notranslate"><span class="pre">BatchProcessors</span></code> to stream data from either an SQL database or a CSV file respectively, allowing for implementation of ETL pipelines with minimal effort.</p>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="index.html" class="btn btn-neutral float-left" title="Welcome to the neo4j-etl-lib documentation" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="parallel.html" class="btn btn-neutral float-right" title="Parallel Processing" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright .</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

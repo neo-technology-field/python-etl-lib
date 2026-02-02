@@ -1,0 +1,379 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>etl_lib.core.ProgressReporter &mdash; neo4j-etl-lib 0.3.2 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/graphviz.css?v=4ae1632d" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/readthedocs-custom.css" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=71d9d8e6"></script>
+      <script src="../../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            neo4j-etl-lib
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../index.html">Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../batching.html">Batching and Streaming</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../parallel.html">Parallel Processing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../reporting.html">Reporting</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../validation.html">Validation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../data-sources.html">Data Sources</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../data-sinks.html">Data Sinks</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../processing.html">Data Processing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../configuration.html">Configuration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../testing.html">Testing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../cli.html">CLI</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../source/etl_lib.html">API Reference</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">neo4j-etl-lib</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">etl_lib.core.ProgressReporter</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for etl_lib.core.ProgressReporter</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">datetime</span><span class="w"> </span><span class="kn">import</span> <span class="n">datetime</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">tabulate</span><span class="w"> </span><span class="kn">import</span> <span class="n">tabulate</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">etl_lib.core.Task</span><span class="w"> </span><span class="kn">import</span> <span class="n">Task</span><span class="p">,</span> <span class="n">TaskGroup</span><span class="p">,</span> <span class="n">TaskReturn</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">etl_lib.core.utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">add_sigint_handler</span>
+
+
+<div class="viewcode-block" id="ProgressReporter">
+<a class="viewcode-back" href="../../../source/etl_lib.core.ProgressReporter.html#etl_lib.core.ProgressReporter.ProgressReporter">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">ProgressReporter</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Responsible for reporting progress of :py:class:`etl_lib.core.Task` .</span>
+
+<span class="sd">    This specific implementation uses the python logging module to log progress.</span>
+<span class="sd">    Non-error logging is using the INFO level.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">start_time</span><span class="p">:</span> <span class="n">datetime</span>
+    <span class="n">end_time</span><span class="p">:</span> <span class="n">datetime</span>
+
+<div class="viewcode-block" id="ProgressReporter.__init__">
+<a class="viewcode-back" href="../../../source/etl_lib.core.ProgressReporter.html#etl_lib.core.ProgressReporter.ProgressReporter.__init__">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">context</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">context</span> <span class="o">=</span> <span class="n">context</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__module__</span><span class="si">}</span><span class="s2">.</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="ProgressReporter.register_tasks">
+<a class="viewcode-back" href="../../../source/etl_lib.core.ProgressReporter.html#etl_lib.core.ProgressReporter.ProgressReporter.register_tasks">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">register_tasks</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">main</span><span class="p">:</span> <span class="n">Task</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Registers a :py:class:`etl_lib.core.Task` with this reporter.</span>
+
+<span class="sd">        Needs to be called once with the root task. The function will walk the tree of tasks and register them in turn.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            main: Root of the task tree.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">__print_tree</span><span class="p">(</span><span class="n">main</span><span class="p">))</span></div>
+
+
+<div class="viewcode-block" id="ProgressReporter.started_task">
+<a class="viewcode-back" href="../../../source/etl_lib.core.ProgressReporter.html#etl_lib.core.ProgressReporter.ProgressReporter.started_task">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">started_task</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">task</span><span class="p">:</span> <span class="n">Task</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Task</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Marks the task as started.</span>
+
+<span class="sd">        Start the time keeping for this task and performs logging.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            task: Task to be marked as started.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            The task that was provided.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">task</span><span class="o">.</span><span class="n">start_time</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="s1">&#39; &#39;</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="p">(</span><span class="mi">4</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">task</span><span class="o">.</span><span class="n">depth</span><span class="p">)</span><span class="si">}</span><span class="s2">starting </span><span class="si">{</span><span class="n">task</span><span class="o">.</span><span class="n">task_name</span><span class="p">()</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">task</span></div>
+
+
+<div class="viewcode-block" id="ProgressReporter.finished_task">
+<a class="viewcode-back" href="../../../source/etl_lib.core.ProgressReporter.html#etl_lib.core.ProgressReporter.ProgressReporter.finished_task">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">finished_task</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">task</span><span class="p">:</span> <span class="n">Task</span><span class="p">,</span> <span class="n">result</span><span class="p">:</span> <span class="n">TaskReturn</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Task</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Marks the task as finished.</span>
+
+<span class="sd">        Stops the time recording for the tasks and performs logging. Logging will include details from the provided summery.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            task: Task to be marked as finished.</span>
+<span class="sd">            result: result of the task execution, such as status and summery information.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Task to be marked as started.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">task</span><span class="o">.</span><span class="n">end_time</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span>
+        <span class="n">task</span><span class="o">.</span><span class="n">success</span> <span class="o">=</span> <span class="n">result</span><span class="o">.</span><span class="n">success</span>
+        <span class="n">task</span><span class="o">.</span><span class="n">summery</span> <span class="o">=</span> <span class="n">result</span><span class="o">.</span><span class="n">summery</span>
+
+        <span class="n">report</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;finished </span><span class="si">{</span><span class="n">task</span><span class="o">.</span><span class="n">task_name</span><span class="p">()</span><span class="si">}</span><span class="s2"> in </span><span class="si">{</span><span class="n">task</span><span class="o">.</span><span class="n">end_time</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">task</span><span class="o">.</span><span class="n">start_time</span><span class="si">}</span><span class="s2"> with status: </span><span class="si">{</span><span class="s1">&#39;success&#39;</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="n">result</span><span class="o">.</span><span class="n">success</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="s1">&#39;failed&#39;</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="k">if</span> <span class="n">result</span><span class="o">.</span><span class="n">error</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">report</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">&quot;, error: </span><span class="se">\n</span><span class="si">{</span><span class="n">result</span><span class="o">.</span><span class="n">error</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># for the logger, remove entries with 0, but keep them in the original for reporting</span>
+            <span class="n">cleaned_summery</span> <span class="o">=</span> <span class="p">{</span><span class="n">key</span><span class="p">:</span> <span class="n">value</span> <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">result</span><span class="o">.</span><span class="n">summery</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="n">value</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">}</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">cleaned_summery</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">report</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="se">\n</span><span class="si">{</span><span class="n">tabulate</span><span class="p">([</span><span class="n">cleaned_summery</span><span class="p">],</span><span class="w"> </span><span class="n">headers</span><span class="o">=</span><span class="s1">&#39;keys&#39;</span><span class="p">,</span><span class="w"> </span><span class="n">tablefmt</span><span class="o">=</span><span class="s1">&#39;psql&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">report</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">task</span></div>
+
+
+<div class="viewcode-block" id="ProgressReporter.report_progress">
+<a class="viewcode-back" href="../../../source/etl_lib.core.ProgressReporter.html#etl_lib.core.ProgressReporter.ProgressReporter.report_progress">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">report_progress</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">task</span><span class="p">:</span> <span class="n">Task</span><span class="p">,</span> <span class="n">batches</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">expected_batches</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">stats</span><span class="p">:</span> <span class="nb">dict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Optionally provide updates during execution of a task, such as batches processed so far.</span>
+
+<span class="sd">        This is an optional call, as not all :py:class:`etl_lib.core.Task` need batching.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            task: Task reporting updates.</span>
+<span class="sd">            batches: Number of batches processed so far.</span>
+<span class="sd">            expected_batches: Number of expected batches. Can be `None` if the overall number of</span>
+<span class="sd">                batches is not known before execution.</span>
+<span class="sd">            stats: dict of statistics so far (such as `nodes_created`).</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">pass</span></div>
+
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">__print_tree</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">task</span><span class="p">:</span> <span class="n">Task</span><span class="p">,</span> <span class="n">last</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">header</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Generates a tree view of the task tree.&quot;&quot;&quot;</span>
+        <span class="n">elbow</span> <span class="o">=</span> <span class="s2">&quot;└──&quot;</span>
+        <span class="n">pipe</span> <span class="o">=</span> <span class="s2">&quot;│  &quot;</span>
+        <span class="n">tee</span> <span class="o">=</span> <span class="s2">&quot;├──&quot;</span>
+        <span class="n">blank</span> <span class="o">=</span> <span class="s2">&quot;   &quot;</span>
+        <span class="n">tree_string</span> <span class="o">=</span> <span class="n">header</span> <span class="o">+</span> <span class="p">(</span><span class="n">elbow</span> <span class="k">if</span> <span class="n">last</span> <span class="k">else</span> <span class="n">tee</span><span class="p">)</span> <span class="o">+</span> <span class="n">task</span><span class="o">.</span><span class="n">task_name</span><span class="p">()</span> <span class="o">+</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">task</span><span class="p">,</span> <span class="n">TaskGroup</span><span class="p">):</span>
+            <span class="n">children</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">task</span><span class="o">.</span><span class="n">sub_tasks</span><span class="p">())</span>
+            <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">c</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">children</span><span class="p">):</span>
+                <span class="n">tree_string</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__print_tree</span><span class="p">(</span><span class="n">c</span><span class="p">,</span> <span class="n">header</span><span class="o">=</span><span class="n">header</span> <span class="o">+</span> <span class="p">(</span><span class="n">blank</span> <span class="k">if</span> <span class="n">last</span> <span class="k">else</span> <span class="n">pipe</span><span class="p">),</span>
+                                                 <span class="n">last</span><span class="o">=</span><span class="n">i</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="n">children</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">tree_string</span></div>
+
+
+
+<div class="viewcode-block" id="Neo4jProgressReporter">
+<a class="viewcode-back" href="../../../source/etl_lib.core.ProgressReporter.html#etl_lib.core.ProgressReporter.Neo4jProgressReporter">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">Neo4jProgressReporter</span><span class="p">(</span><span class="n">ProgressReporter</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Extends the ProgressReporter to additionally write the status updates from the tasks to a Neo4j database.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="Neo4jProgressReporter.__init__">
+<a class="viewcode-back" href="../../../source/etl_lib.core.ProgressReporter.html#etl_lib.core.ProgressReporter.Neo4jProgressReporter.__init__">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">context</span><span class="p">,</span> <span class="n">database</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Creates a new Neo4j progress reporter.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            context: :py:class:`etl_lib.core.ETLContext` containing a Neo4jConnection instance.</span>
+<span class="sd">            database: Name of the database to write the status updates to.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">context</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">run_uuid</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">database</span> <span class="o">=</span> <span class="n">database</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;progress reporting to database: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">database</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__create_constraints</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_register_shutdown_handler</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="Neo4jProgressReporter.register_tasks">
+<a class="viewcode-back" href="../../../source/etl_lib.core.ProgressReporter.html#etl_lib.core.ProgressReporter.Neo4jProgressReporter.register_tasks">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">register_tasks</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">root</span><span class="p">:</span> <span class="n">Task</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">register_tasks</span><span class="p">(</span><span class="n">root</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">run_uuid</span> <span class="o">=</span> <span class="n">root</span><span class="o">.</span><span class="n">uuid</span>
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">context</span><span class="o">.</span><span class="n">neo4j</span><span class="o">.</span><span class="n">session</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">database</span><span class="p">)</span> <span class="k">as</span> <span class="n">session</span><span class="p">:</span>
+            <span class="n">order</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="n">session</span><span class="o">.</span><span class="n">run</span><span class="p">(</span>
+                <span class="s2">&quot;CREATE (t:ETLTask:ETLRun {uuid:$id, task:$task, order:$order, name:$name, status: &#39;open&#39;}) SET t +=$other&quot;</span><span class="p">,</span>
+                <span class="nb">id</span><span class="o">=</span><span class="n">root</span><span class="o">.</span><span class="n">uuid</span><span class="p">,</span> <span class="n">order</span><span class="o">=</span><span class="n">order</span><span class="p">,</span> <span class="n">task</span><span class="o">=</span><span class="n">root</span><span class="o">.</span><span class="fm">__repr__</span><span class="p">(),</span> <span class="n">name</span><span class="o">=</span><span class="n">root</span><span class="o">.</span><span class="n">task_name</span><span class="p">(),</span> <span class="n">other</span><span class="o">=</span><span class="n">kwargs</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__persist_task</span><span class="p">(</span><span class="n">session</span><span class="p">,</span> <span class="n">root</span><span class="p">,</span> <span class="n">order</span><span class="p">)</span></div>
+
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">__persist_task</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">session</span><span class="p">,</span> <span class="n">task</span><span class="p">:</span> <span class="n">Task</span> <span class="o">|</span> <span class="n">TaskGroup</span><span class="p">,</span> <span class="n">order</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Writes task information to the database.&quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">task</span><span class="p">)</span> <span class="ow">is</span> <span class="n">Task</span><span class="p">:</span>
+            <span class="n">order</span> <span class="o">+=</span> <span class="mi">1</span>
+            <span class="n">session</span><span class="o">.</span><span class="n">run</span><span class="p">(</span>
+<span class="w">                </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">                MERGE (t:ETLTask { uuid: $id })</span>
+<span class="sd">                    SET t.task=$task, t.order=$order, t.name=$name, t.status=&#39;open&#39;</span>
+<span class="sd">                &quot;&quot;&quot;</span><span class="p">,</span>
+                <span class="nb">id</span><span class="o">=</span><span class="n">task</span><span class="o">.</span><span class="n">uuid</span><span class="p">,</span> <span class="n">task</span><span class="o">=</span><span class="n">task</span><span class="o">.</span><span class="fm">__repr__</span><span class="p">(),</span> <span class="n">order</span><span class="o">=</span><span class="n">order</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="n">task</span><span class="o">.</span><span class="n">task_name</span><span class="p">())</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">child</span> <span class="ow">in</span> <span class="n">task</span><span class="o">.</span><span class="n">sub_tasks</span><span class="p">():</span>
+                <span class="n">order</span> <span class="o">+=</span> <span class="mi">1</span>
+                <span class="n">session</span><span class="o">.</span><span class="n">run</span><span class="p">(</span>
+<span class="w">                    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">                    MATCH (p:ETLTask { uuid: $parent_id }) SET p.type=&#39;TaskGroup&#39;</span>
+<span class="sd">                    CREATE (t:ETLTask { uuid:$id, task:$task, order:$order, name:$name, status: &#39;open&#39; })</span>
+<span class="sd">                    CREATE (p)-[:HAS_SUB_TASK]-&gt;(t)</span>
+<span class="sd">                    &quot;&quot;&quot;</span><span class="p">,</span>
+                    <span class="n">parent_id</span><span class="o">=</span><span class="n">task</span><span class="o">.</span><span class="n">uuid</span><span class="p">,</span> <span class="nb">id</span><span class="o">=</span><span class="n">child</span><span class="o">.</span><span class="n">uuid</span><span class="p">,</span> <span class="n">task</span><span class="o">=</span><span class="n">child</span><span class="o">.</span><span class="fm">__repr__</span><span class="p">(),</span> <span class="n">order</span><span class="o">=</span><span class="n">order</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="n">child</span><span class="o">.</span><span class="n">task_name</span><span class="p">())</span>
+                <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">child</span><span class="p">,</span> <span class="n">TaskGroup</span><span class="p">):</span>
+                    <span class="n">order</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__persist_task</span><span class="p">(</span><span class="n">session</span><span class="p">,</span> <span class="n">child</span><span class="p">,</span> <span class="n">order</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">order</span>
+
+<div class="viewcode-block" id="Neo4jProgressReporter.started_task">
+<a class="viewcode-back" href="../../../source/etl_lib.core.ProgressReporter.html#etl_lib.core.ProgressReporter.Neo4jProgressReporter.started_task">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">started_task</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">task</span><span class="p">:</span> <span class="n">Task</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Task</span><span class="p">:</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">started_task</span><span class="p">(</span><span class="n">task</span><span class="o">=</span><span class="n">task</span><span class="p">)</span>
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">context</span><span class="o">.</span><span class="n">neo4j</span><span class="o">.</span><span class="n">session</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">database</span><span class="p">)</span> <span class="k">as</span> <span class="n">session</span><span class="p">:</span>
+            <span class="n">session</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="s2">&quot;MATCH (t:ETLTask { uuid: $id }) SET t.startTime = $start_time, t.status= &#39;running&#39;&quot;</span><span class="p">,</span>
+                        <span class="nb">id</span><span class="o">=</span><span class="n">task</span><span class="o">.</span><span class="n">uuid</span><span class="p">,</span>
+                        <span class="n">start_time</span><span class="o">=</span><span class="n">task</span><span class="o">.</span><span class="n">start_time</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">task</span></div>
+
+
+<div class="viewcode-block" id="Neo4jProgressReporter.finished_task">
+<a class="viewcode-back" href="../../../source/etl_lib.core.ProgressReporter.html#etl_lib.core.ProgressReporter.Neo4jProgressReporter.finished_task">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">finished_task</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">task</span><span class="p">:</span> <span class="n">Task</span><span class="p">,</span> <span class="n">result</span><span class="p">:</span> <span class="n">TaskReturn</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Task</span><span class="p">:</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">finished_task</span><span class="p">(</span><span class="n">task</span><span class="o">=</span><span class="n">task</span><span class="p">,</span> <span class="n">result</span><span class="o">=</span><span class="n">result</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">result</span><span class="o">.</span><span class="n">success</span><span class="p">:</span>
+            <span class="n">status</span> <span class="o">=</span> <span class="s2">&quot;success&quot;</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">status</span> <span class="o">=</span> <span class="s2">&quot;failure&quot;</span>
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">context</span><span class="o">.</span><span class="n">neo4j</span><span class="o">.</span><span class="n">session</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">database</span><span class="p">)</span> <span class="k">as</span> <span class="n">session</span><span class="p">:</span>
+            <span class="n">session</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">            MATCH (t:ETLTask {uuid:$id}) SET t.endTime = $end_time, t.status = $status, t.error = $error</span>
+<span class="s2">            CREATE (s:ETLStats) SET s=$summery</span>
+<span class="s2">            CREATE (t)-[:HAS_STATS]-&gt;(s)</span>
+<span class="s2">            &quot;&quot;&quot;</span><span class="p">,</span> <span class="nb">id</span><span class="o">=</span><span class="n">task</span><span class="o">.</span><span class="n">uuid</span><span class="p">,</span> <span class="n">end_time</span><span class="o">=</span><span class="n">task</span><span class="o">.</span><span class="n">end_time</span><span class="p">,</span> <span class="n">summery</span><span class="o">=</span><span class="n">result</span><span class="o">.</span><span class="n">summery</span><span class="p">,</span> <span class="n">status</span><span class="o">=</span><span class="n">status</span><span class="p">,</span> <span class="n">error</span><span class="o">=</span><span class="n">result</span><span class="o">.</span><span class="n">error</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">task</span></div>
+
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">__create_constraints</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">context</span><span class="o">.</span><span class="n">neo4j</span><span class="o">.</span><span class="n">session</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">database</span><span class="p">)</span> <span class="k">as</span> <span class="n">session</span><span class="p">:</span>
+            <span class="n">session</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="s2">&quot;CREATE CONSTRAINT etl_task_unique IF NOT EXISTS FOR (n:ETLTask) REQUIRE n.uuid IS UNIQUE;&quot;</span><span class="p">)</span>
+
+<div class="viewcode-block" id="Neo4jProgressReporter.report_progress">
+<a class="viewcode-back" href="../../../source/etl_lib.core.ProgressReporter.html#etl_lib.core.ProgressReporter.Neo4jProgressReporter.report_progress">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">report_progress</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">task</span><span class="p">:</span> <span class="n">Task</span><span class="p">,</span> <span class="n">batches</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">expected_batches</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">stats</span><span class="p">:</span> <span class="nb">dict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">batches</span><span class="si">=}</span><span class="s2">, </span><span class="si">{</span><span class="n">expected_batches</span><span class="si">=}</span><span class="s2">, </span><span class="si">{</span><span class="n">stats</span><span class="si">=}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">context</span><span class="o">.</span><span class="n">neo4j</span><span class="o">.</span><span class="n">session</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">database</span><span class="p">)</span> <span class="k">as</span> <span class="n">session</span><span class="p">:</span>
+            <span class="n">session</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="s2">&quot;MATCH (t:ETLTask {uuid:$id}) SET t.batches =$batches, t.expected_batches =$expected_batches&quot;</span><span class="p">,</span>
+                        <span class="nb">id</span><span class="o">=</span><span class="n">task</span><span class="o">.</span><span class="n">uuid</span><span class="p">,</span> <span class="n">batches</span><span class="o">=</span><span class="n">batches</span><span class="p">,</span> <span class="n">expected_batches</span><span class="o">=</span><span class="n">expected_batches</span><span class="p">)</span></div>
+
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_register_shutdown_handler</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">def</span><span class="w"> </span><span class="nf">shutdown_handler</span><span class="p">(</span><span class="n">signum</span><span class="p">,</span> <span class="n">frame</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;SIGINT received, waiting for running tasks to abort.&quot;</span><span class="p">)</span>
+            <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">context</span><span class="o">.</span><span class="n">neo4j</span><span class="o">.</span><span class="n">session</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">database</span><span class="p">)</span> <span class="k">as</span> <span class="n">session</span><span class="p">:</span>
+                <span class="n">cnt</span> <span class="o">=</span> <span class="n">session</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">                MATCH path=(r:ETLRun {uuid: $runId})-[*]-&gt;() </span>
+<span class="s2">                WITH [task in nodes(path) WHERE task:ETLTask AND task.status IN [&#39;open&#39;, &#39;running&#39;] | task] AS tasks</span>
+<span class="s2">                UNWIND tasks AS task</span>
+<span class="s2">                SET task.status = &#39;aborted&#39;</span>
+<span class="s2">                RETURN count(task) AS cnt</span>
+<span class="s2">                &quot;&quot;&quot;</span><span class="p">,</span> <span class="n">runId</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">run_uuid</span>
+                <span class="p">)</span><span class="o">.</span><span class="n">single</span><span class="p">()[</span><span class="s1">&#39;cnt&#39;</span><span class="p">]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;marked </span><span class="si">{</span><span class="n">cnt</span><span class="si">}</span><span class="s2"> tasks as aborted.&quot;</span><span class="p">)</span>
+        <span class="n">add_sigint_handler</span><span class="p">(</span><span class="n">shutdown_handler</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="get_reporter">
+<a class="viewcode-back" href="../../../source/etl_lib.core.ProgressReporter.html#etl_lib.core.ProgressReporter.get_reporter">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_reporter</span><span class="p">(</span><span class="n">context</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ProgressReporter</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Returns a ProgressReporter instance.</span>
+
+<span class="sd">    If the :class:`ETLContext &lt;etl_lib.core.ETLContext&gt;` env holds the key `REPORTER_DATABASE` then</span>
+<span class="sd">    a :class:`Neo4jProgressReporter` instance is created with the given database name.</span>
+
+<span class="sd">    Otherwise, a  :class:`ProgressReporter` (no logging to database) instance will be created.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">db</span> <span class="o">=</span> <span class="n">context</span><span class="o">.</span><span class="n">env</span><span class="p">(</span><span class="s2">&quot;REPORTER_DATABASE&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">db</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">ProgressReporter</span><span class="p">(</span><span class="n">context</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">Neo4jProgressReporter</span><span class="p">(</span><span class="n">context</span><span class="p">,</span> <span class="n">db</span><span class="p">)</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright .</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

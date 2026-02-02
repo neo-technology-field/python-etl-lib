@@ -1,0 +1,208 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Testing &mdash; neo4j-etl-lib 0.3.2 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="_static/graphviz.css?v=4ae1632d" />
+      <link rel="stylesheet" type="text/css" href="_static/readthedocs-custom.css" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=71d9d8e6"></script>
+      <script src="_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="CLI" href="cli.html" />
+    <link rel="prev" title="Configuration" href="configuration.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            neo4j-etl-lib
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="index.html">Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="batching.html">Batching and Streaming</a></li>
+<li class="toctree-l1"><a class="reference internal" href="parallel.html">Parallel Processing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="reporting.html">Reporting</a></li>
+<li class="toctree-l1"><a class="reference internal" href="validation.html">Validation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="data-sources.html">Data Sources</a></li>
+<li class="toctree-l1"><a class="reference internal" href="data-sinks.html">Data Sinks</a></li>
+<li class="toctree-l1"><a class="reference internal" href="processing.html">Data Processing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="configuration.html">Configuration</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Testing</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#fixtures">Fixtures</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#selecting-a-neo4j-installation">Selecting a Neo4j Installation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#id1">Testcontainers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#external-installation">External Installation</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="cli.html">CLI</a></li>
+<li class="toctree-l1"><a class="reference internal" href="source/etl_lib.html">API Reference</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">neo4j-etl-lib</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Testing</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/testing.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="testing">
+<h1>Testing<a class="headerlink" href="#testing" title="Link to this heading"></a></h1>
+<p>Tests for ETL pipelines are, by definition, integration tests. The library provides utilities to simplify setting up a connection to Neo4j.</p>
+<p>The utilities integrate with <code class="docutils literal notranslate"><span class="pre">pytest</span></code>. See the provided examples for possible setup and usage.</p>
+<p>There are two ways to use Neo4j with tests: either with the excellent <a class="reference external" href="https://testcontainers-python.readthedocs.io/en/latest/">TestContainers</a> or by using an existing Neo4j installation.</p>
+<p>The module <code class="xref py py-mod docutils literal notranslate"><span class="pre">utils</span></code> contains mock implementations of core components to set up an ETLContext and its dependencies. These utilities are designed to integrate seamlessly and use environment variables for configuration.</p>
+<section id="fixtures">
+<h2>Fixtures<a class="headerlink" href="#fixtures" title="Link to this heading"></a></h2>
+<p>In addition to the above module, the following code is recommended to be placed in the root of the testing package as <code class="docutils literal notranslate"><span class="pre">conftest.py</span></code>. The <code class="docutils literal notranslate"><span class="pre">pytest</span></code> fixtures defined within it will be available to all tests.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="linenos"> 1</span><span class="nd">@pytest</span><span class="o">.</span><span class="n">fixture</span><span class="p">(</span><span class="n">scope</span><span class="o">=</span><span class="s2">&quot;session&quot;</span><span class="p">)</span>
+<span class="linenos"> 2</span><span class="k">def</span><span class="w"> </span><span class="nf">neo4j_driver</span><span class="p">():</span>
+<span class="linenos"> 3</span><span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="linenos"> 4</span><span class="sd">    Creates a Neo4j driver instance.</span>
+<span class="linenos"> 5</span><span class="sd">    If the environment variable NEO4J_TEST_CONTAINER is set, it will be used as the image name to start Neo4j in a</span>
+<span class="linenos"> 6</span><span class="sd">    TestContainer.</span>
+<span class="linenos"> 7</span><span class="sd">    If the variable is not set, then the following environment variables will be used to connect to running instance:</span>
+<span class="linenos"> 8</span><span class="sd">    `NEO4J_URI`</span>
+<span class="linenos"> 9</span><span class="sd">    `NEO4J_USERNAME`</span>
+<span class="linenos">10</span><span class="sd">    `NEO4J_PASSWORD`</span>
+<span class="linenos">11</span><span class="sd">    `NEO4J_TEST_DATABASE`</span>
+<span class="linenos">12</span><span class="sd">    The later can be used to direct tests away from the default DB,</span>
+<span class="linenos">13</span><span class="sd">    :return:</span>
+<span class="linenos">14</span><span class="sd">    &quot;&quot;&quot;</span>
+<span class="linenos">15</span>    <span class="n">neo4j_container</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">getenv</span><span class="p">(</span><span class="s2">&quot;NEO4J_TEST_CONTAINER&quot;</span><span class="p">)</span>
+<span class="linenos">16</span>    <span class="k">if</span> <span class="n">neo4j_container</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+<span class="linenos">17</span>        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;found NEO4J_TEST_CONTAINER with </span><span class="si">{</span><span class="n">neo4j_container</span><span class="si">}</span><span class="s2">, using test containers&quot;</span><span class="p">)</span>
+<span class="linenos">18</span>        <span class="kn">from</span><span class="w"> </span><span class="nn">testcontainers.neo4j</span><span class="w"> </span><span class="kn">import</span> <span class="n">Neo4jContainer</span>
+<span class="linenos">19</span>        <span class="k">with</span> <span class="p">(</span><span class="n">Neo4jContainer</span><span class="p">(</span>
+<span class="linenos">20</span>                <span class="n">image</span><span class="o">=</span><span class="n">neo4j_container</span><span class="p">,</span>
+<span class="linenos">21</span>                <span class="n">username</span><span class="o">=</span><span class="s2">&quot;neo4j&quot;</span><span class="p">,</span>
+<span class="linenos">22</span>                <span class="n">password</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="n">uuid</span><span class="o">.</span><span class="n">uuid4</span><span class="p">()))</span>
+<span class="linenos">23</span>                      <span class="o">.</span><span class="n">with_env</span><span class="p">(</span><span class="s2">&quot;NEO4J_PLUGINS&quot;</span><span class="p">,</span> <span class="s2">&quot;[</span><span class="se">\&quot;</span><span class="s2">apoc</span><span class="se">\&quot;</span><span class="s2">, </span><span class="se">\&quot;</span><span class="s2">graph-data-science</span><span class="se">\&quot;</span><span class="s2">],&quot;</span><span class="p">)</span>
+<span class="linenos">24</span>                      <span class="o">.</span><span class="n">with_env</span><span class="p">(</span><span class="s2">&quot;NEO4J_ACCEPT_LICENSE_AGREEMENT&quot;</span><span class="p">,</span> <span class="s2">&quot;yes&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">neo4j</span><span class="p">):</span>
+<span class="linenos">25</span>            <span class="n">driver</span> <span class="o">=</span> <span class="n">neo4j</span><span class="o">.</span><span class="n">get_driver</span><span class="p">()</span>
+<span class="linenos">26</span>            <span class="k">yield</span> <span class="n">driver</span>
+<span class="linenos">27</span>            <span class="n">driver</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+<span class="linenos">28</span>            <span class="k">return</span>
+<span class="linenos">29</span>    <span class="k">else</span><span class="p">:</span>
+<span class="linenos">30</span>        <span class="nb">print</span><span class="p">(</span>
+<span class="linenos">31</span>            <span class="sa">f</span><span class="s2">&quot;found NEO4J_TEST_CONTAINER not set, using instance at  </span><span class="si">{</span><span class="n">os</span><span class="o">.</span><span class="n">getenv</span><span class="p">(</span><span class="s1">&#39;NEO4J_URI&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2"> and database=</span><span class="si">{</span><span class="n">os</span><span class="o">.</span><span class="n">getenv</span><span class="p">(</span><span class="s1">&#39;NEO4J_TEST_DATABASE&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="linenos">32</span>        <span class="c1"># do not use test containers, but a running remote db</span>
+<span class="linenos">33</span>        <span class="k">with</span> <span class="n">GraphDatabase</span><span class="o">.</span><span class="n">driver</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">getenv</span><span class="p">(</span><span class="s1">&#39;NEO4J_URI&#39;</span><span class="p">),</span>
+<span class="linenos">34</span>                                  <span class="n">auth</span><span class="o">=</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">getenv</span><span class="p">(</span><span class="s1">&#39;NEO4J_USERNAME&#39;</span><span class="p">),</span>
+<span class="linenos">35</span>                                        <span class="n">os</span><span class="o">.</span><span class="n">getenv</span><span class="p">(</span><span class="s1">&#39;NEO4J_PASSWORD&#39;</span><span class="p">)),</span>
+<span class="linenos">36</span>                                  <span class="n">notifications_min_severity</span><span class="o">=</span><span class="s2">&quot;OFF&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">driver</span><span class="p">:</span>
+<span class="linenos">37</span>            <span class="k">yield</span> <span class="n">driver</span>
+<span class="linenos">38</span>            <span class="n">driver</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+<span class="linenos">39</span>            <span class="k">return</span>
+<span class="linenos">40</span>
+<span class="linenos">41</span>
+<span class="linenos">42</span><span class="nd">@pytest</span><span class="o">.</span><span class="n">fixture</span>
+<span class="linenos">43</span><span class="k">def</span><span class="w"> </span><span class="nf">neo4j_driver_with_empty_db</span><span class="p">(</span><span class="n">neo4j_driver</span><span class="p">):</span>
+<span class="linenos">44</span>    <span class="k">with</span> <span class="n">neo4j_driver</span><span class="o">.</span><span class="n">session</span><span class="p">(</span><span class="n">database</span><span class="o">=</span><span class="n">get_database_name</span><span class="p">(),</span> <span class="n">default_access_mode</span><span class="o">=</span><span class="n">WRITE_ACCESS</span><span class="p">)</span> <span class="k">as</span> <span class="n">session</span><span class="p">:</span>
+<span class="linenos">45</span>        <span class="n">session</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="s2">&quot;MATCH (n) DETACH DELETE n&quot;</span><span class="p">)</span>
+<span class="linenos">46</span>        <span class="k">yield</span> <span class="n">neo4j_driver</span>
+<span class="linenos">47</span>
+<span class="linenos">48</span>
+<span class="linenos">49</span><span class="nd">@pytest</span><span class="o">.</span><span class="n">fixture</span>
+<span class="linenos">50</span><span class="k">def</span><span class="w"> </span><span class="nf">etl_context</span><span class="p">(</span><span class="n">neo4j_driver_with_empty_db</span><span class="p">,</span> <span class="n">tmp_path</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ETLContext</span><span class="p">:</span>
+<span class="linenos">51</span>    <span class="k">return</span> <span class="n">MockETLContext</span><span class="p">(</span><span class="n">neo4j_driver_with_empty_db</span><span class="p">,</span> <span class="n">tmp_path</span><span class="p">)</span>
+<span class="linenos">52</span>
+</pre></div>
+</div>
+<p>The following fixtures are provided:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">neo4j_driver_with_empty_db</span></code> : Provides a Neo4j driver object connected to an empty database. Typically used in data setup steps.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">neo4j_driver</span></code> : Provides a Neo4j driver object connected to a running Neo4j installation.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">etl_context</span></code> : Provides a <a class="reference internal" href="source/etl_lib.core.ETLContext.html#etl_lib.core.ETLContext.ETLContext" title="etl_lib.core.ETLContext.ETLContext"><code class="xref py py-class docutils literal notranslate"><span class="pre">ETLContext</span></code></a> for testing purposes. The simple reporter is used, and a <code class="docutils literal notranslate"><span class="pre">pytest</span></code> temporary directory is set up for error files (<a class="reference internal" href="validation.html"><span class="doc">Validation</span></a>).</p></li>
+</ul>
+</section>
+<section id="selecting-a-neo4j-installation">
+<h2>Selecting a Neo4j Installation<a class="headerlink" href="#selecting-a-neo4j-installation" title="Link to this heading"></a></h2>
+</section>
+<section id="id1">
+<h2>Testcontainers<a class="headerlink" href="#id1" title="Link to this heading"></a></h2>
+<p>If the <code class="docutils literal notranslate"><span class="pre">NEO4J_TEST_CONTAINER</span></code> environment variable is set to the name of a Neo4j Docker image, TestContainers will be used to run Neo4j. This requires Docker to be available on the host running the tests.</p>
+<p>The provided installation will have apoc core and gds plugins installed.</p>
+</section>
+<section id="external-installation">
+<h2>External Installation<a class="headerlink" href="#external-installation" title="Link to this heading"></a></h2>
+<p>If the <code class="docutils literal notranslate"><span class="pre">NEO4J_TEST_CONTAINER</span></code> environment variable is not set, the <code class="docutils literal notranslate"><span class="pre">NEO4J_URI</span></code>, <code class="docutils literal notranslate"><span class="pre">NEO4J_USERNAME</span></code>, and <code class="docutils literal notranslate"><span class="pre">NEO4J_PASSWORD</span></code> variables must be set. These will be used to connect to an existing Neo4j instance.</p>
+<p>The functions in <code class="xref py py-mod docutils literal notranslate"><span class="pre">utils</span></code> respect the <code class="docutils literal notranslate"><span class="pre">NEO4J_TEST_DATABASE</span></code> variable when running queries, allowing for separate databases per user.</p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="configuration.html" class="btn btn-neutral float-left" title="Configuration" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="cli.html" class="btn btn-neutral float-right" title="CLI" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright .</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

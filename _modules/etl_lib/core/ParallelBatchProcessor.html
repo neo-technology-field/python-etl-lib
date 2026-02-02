@@ -1,0 +1,284 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>etl_lib.core.ParallelBatchProcessor &mdash; neo4j-etl-lib 0.3.2 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/graphviz.css?v=4ae1632d" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/readthedocs-custom.css" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=71d9d8e6"></script>
+      <script src="../../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            neo4j-etl-lib
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../index.html">Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../batching.html">Batching and Streaming</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../parallel.html">Parallel Processing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../reporting.html">Reporting</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../validation.html">Validation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../data-sources.html">Data Sources</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../data-sinks.html">Data Sinks</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../processing.html">Data Processing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../configuration.html">Configuration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../testing.html">Testing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../cli.html">CLI</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../source/etl_lib.html">API Reference</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">neo4j-etl-lib</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">etl_lib.core.ParallelBatchProcessor</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for etl_lib.core.ParallelBatchProcessor</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span><span class="w"> </span><span class="nn">queue</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">threading</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">concurrent.futures</span><span class="w"> </span><span class="kn">import</span> <span class="n">ThreadPoolExecutor</span><span class="p">,</span> <span class="n">as_completed</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Generator</span><span class="p">,</span> <span class="n">List</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">etl_lib.core.BatchProcessor</span><span class="w"> </span><span class="kn">import</span> <span class="n">BatchProcessor</span><span class="p">,</span> <span class="n">BatchResults</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">etl_lib.core.utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">merge_summery</span>
+
+
+<div class="viewcode-block" id="ParallelBatchResult">
+<a class="viewcode-back" href="../../../source/etl_lib.core.ParallelBatchProcessor.html#etl_lib.core.ParallelBatchProcessor.ParallelBatchResult">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">ParallelBatchResult</span><span class="p">(</span><span class="n">BatchResults</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Represents one *wave* produced by the splitter.</span>
+
+<span class="sd">    `chunk` is a list of bucket-batches. Each sub-list is processed by one worker instance.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">pass</span></div>
+
+
+
+<div class="viewcode-block" id="ParallelBatchProcessor">
+<a class="viewcode-back" href="../../../source/etl_lib.core.ParallelBatchProcessor.html#etl_lib.core.ParallelBatchProcessor.ParallelBatchProcessor">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">ParallelBatchProcessor</span><span class="p">(</span><span class="n">BatchProcessor</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    BatchProcessor that runs a worker over the bucket-batches of each ParallelBatchResult</span>
+<span class="sd">    in parallel threads, while prefetching the next ParallelBatchResult from its predecessor.</span>
+
+<span class="sd">    Note:</span>
+<span class="sd">        - The predecessor must emit `ParallelBatchResult` instances (waves).</span>
+<span class="sd">        - This processor collects the BatchResults from all workers for one wave and merges them</span>
+<span class="sd">          into one BatchResults.</span>
+<span class="sd">        - The returned BatchResults will not obey the max_batch_size from get_batch() because</span>
+<span class="sd">          it represents the full wave.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        context: ETL context.</span>
+<span class="sd">        worker_factory: A zero-arg callable that returns a new BatchProcessor each time it&#39;s called.</span>
+<span class="sd">        task: optional Task for reporting.</span>
+<span class="sd">        predecessor: upstream BatchProcessor that must emit ParallelBatchResult See</span>
+<span class="sd">                :class:`~etl_lib.core.SplittingBatchProcessor.SplittingBatchProcessor`.</span>
+<span class="sd">        max_workers: number of parallel threads for bucket processing.</span>
+<span class="sd">        prefetch: number of waves to prefetch.</span>
+
+<span class="sd">    Behavior:</span>
+<span class="sd">        - For every wave, spins up `max_workers` threads.</span>
+<span class="sd">        - Each thread processes one bucket-batch using a fresh worker from `worker_factory()`.</span>
+<span class="sd">        - Collects and merges worker results in a fail-fast manner.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="ParallelBatchProcessor.__init__">
+<a class="viewcode-back" href="../../../source/etl_lib.core.ParallelBatchProcessor.html#etl_lib.core.ParallelBatchProcessor.ParallelBatchProcessor.__init__">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
+            <span class="bp">self</span><span class="p">,</span>
+            <span class="n">context</span><span class="p">,</span>
+            <span class="n">worker_factory</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[],</span> <span class="n">BatchProcessor</span><span class="p">],</span>
+            <span class="n">task</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+            <span class="n">predecessor</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+            <span class="n">max_workers</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">4</span><span class="p">,</span>
+            <span class="n">prefetch</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">4</span><span class="p">,</span>
+    <span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">context</span><span class="p">,</span> <span class="n">task</span><span class="p">,</span> <span class="n">predecessor</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">worker_factory</span> <span class="o">=</span> <span class="n">worker_factory</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">max_workers</span> <span class="o">=</span> <span class="n">max_workers</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">prefetch</span> <span class="o">=</span> <span class="n">prefetch</span></div>
+
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_process_wave</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">wave</span><span class="p">:</span> <span class="n">ParallelBatchResult</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">BatchResults</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Process one wave: run one worker per bucket-batch and merge their BatchResults.</span>
+
+<span class="sd">        Statistics:</span>
+<span class="sd">            `wave.statistics` is used as the initial merged stats, then merged with each worker&#39;s stats.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">merged_stats</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">wave</span><span class="o">.</span><span class="n">statistics</span> <span class="ow">or</span> <span class="p">{})</span>
+        <span class="n">merged_chunk</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">total</span> <span class="o">=</span> <span class="mi">0</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Processing wave with </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">wave</span><span class="o">.</span><span class="n">chunk</span><span class="p">)</span><span class="si">}</span><span class="s2"> buckets&quot;</span><span class="p">)</span>
+
+        <span class="k">with</span> <span class="n">ThreadPoolExecutor</span><span class="p">(</span><span class="n">max_workers</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">max_workers</span><span class="p">,</span> <span class="n">thread_name_prefix</span><span class="o">=</span><span class="s2">&quot;PBP_worker_&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">pool</span><span class="p">:</span>
+            <span class="n">futures</span> <span class="o">=</span> <span class="p">[</span><span class="n">pool</span><span class="o">.</span><span class="n">submit</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_process_bucket_batch</span><span class="p">,</span> <span class="n">bucket_batch</span><span class="p">)</span> <span class="k">for</span> <span class="n">bucket_batch</span> <span class="ow">in</span> <span class="n">wave</span><span class="o">.</span><span class="n">chunk</span><span class="p">]</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">as_completed</span><span class="p">(</span><span class="n">futures</span><span class="p">):</span>
+                    <span class="n">out</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">result</span><span class="p">()</span>
+                    <span class="n">merged_stats</span> <span class="o">=</span> <span class="n">merge_summery</span><span class="p">(</span><span class="n">merged_stats</span><span class="p">,</span> <span class="n">out</span><span class="o">.</span><span class="n">statistics</span> <span class="ow">or</span> <span class="p">{})</span>
+                    <span class="n">total</span> <span class="o">+=</span> <span class="n">out</span><span class="o">.</span><span class="n">batch_size</span>
+                    <span class="n">merged_chunk</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">out</span><span class="o">.</span><span class="n">chunk</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">out</span><span class="o">.</span><span class="n">chunk</span><span class="p">,</span> <span class="nb">list</span><span class="p">)</span> <span class="k">else</span> <span class="p">[</span><span class="n">out</span><span class="o">.</span><span class="n">chunk</span><span class="p">])</span>
+            <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                <span class="k">for</span> <span class="n">g</span> <span class="ow">in</span> <span class="n">futures</span><span class="p">:</span>
+                    <span class="n">g</span><span class="o">.</span><span class="n">cancel</span><span class="p">()</span>
+                <span class="n">pool</span><span class="o">.</span><span class="n">shutdown</span><span class="p">(</span><span class="n">cancel_futures</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+                <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;bucket processing failed&quot;</span><span class="p">)</span> <span class="kn">from</span><span class="w"> </span><span class="nn">e</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Finished wave with stats=</span><span class="si">{</span><span class="n">merged_stats</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">BatchResults</span><span class="p">(</span><span class="n">chunk</span><span class="o">=</span><span class="n">merged_chunk</span><span class="p">,</span> <span class="n">statistics</span><span class="o">=</span><span class="n">merged_stats</span><span class="p">,</span> <span class="n">batch_size</span><span class="o">=</span><span class="n">total</span><span class="p">)</span>
+
+<div class="viewcode-block" id="ParallelBatchProcessor.get_batch">
+<a class="viewcode-back" href="../../../source/etl_lib.core.ParallelBatchProcessor.html#etl_lib.core.ParallelBatchProcessor.ParallelBatchProcessor.get_batch">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_batch</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">max_batch_size</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Generator</span><span class="p">[</span><span class="n">BatchResults</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Pull waves from the predecessor (prefetching up to `prefetch` ahead), process each wave&#39;s</span>
+<span class="sd">        buckets in parallel, and yield one flattened BatchResults per wave.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">wave_queue</span><span class="p">:</span> <span class="n">queue</span><span class="o">.</span><span class="n">Queue</span><span class="p">[</span><span class="n">ParallelBatchResult</span> <span class="o">|</span> <span class="nb">object</span><span class="p">]</span> <span class="o">=</span> <span class="n">queue</span><span class="o">.</span><span class="n">Queue</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">prefetch</span><span class="p">)</span>
+        <span class="n">SENTINEL</span> <span class="o">=</span> <span class="nb">object</span><span class="p">()</span>
+        <span class="n">exc</span><span class="p">:</span> <span class="ne">BaseException</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="k">def</span><span class="w"> </span><span class="nf">producer</span><span class="p">():</span>
+            <span class="k">nonlocal</span> <span class="n">exc</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="k">for</span> <span class="n">wave</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">predecessor</span><span class="o">.</span><span class="n">get_batch</span><span class="p">(</span><span class="n">max_batch_size</span><span class="p">):</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
+                        <span class="sa">f</span><span class="s2">&quot;adding wave stats=</span><span class="si">{</span><span class="n">wave</span><span class="o">.</span><span class="n">statistics</span><span class="si">}</span><span class="s2"> buckets=</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">wave</span><span class="o">.</span><span class="n">chunk</span><span class="p">)</span><span class="si">}</span><span class="s2"> to queue size=</span><span class="si">{</span><span class="n">wave_queue</span><span class="o">.</span><span class="n">qsize</span><span class="p">()</span><span class="si">}</span><span class="s2">&quot;</span>
+                    <span class="p">)</span>
+                    <span class="n">wave_queue</span><span class="o">.</span><span class="n">put</span><span class="p">(</span><span class="n">wave</span><span class="p">)</span>
+            <span class="k">except</span> <span class="ne">BaseException</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                <span class="n">exc</span> <span class="o">=</span> <span class="n">e</span>
+            <span class="k">finally</span><span class="p">:</span>
+                <span class="n">wave_queue</span><span class="o">.</span><span class="n">put</span><span class="p">(</span><span class="n">SENTINEL</span><span class="p">)</span>
+
+        <span class="n">threading</span><span class="o">.</span><span class="n">Thread</span><span class="p">(</span><span class="n">target</span><span class="o">=</span><span class="n">producer</span><span class="p">,</span> <span class="n">daemon</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;prefetcher&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
+
+        <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+            <span class="n">wave</span> <span class="o">=</span> <span class="n">wave_queue</span><span class="o">.</span><span class="n">get</span><span class="p">()</span>
+            <span class="k">if</span> <span class="n">wave</span> <span class="ow">is</span> <span class="n">SENTINEL</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">exc</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">&quot;Upstream producer failed&quot;</span><span class="p">,</span> <span class="n">exc_info</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+                    <span class="k">raise</span> <span class="n">exc</span>
+                <span class="k">break</span>
+            <span class="k">yield</span> <span class="bp">self</span><span class="o">.</span><span class="n">_process_wave</span><span class="p">(</span><span class="n">wave</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="ParallelBatchProcessor.SingleBatchWrapper">
+<a class="viewcode-back" href="../../../source/etl_lib.core.ParallelBatchProcessor.html#etl_lib.core.ParallelBatchProcessor.ParallelBatchProcessor.SingleBatchWrapper">[docs]</a>
+    <span class="k">class</span><span class="w"> </span><span class="nc">SingleBatchWrapper</span><span class="p">(</span><span class="n">BatchProcessor</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Simple BatchProcessor that returns exactly one batch (the bucket-batch passed in via init).</span>
+<span class="sd">        Used as predecessor for the per-bucket worker.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="ParallelBatchProcessor.SingleBatchWrapper.__init__">
+<a class="viewcode-back" href="../../../source/etl_lib.core.ParallelBatchProcessor.html#etl_lib.core.ParallelBatchProcessor.ParallelBatchProcessor.SingleBatchWrapper.__init__">[docs]</a>
+        <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">context</span><span class="p">,</span> <span class="n">batch</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Any</span><span class="p">]):</span>
+            <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">context</span><span class="o">=</span><span class="n">context</span><span class="p">,</span> <span class="n">predecessor</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_batch</span> <span class="o">=</span> <span class="n">batch</span></div>
+
+
+<div class="viewcode-block" id="ParallelBatchProcessor.SingleBatchWrapper.get_batch">
+<a class="viewcode-back" href="../../../source/etl_lib.core.ParallelBatchProcessor.html#etl_lib.core.ParallelBatchProcessor.ParallelBatchProcessor.SingleBatchWrapper.get_batch">[docs]</a>
+        <span class="k">def</span><span class="w"> </span><span class="nf">get_batch</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">max_size</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Generator</span><span class="p">[</span><span class="n">BatchResults</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">]:</span>
+            <span class="k">yield</span> <span class="n">BatchResults</span><span class="p">(</span>
+                <span class="n">chunk</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_batch</span><span class="p">,</span>
+                <span class="n">statistics</span><span class="o">=</span><span class="p">{},</span>
+                <span class="n">batch_size</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_batch</span><span class="p">),</span>
+            <span class="p">)</span></div>
+</div>
+
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_process_bucket_batch</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">bucket_batch</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Process one bucket-batch by running a fresh worker over it.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Processing batch w/ size </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">bucket_batch</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">wrapper</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">SingleBatchWrapper</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">context</span><span class="p">,</span> <span class="n">bucket_batch</span><span class="p">)</span>
+        <span class="n">worker</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">worker_factory</span><span class="p">()</span>
+        <span class="n">worker</span><span class="o">.</span><span class="n">predecessor</span> <span class="o">=</span> <span class="n">wrapper</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="nb">next</span><span class="p">(</span><span class="n">worker</span><span class="o">.</span><span class="n">get_batch</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">bucket_batch</span><span class="p">)))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Finished bucket batch stats=</span><span class="si">{</span><span class="n">result</span><span class="o">.</span><span class="n">statistics</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">result</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright .</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

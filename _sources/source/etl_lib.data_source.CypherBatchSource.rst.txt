@@ -1,0 +1,7 @@
+etl\_lib.data\_source.CypherBatchSource module
+==============================================
+
+.. automodule:: etl_lib.data_source.CypherBatchSource
+   :members:
+   :show-inheritance:
+   :undoc-members:

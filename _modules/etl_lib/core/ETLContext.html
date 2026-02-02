@@ -1,0 +1,368 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>etl_lib.core.ETLContext &mdash; neo4j-etl-lib 0.3.2 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/graphviz.css?v=4ae1632d" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/readthedocs-custom.css" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=71d9d8e6"></script>
+      <script src="../../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            neo4j-etl-lib
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../index.html">Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../batching.html">Batching and Streaming</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../parallel.html">Parallel Processing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../reporting.html">Reporting</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../validation.html">Validation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../data-sources.html">Data Sources</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../data-sinks.html">Data Sinks</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../processing.html">Data Processing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../configuration.html">Configuration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../testing.html">Testing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../cli.html">CLI</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../source/etl_lib.html">API Reference</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">neo4j-etl-lib</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">etl_lib.core.ETLContext</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for etl_lib.core.ETLContext</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">NamedTuple</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">neo4j.exceptions</span><span class="w"> </span><span class="kn">import</span> <span class="n">Neo4jError</span>
+
+<span class="k">try</span><span class="p">:</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">graphdatascience</span><span class="w"> </span><span class="kn">import</span> <span class="n">GraphDataScience</span>
+
+    <span class="n">gds_available</span> <span class="o">=</span> <span class="kc">False</span>
+<span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
+    <span class="n">gds_available</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Graph Data Science not installed, skipping&quot;</span><span class="p">)</span>
+    <span class="n">GraphDataScience</span> <span class="o">=</span> <span class="kc">None</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">neo4j</span><span class="w"> </span><span class="kn">import</span> <span class="n">GraphDatabase</span><span class="p">,</span> <span class="n">Session</span><span class="p">,</span> <span class="n">WRITE_ACCESS</span><span class="p">,</span> <span class="n">SummaryCounters</span>
+
+<span class="k">try</span><span class="p">:</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">sqlalchemy</span><span class="w"> </span><span class="kn">import</span> <span class="n">create_engine</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">sqlalchemy.engine</span><span class="w"> </span><span class="kn">import</span> <span class="n">Engine</span>
+
+    <span class="n">sqlalchemy_available</span> <span class="o">=</span> <span class="kc">True</span>
+<span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
+    <span class="n">sqlalchemy_available</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;SQL Alchemy not installed, skipping&quot;</span><span class="p">)</span>
+    <span class="n">create_engine</span> <span class="o">=</span> <span class="kc">None</span>  <span class="c1"># this and next line needed to prevent PyCharm warning</span>
+    <span class="n">Engine</span> <span class="o">=</span> <span class="kc">None</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">etl_lib.core.ProgressReporter</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_reporter</span>
+
+
+<div class="viewcode-block" id="QueryResult">
+<a class="viewcode-back" href="../../../source/etl_lib.core.ETLContext.html#etl_lib.core.ETLContext.QueryResult">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">QueryResult</span><span class="p">(</span><span class="n">NamedTuple</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Result of a query against the neo4j database.&quot;&quot;&quot;</span>
+    <span class="n">data</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Any</span><span class="p">]</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Data as returned from the query.&quot;&quot;&quot;</span>
+    <span class="n">summery</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">]</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Counters as reported by neo4j. Contains entries such as `nodes_created`, `nodes_deleted`, etc.&quot;&quot;&quot;</span></div>
+
+
+
+<div class="viewcode-block" id="append_results">
+<a class="viewcode-back" href="../../../source/etl_lib.core.ETLContext.html#etl_lib.core.ETLContext.append_results">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">append_results</span><span class="p">(</span><span class="n">r1</span><span class="p">:</span> <span class="n">QueryResult</span><span class="p">,</span> <span class="n">r2</span><span class="p">:</span> <span class="n">QueryResult</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">QueryResult</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Appends two QueryResult objects, summing the values for duplicate keys in the summary.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        r1: The first QueryResult object.</span>
+<span class="sd">        r2: The second QueryResult object to append.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        A new QueryResult object with combined data and summed summary counts.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">combined_summery</span> <span class="o">=</span> <span class="n">r1</span><span class="o">.</span><span class="n">summery</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+
+    <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">r2</span><span class="o">.</span><span class="n">summery</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="n">combined_summery</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">combined_summery</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span> <span class="o">+</span> <span class="n">value</span>
+
+    <span class="k">return</span> <span class="n">QueryResult</span><span class="p">(</span><span class="n">r1</span><span class="o">.</span><span class="n">data</span> <span class="o">+</span> <span class="n">r2</span><span class="o">.</span><span class="n">data</span><span class="p">,</span> <span class="n">combined_summery</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="Neo4jContext">
+<a class="viewcode-back" href="../../../source/etl_lib.core.ETLContext.html#etl_lib.core.ETLContext.Neo4jContext">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">Neo4jContext</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Holds the connection to the neo4j database and provides facilities to execute queries.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="Neo4jContext.__init__">
+<a class="viewcode-back" href="../../../source/etl_lib.core.ETLContext.html#etl_lib.core.ETLContext.Neo4jContext.__init__">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">env_vars</span><span class="p">:</span> <span class="nb">dict</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Create a new Neo4j context.</span>
+
+<span class="sd">        Reads the following env_vars keys:</span>
+<span class="sd">        - `NEO4J_URI`,</span>
+<span class="sd">        - `NEO4J_USERNAME`,</span>
+<span class="sd">        - `NEO4J_PASSWORD`.</span>
+<span class="sd">        - `NEO4J_DATABASE`,</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__module__</span><span class="si">}</span><span class="s2">.</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">uri</span> <span class="o">=</span> <span class="n">env_vars</span><span class="p">[</span><span class="s2">&quot;NEO4J_URI&quot;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">auth</span> <span class="o">=</span> <span class="p">(</span><span class="n">env_vars</span><span class="p">[</span><span class="s2">&quot;NEO4J_USERNAME&quot;</span><span class="p">],</span>
+                     <span class="n">env_vars</span><span class="p">[</span><span class="s2">&quot;NEO4J_PASSWORD&quot;</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">database</span> <span class="o">=</span> <span class="n">env_vars</span><span class="p">[</span><span class="s2">&quot;NEO4J_DATABASE&quot;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__neo4j_connect</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="Neo4jContext.query_database">
+<a class="viewcode-back" href="../../../source/etl_lib.core.ETLContext.html#etl_lib.core.ETLContext.Neo4jContext.query_database">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">query_database</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">session</span><span class="p">:</span> <span class="n">Session</span><span class="p">,</span> <span class="n">query</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">QueryResult</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Executes Cypher and returns (records, counters) with retryable write semantics.</span>
+<span class="sd">        Accepts either a single query string or a list of queries.</span>
+<span class="sd">        Does not work with CALL {} IN TRANSACTION queries.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">query</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+            <span class="n">results</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="k">for</span> <span class="n">single</span> <span class="ow">in</span> <span class="n">query</span><span class="p">:</span>
+                <span class="n">part</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">query_database</span><span class="p">(</span><span class="n">session</span><span class="p">,</span> <span class="n">single</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+                <span class="n">results</span> <span class="o">=</span> <span class="n">append_results</span><span class="p">(</span><span class="n">results</span><span class="p">,</span> <span class="n">part</span><span class="p">)</span> <span class="k">if</span> <span class="n">results</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">part</span>
+            <span class="k">return</span> <span class="n">results</span>
+
+        <span class="k">def</span><span class="w"> </span><span class="nf">_tx</span><span class="p">(</span><span class="n">tx</span><span class="p">,</span> <span class="n">q</span><span class="p">,</span> <span class="n">params</span><span class="p">):</span>
+            <span class="n">res</span> <span class="o">=</span> <span class="n">tx</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">q</span><span class="p">,</span> <span class="o">**</span><span class="n">params</span><span class="p">)</span>
+            <span class="n">records</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">res</span><span class="p">)</span>
+            <span class="n">counters</span> <span class="o">=</span> <span class="n">res</span><span class="o">.</span><span class="n">consume</span><span class="p">()</span><span class="o">.</span><span class="n">counters</span>
+            <span class="k">return</span> <span class="n">records</span><span class="p">,</span> <span class="n">counters</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">records</span><span class="p">,</span> <span class="n">counters</span> <span class="o">=</span> <span class="n">session</span><span class="o">.</span><span class="n">execute_write</span><span class="p">(</span><span class="n">_tx</span><span class="p">,</span> <span class="n">query</span><span class="p">,</span> <span class="n">kwargs</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">QueryResult</span><span class="p">(</span><span class="n">records</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">__counters_2_dict</span><span class="p">(</span><span class="n">counters</span><span class="p">))</span>
+        <span class="k">except</span> <span class="n">Neo4jError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
+            <span class="k">raise</span></div>
+
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">__counters_2_dict</span><span class="p">(</span><span class="n">counters</span><span class="p">:</span> <span class="n">SummaryCounters</span><span class="p">):</span>
+        <span class="k">return</span> <span class="p">{</span>
+            <span class="s2">&quot;constraints_added&quot;</span><span class="p">:</span> <span class="n">counters</span><span class="o">.</span><span class="n">constraints_added</span><span class="p">,</span>
+            <span class="s2">&quot;constraints_removed&quot;</span><span class="p">:</span> <span class="n">counters</span><span class="o">.</span><span class="n">constraints_removed</span><span class="p">,</span>
+            <span class="s2">&quot;indexes_added&quot;</span><span class="p">:</span> <span class="n">counters</span><span class="o">.</span><span class="n">indexes_added</span><span class="p">,</span>
+            <span class="s2">&quot;indexes_removed&quot;</span><span class="p">:</span> <span class="n">counters</span><span class="o">.</span><span class="n">indexes_removed</span><span class="p">,</span>
+            <span class="s2">&quot;labels_added&quot;</span><span class="p">:</span> <span class="n">counters</span><span class="o">.</span><span class="n">labels_added</span><span class="p">,</span>
+            <span class="s2">&quot;labels_removed&quot;</span><span class="p">:</span> <span class="n">counters</span><span class="o">.</span><span class="n">labels_removed</span><span class="p">,</span>
+            <span class="s2">&quot;nodes_created&quot;</span><span class="p">:</span> <span class="n">counters</span><span class="o">.</span><span class="n">nodes_created</span><span class="p">,</span>
+            <span class="s2">&quot;nodes_deleted&quot;</span><span class="p">:</span> <span class="n">counters</span><span class="o">.</span><span class="n">nodes_deleted</span><span class="p">,</span>
+            <span class="s2">&quot;properties_set&quot;</span><span class="p">:</span> <span class="n">counters</span><span class="o">.</span><span class="n">properties_set</span><span class="p">,</span>
+            <span class="s2">&quot;relationships_created&quot;</span><span class="p">:</span> <span class="n">counters</span><span class="o">.</span><span class="n">relationships_created</span><span class="p">,</span>
+            <span class="s2">&quot;relationships_deleted&quot;</span><span class="p">:</span> <span class="n">counters</span><span class="o">.</span><span class="n">relationships_deleted</span><span class="p">,</span>
+        <span class="p">}</span>
+
+<div class="viewcode-block" id="Neo4jContext.session">
+<a class="viewcode-back" href="../../../source/etl_lib.core.ETLContext.html#etl_lib.core.ETLContext.Neo4jContext.session">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">session</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">database</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Create a new Neo4j session in write mode, caller is responsible to close the session.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            database: name of the database to use for this session. If not provided, the database name provided during</span>
+<span class="sd">                construction will be used.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            newly created Neo4j session.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">database</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">driver</span><span class="o">.</span><span class="n">session</span><span class="p">(</span><span class="n">database</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">database</span><span class="p">,</span> <span class="n">default_access_mode</span><span class="o">=</span><span class="n">WRITE_ACCESS</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">driver</span><span class="o">.</span><span class="n">session</span><span class="p">(</span><span class="n">database</span><span class="o">=</span><span class="n">database</span><span class="p">,</span> <span class="n">default_access_mode</span><span class="o">=</span><span class="n">WRITE_ACCESS</span><span class="p">)</span></div>
+
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">__neo4j_connect</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">driver</span> <span class="o">=</span> <span class="n">GraphDatabase</span><span class="o">.</span><span class="n">driver</span><span class="p">(</span><span class="n">uri</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">uri</span><span class="p">,</span> <span class="n">auth</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">auth</span><span class="p">,</span>
+                                           <span class="n">notifications_min_severity</span><span class="o">=</span><span class="s2">&quot;OFF&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">driver</span><span class="o">.</span><span class="n">verify_connectivity</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;driver connected to instance at </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">uri</span><span class="si">}</span><span class="s2"> with username </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">auth</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s2"> and database </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">database</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="gds">
+<a class="viewcode-back" href="../../../source/etl_lib.core.ETLContext.html#etl_lib.core.ETLContext.gds">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">gds</span><span class="p">(</span><span class="n">neo4j_context</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">GraphDataScience</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Creates a new GraphDataScience client.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        neo4j_context: Neo4j context containing driver and database name.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        gds client.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">GraphDataScience</span><span class="o">.</span><span class="n">from_neo4j_driver</span><span class="p">(</span><span class="n">driver</span><span class="o">=</span><span class="n">neo4j_context</span><span class="o">.</span><span class="n">driver</span><span class="p">,</span> <span class="n">database</span><span class="o">=</span><span class="n">neo4j_context</span><span class="o">.</span><span class="n">database</span><span class="p">)</span></div>
+
+
+
+<span class="k">if</span> <span class="n">sqlalchemy_available</span><span class="p">:</span>
+<div class="viewcode-block" id="SQLContext">
+<a class="viewcode-back" href="../../../source/etl_lib.core.ETLContext.html#etl_lib.core.ETLContext.SQLContext">[docs]</a>
+    <span class="k">class</span><span class="w"> </span><span class="nc">SQLContext</span><span class="p">:</span>
+<div class="viewcode-block" id="SQLContext.__init__">
+<a class="viewcode-back" href="../../../source/etl_lib.core.ETLContext.html#etl_lib.core.ETLContext.SQLContext.__init__">[docs]</a>
+        <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">database_url</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">pool_size</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">10</span><span class="p">,</span> <span class="n">max_overflow</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">20</span><span class="p">):</span>
+<span class="w">            </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">            Initializes the SQL context with an SQLAlchemy engine.</span>
+
+<span class="sd">            Args:</span>
+<span class="sd">                database_url (str): SQLAlchemy connection URL.</span>
+<span class="sd">                pool_size (int): Number of connections to maintain in the pool.</span>
+<span class="sd">                max_overflow (int): Additional connections allowed beyond pool_size.</span>
+<span class="sd">            &quot;&quot;&quot;</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">engine</span><span class="p">:</span> <span class="n">Engine</span> <span class="o">=</span> <span class="n">create_engine</span><span class="p">(</span>
+                <span class="n">database_url</span><span class="p">,</span>
+                <span class="n">pool_pre_ping</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                <span class="n">pool_size</span><span class="o">=</span><span class="n">pool_size</span><span class="p">,</span>
+                <span class="n">max_overflow</span><span class="o">=</span><span class="n">max_overflow</span>
+            <span class="p">)</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="ETLContext">
+<a class="viewcode-back" href="../../../source/etl_lib.core.ETLContext.html#etl_lib.core.ETLContext.ETLContext">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">ETLContext</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    General context information.</span>
+
+<span class="sd">    Will be passed to all :class:`~etl_lib.core.Task.Task` to provide access to environment variables and functionally</span>
+<span class="sd">    deemed general enough that all parts of the ETL pipeline would need it.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="ETLContext.__init__">
+<a class="viewcode-back" href="../../../source/etl_lib.core.ETLContext.html#etl_lib.core.ETLContext.ETLContext.__init__">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">env_vars</span><span class="p">:</span> <span class="nb">dict</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Create a new ETLContext.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            env_vars: Environment variables. Stored internally and can be accessed via :func:`~env` .</span>
+
+<span class="sd">        The context created will contain an :class:`~Neo4jContext` and a :class:`~etl_lib.core.ProgressReporter.ProgressReporter`.</span>
+<span class="sd">        See there for keys used from the provided `env_vars` dict.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__module__</span><span class="si">}</span><span class="s2">.</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">neo4j</span> <span class="o">=</span> <span class="n">Neo4jContext</span><span class="p">(</span><span class="n">env_vars</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__env_vars</span> <span class="o">=</span> <span class="n">env_vars</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">reporter</span> <span class="o">=</span> <span class="n">get_reporter</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+        <span class="n">sql_uri</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">env</span><span class="p">(</span><span class="s2">&quot;SQLALCHEMY_URI&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">sql_uri</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">sqlalchemy_available</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">sql</span> <span class="o">=</span> <span class="n">SQLContext</span><span class="p">(</span><span class="n">sql_uri</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">gds_available</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">gds</span> <span class="o">=</span> <span class="n">gds</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">neo4j</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="ETLContext.env">
+<a class="viewcode-back" href="../../../source/etl_lib.core.ETLContext.html#etl_lib.core.ETLContext.ETLContext.env">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">env</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns the value of an entry in the `env_vars` dict.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            key: name of the entry to read.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            value of the entry, or None if the key is not in the dict.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">key</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">__env_vars</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__env_vars</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
+        <span class="k">return</span> <span class="kc">None</span></div>
+</div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright .</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

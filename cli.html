@@ -1,0 +1,259 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CLI &mdash; neo4j-etl-lib 0.3.2 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="_static/graphviz.css?v=4ae1632d" />
+      <link rel="stylesheet" type="text/css" href="_static/readthedocs-custom.css" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=71d9d8e6"></script>
+      <script src="_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="etl_lib package" href="source/etl_lib.html" />
+    <link rel="prev" title="Testing" href="testing.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            neo4j-etl-lib
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="index.html">Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="batching.html">Batching and Streaming</a></li>
+<li class="toctree-l1"><a class="reference internal" href="parallel.html">Parallel Processing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="reporting.html">Reporting</a></li>
+<li class="toctree-l1"><a class="reference internal" href="validation.html">Validation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="data-sources.html">Data Sources</a></li>
+<li class="toctree-l1"><a class="reference internal" href="data-sinks.html">Data Sinks</a></li>
+<li class="toctree-l1"><a class="reference internal" href="processing.html">Data Processing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="configuration.html">Configuration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="testing.html">Testing</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">CLI</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#commands">Commands</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#query">Query</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#detail">Detail</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#delete">Delete</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="source/etl_lib.html">API Reference</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">neo4j-etl-lib</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">CLI</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/cli.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="cli">
+<h1>CLI<a class="headerlink" href="#cli" title="Link to this heading"></a></h1>
+<p>The module <a class="reference internal" href="source/etl_lib.cli.run_tools.html#module-etl_lib.cli.run_tools" title="etl_lib.cli.run_tools"><code class="xref py py-mod docutils literal notranslate"><span class="pre">etl_lib.cli.run_tools</span></code></a> defines functions to query details of past ETL runs. It utilizes the <code class="docutils literal notranslate"><span class="pre">click</span></code> package to define a <code class="docutils literal notranslate"><span class="pre">click.group()</span></code> named <code class="docutils literal notranslate"><span class="pre">cli</span></code>, which can be easily integrated into a command-line utility.</p>
+<p>See the <a class="reference external" href="https://github.com/neo-technology-field/python-etl-lib/tree/main/examples/gtfs">GTFS example</a> for guidance on building a command-line tool.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">etl_lib.cli.run_tools</span><span class="w"> </span><span class="kn">import</span> <span class="n">cli</span>
+<span class="nd">@cli</span><span class="o">.</span><span class="n">command</span><span class="p">(</span><span class="s2">&quot;&lt;your own command&gt;&quot;</span><span class="p">)</span>
+<span class="nd">@click</span><span class="o">.</span><span class="n">argument</span><span class="p">(</span><span class="o">&lt;</span><span class="n">your</span> <span class="n">own</span> <span class="n">arguments</span><span class="o">&gt;</span><span class="p">)</span>
+<span class="nd">@click</span><span class="o">.</span><span class="n">pass_context</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">main</span><span class="p">(</span><span class="n">ctx</span><span class="p">,</span> <span class="n">input_directory</span><span class="p">):</span>
+    <span class="k">pass</span>
+
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s1">&#39;__main__&#39;</span><span class="p">:</span>
+    <span class="n">cli</span><span class="p">()</span>
+</pre></div>
+</div>
+<section id="commands">
+<h2>Commands<a class="headerlink" href="#commands" title="Link to this heading"></a></h2>
+<p>The <code class="docutils literal notranslate"><span class="pre">cli</span></code> group provides the following commands:</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$ </span>python<span class="w"> </span>&lt;your-cli&gt;.py<span class="w"> </span>--help
+<span class="go">Usage: &lt;your-cli&gt;.py [OPTIONS] COMMAND [ARGS]...</span>
+
+<span class="go">  Environment variables can be configured via a .env file or overridden via</span>
+<span class="go">  CLI options:</span>
+
+<span class="go">  - NEO4J_URI: Neo4j database URI</span>
+<span class="go">  - NEO4J_USERNAME: Neo4j username</span>
+<span class="go">  - NEO4J_PASSWORD: Neo4j password</span>
+<span class="go">  - LOG_FILE: Path to the log file</span>
+<span class="go">  - DATABASE_NAME: Neo4j database name (default: neo4j)</span>
+
+<span class="go">Options:</span>
+<span class="go">  --neo4j-uri TEXT       Neo4j database URI</span>
+<span class="go">  --neo4j-user TEXT      Neo4j username</span>
+<span class="go">  --neo4j-password TEXT  Neo4j password</span>
+<span class="go">  --log-file TEXT        Path to the log file</span>
+<span class="go">  --database-name TEXT   Neo4j database name (default: neo4j)</span>
+<span class="go">  --help                 Show this message and exit.</span>
+
+<span class="go">Commands:</span>
+<span class="go">  delete  Delete runs based on run ID, date, or age.</span>
+<span class="go">  detail  Show a breakdown of the task for the specified run, including...</span>
+<span class="go">  query   Retrieve the list of the last x ETL runs from the database and...</span>
+</pre></div>
+</div>
+<section id="query">
+<h3>Query<a class="headerlink" href="#query" title="Link to this heading"></a></h3>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$ </span>python<span class="w"> </span>&lt;your-cli&gt;.py<span class="w"> </span>query<span class="w"> </span>--help
+<span class="go">Usage: &lt;your-cli&gt;.py query [OPTIONS]</span>
+
+<span class="go">Retrieve the list of the last x ETL runs from the database and display them.</span>
+
+<span class="go">Options:</span>
+<span class="go">  --number-runs INTEGER  Number of rows to process, defaults to 10</span>
+<span class="go">  --help                 Show this message and exit.</span>
+</pre></div>
+</div>
+<p>Example output:</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$ </span>python<span class="w"> </span>&lt;your-cli&gt;.py<span class="w"> </span>query
+<span class="go">Listing runs in database &#39;neo4j&#39;</span>
+<span class="go">+--------+--------------------------------------+------------------+------------------+-----------+</span>
+<span class="go">| name   | ID                                   | startTime        | endTime          |   changes |</span>
+<span class="go">|--------+--------------------------------------+------------------+------------------+-----------|</span>
+<span class="go">| main   | 69260954-0b94-4043-be1b-f99ce5a64d3a | 2025-02-09 17:19 | 2025-02-09 17:20 |   4566469 |</span>
+<span class="go">+--------+--------------------------------------+------------------+------------------+-----------+</span>
+</pre></div>
+</div>
+<p>The <code class="docutils literal notranslate"><span class="pre">changes</span></code> column represents the sum of all modifications in that run, including CSV rows read, constraints added, properties set, etc.</p>
+</section>
+<section id="detail">
+<h3>Detail<a class="headerlink" href="#detail" title="Link to this heading"></a></h3>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$ </span>python<span class="w"> </span>&lt;your-cli&gt;.py<span class="w"> </span>detail<span class="w"> </span>--help
+<span class="go">Usage: &lt;your-cli&gt;.py detail [OPTIONS] RUN_ID</span>
+
+<span class="go">  Show a breakdown of the task for the specified run, including statistics.</span>
+
+<span class="go">Options:</span>
+<span class="go">  --details  Show stats for each task</span>
+<span class="go">  --help     Show this message and exit.</span>
+</pre></div>
+</div>
+<p>Example output:</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$ </span>python<span class="w"> </span>&lt;your-cli&gt;.py<span class="w"> </span>detail<span class="w"> </span><span class="m">69260954</span>-0b94-4043-be1b-f99ce5a64d3a
+<span class="go">Showing details for run ID: 69260954-0b94-4043-be1b-f99ce5a64d3a</span>
+<span class="go">+-------------------------------------------------------------------------------+----------+-----------+------------+-----------+</span>
+<span class="go">| task                                                                          | status   | batches   | duration   |   changes |</span>
+<span class="go">|-------------------------------------------------------------------------------+----------+-----------+------------+-----------|</span>
+<span class="go">| TaskGroup(schema-init)                                                        | success  |           | 0:00:00    |         0 |</span>
+<span class="go">| Task(SchemaTask)                                                              | success  |           | 0:00:00    |         0 |</span>
+<span class="go">| TaskGroup(csv-loading)                                                        | success  |           | 0:00:57    |   4566469 |</span>
+<span class="go">| LoadAgenciesTask(/Users/bert/Downloads/mdb-2333-202412230030/agency.txt)      | success  | 1 / -     | 0:00:00    |         6 |</span>
+<span class="go">| LoadRoutesTask(/Users/bert/Downloads/mdb-2333-202412230030/routes.txt)        | success  | 1 / -     | 0:00:00    |      1495 |</span>
+<span class="go">| LoadStopsTask(/Users/bert/Downloads/mdb-2333-202412230030/stops.txt)          | success  | 1 / -     | 0:00:00    |     33360 |</span>
+<span class="go">| LoadTripsTask(/Users/bert/Downloads/mdb-2333-202412230030/trips.txt)          | success  | 19 / -    | 0:00:03    |    733552 |</span>
+<span class="go">| LoadCalendarTask(/Users/bert/Downloads/mdb-2333-202412230030/calendar.txt)    | success  | 1 / -     | 0:00:00    |       424 |</span>
+<span class="go">| LoadStopTimesTask(/Users/bert/Downloads/mdb-2333-202412230030/stop_times.txt) | success  | 380 / -   | 0:00:54    |   3797632 |</span>
+<span class="go">| TaskGroup(post-processing)                                                    | success  |           | 0:00:07    |         0 |</span>
+<span class="go">| Task(CreateSequenceTask)                                                      | success  |           | 0:00:07    |         0 |</span>
+<span class="go">+-------------------------------------------------------------------------------+----------+-----------+------------+-----------+</span>
+</pre></div>
+</div>
+<p>In cases where the expected number of batches is unknown, the <code class="docutils literal notranslate"><span class="pre">380</span> <span class="pre">/</span> <span class="pre">-</span></code> format is used.</p>
+<p>Adding the <code class="docutils literal notranslate"><span class="pre">--details</span></code> flag provides additional task-specific statistics:</p>
+<p>Example output:</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$ </span>python<span class="w"> </span>&lt;your-cli&gt;.py<span class="w"> </span>detail<span class="w"> </span><span class="m">69260954</span>-0b94-4043-be1b-f99ce5a64d3a<span class="w"> </span>--details
+<span class="go">Showing statistics for Task &#39;TaskGroup(csv-loading)&#39; with status &#39;success&#39;</span>
+<span class="go">+----------------+---------+</span>
+<span class="go">| Name           |   Value |</span>
+<span class="go">|----------------+---------|</span>
+<span class="go">| csv_lines_read | 1995192 |</span>
+<span class="go">| properties_set |  576085 |</span>
+<span class="go">| valid_rows     | 1995192 |</span>
+<span class="go">+----------------+---------+</span>
+</pre></div>
+</div>
+</section>
+<section id="delete">
+<h3>Delete<a class="headerlink" href="#delete" title="Link to this heading"></a></h3>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$ </span>python<span class="w"> </span>&lt;your-cli&gt;.py<span class="w"> </span>delete<span class="w"> </span>--help
+<span class="go">Usage: &lt;your-cli&gt;.py delete [OPTIONS]</span>
+
+<span class="go">  Delete runs based on run ID, date, or age. One and only one of --run-id,</span>
+<span class="go">  --since, or --older must be provided.</span>
+
+<span class="go">Options:</span>
+<span class="go">  --run-id TEXT        Run IDs to delete, works with comma separated list</span>
+<span class="go">  --before [%Y-%m-%d]  Delete runs before a specific date in format YYYY-MM-DD</span>
+<span class="go">  --older INTEGER      Delete runs older than x days</span>
+<span class="go">  --help               Show this message and exit.</span>
+</pre></div>
+</div>
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="testing.html" class="btn btn-neutral float-left" title="Testing" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="source/etl_lib.html" class="btn btn-neutral float-right" title="etl_lib package" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright .</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

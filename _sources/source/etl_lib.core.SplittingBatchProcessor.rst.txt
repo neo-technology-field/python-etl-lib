@@ -1,0 +1,7 @@
+etl\_lib.core.SplittingBatchProcessor module
+============================================
+
+.. automodule:: etl_lib.core.SplittingBatchProcessor
+   :members:
+   :show-inheritance:
+   :undoc-members:

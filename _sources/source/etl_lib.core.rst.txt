@@ -1,0 +1,26 @@
+etl\_lib.core package
+=====================
+
+Submodules
+----------
+
+.. toctree::
+   :maxdepth: 4
+
+   etl_lib.core.BatchProcessor
+   etl_lib.core.ClosedLoopBatchProcessor
+   etl_lib.core.ETLContext
+   etl_lib.core.ParallelBatchProcessor
+   etl_lib.core.ProgressReporter
+   etl_lib.core.SplittingBatchProcessor
+   etl_lib.core.Task
+   etl_lib.core.ValidationBatchProcessor
+   etl_lib.core.utils
+
+Module contents
+---------------
+
+.. automodule:: etl_lib.core
+   :members:
+   :show-inheritance:
+   :undoc-members:

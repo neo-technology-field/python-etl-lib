@@ -1,0 +1,185 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Reporting &mdash; neo4j-etl-lib 0.3.2 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="_static/graphviz.css?v=4ae1632d" />
+      <link rel="stylesheet" type="text/css" href="_static/readthedocs-custom.css" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=71d9d8e6"></script>
+      <script src="_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Validation" href="validation.html" />
+    <link rel="prev" title="Parallel Processing" href="parallel.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            neo4j-etl-lib
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="index.html">Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="batching.html">Batching and Streaming</a></li>
+<li class="toctree-l1"><a class="reference internal" href="parallel.html">Parallel Processing</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Reporting</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#basic-reporter">Basic Reporter</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#neo4j-reporter">Neo4j Reporter</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="validation.html">Validation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="data-sources.html">Data Sources</a></li>
+<li class="toctree-l1"><a class="reference internal" href="data-sinks.html">Data Sinks</a></li>
+<li class="toctree-l1"><a class="reference internal" href="processing.html">Data Processing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="configuration.html">Configuration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="testing.html">Testing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="cli.html">CLI</a></li>
+<li class="toctree-l1"><a class="reference internal" href="source/etl_lib.html">API Reference</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">neo4j-etl-lib</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Reporting</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/reporting.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="reporting">
+<h1>Reporting<a class="headerlink" href="#reporting" title="Link to this heading"></a></h1>
+<p>The library comes with two implementations for reporting.</p>
+<section id="basic-reporter">
+<span id="id1"></span><h2>Basic Reporter<a class="headerlink" href="#basic-reporter" title="Link to this heading"></a></h2>
+<p>The <a class="reference internal" href="source/etl_lib.core.ProgressReporter.html#etl_lib.core.ProgressReporter.ProgressReporter" title="etl_lib.core.ProgressReporter.ProgressReporter"><code class="xref py py-class docutils literal notranslate"><span class="pre">ProgressReporter</span></code></a> implements basic reporting using the Python logging package. Logging is done at the <code class="docutils literal notranslate"><span class="pre">INFO</span></code> level.</p>
+<p>The <a class="reference internal" href="source/etl_lib.core.utils.html#etl_lib.core.utils.setup_logging" title="etl_lib.core.utils.setup_logging"><code class="xref py py-func docutils literal notranslate"><span class="pre">setup_logging()</span></code></a> function is provided to configure logging to both the console and an optional file.</p>
+<p>The reporter is instantiated and configured inside the <a class="reference internal" href="source/etl_lib.core.ETLContext.html#etl_lib.core.ETLContext.ETLContext" title="etl_lib.core.ETLContext.ETLContext"><code class="xref py py-class docutils literal notranslate"><span class="pre">ETLContext</span></code></a> constructor and can be retrieved from there.</p>
+<p>As part of the ETL pipeline setup, a call to <a class="reference internal" href="source/etl_lib.core.ProgressReporter.html#etl_lib.core.ProgressReporter.ProgressReporter.register_tasks" title="etl_lib.core.ProgressReporter.ProgressReporter.register_tasks"><code class="xref py py-func docutils literal notranslate"><span class="pre">register_tasks()</span></code></a> must be made, passing in the root of the task tree:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">context</span><span class="o">.</span><span class="n">reporter</span><span class="o">.</span><span class="n">register_tasks</span><span class="p">(</span><span class="n">all_group</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>This will log a tree representation of the tasks:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>2025-02-09 13:33:42,696 - INFO -
+└──main
+   ├──schema-init
+   │  └──SchemaTask
+   ├──csv-loading
+   │  ├──LoadAgenciesTask(&#39;mdb-2333-202412230030/agency.txt&#39;)
+   │  ├──LoadRoutesTask(&#39;mdb-2333-202412230030/routes.txt&#39;)
+   │  ├──LoadStopsTask(&#39;mdb-2333-202412230030/stops.txt&#39;)
+   │  ├──LoadTripsTask(&#39;mdb-2333-202412230030/trips.txt&#39;)
+   │  ├──LoadCalendarTask(&#39;mdb-2333-202412230030/calendar.txt&#39;)
+   │  └──LoadStopTimesTask(&#39;mdb-2333-202412230030/stop_times.txt&#39;)
+   └──post-processing
+      └──CreateSequenceTask
+</pre></div>
+</div>
+<p>The <a class="reference internal" href="source/etl_lib.core.Task.html#etl_lib.core.Task.Task" title="etl_lib.core.Task.Task"><code class="xref py py-class docutils literal notranslate"><span class="pre">Task</span></code></a> is responsible for informing the reporter (from the context) about status changes, such as task start and completion. This occurs before and after calls to <a class="reference internal" href="source/etl_lib.core.Task.html#etl_lib.core.Task.Task.run_internal" title="etl_lib.core.Task.Task.run_internal"><code class="xref py py-func docutils literal notranslate"><span class="pre">run_internal()</span></code></a>, ensuring that task implementations do not need to handle this manually.</p>
+<p>At the end of each <a class="reference internal" href="source/etl_lib.core.Task.html#etl_lib.core.Task.Task" title="etl_lib.core.Task.Task"><code class="xref py py-class docutils literal notranslate"><span class="pre">Task</span></code></a>, the reporter logs summary messages such as:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="mi">2025</span><span class="o">-</span><span class="mi">02</span><span class="o">-</span><span class="mi">09</span> <span class="mi">13</span><span class="p">:</span><span class="mi">43</span><span class="p">:</span><span class="mi">41</span><span class="p">,</span><span class="mi">535</span> <span class="o">-</span> <span class="n">INFO</span> <span class="o">-</span>  <span class="n">finished</span> <span class="n">LoadStopTimesTask</span><span class="p">(</span><span class="s1">&#39;mdb-2333-202412230030/stop_times.txt&#39;</span><span class="p">)</span> <span class="ow">in</span> <span class="mi">0</span><span class="p">:</span><span class="mi">01</span><span class="p">:</span><span class="mf">03.138719</span> <span class="k">with</span> <span class="n">success</span><span class="p">:</span> <span class="kc">True</span>
+<span class="o">+--------------+------------------+------------------+----------------+-------------------------+-----------------+</span>
+<span class="o">|</span>   <span class="n">valid_rows</span> <span class="o">|</span>   <span class="n">csv_lines_read</span> <span class="o">|</span>   <span class="n">properties_set</span> <span class="o">|</span>   <span class="n">labels_added</span> <span class="o">|</span>   <span class="n">relationships_created</span> <span class="o">|</span>   <span class="n">nodes_created</span> <span class="o">|</span>
+<span class="o">|--------------+------------------+------------------+----------------+-------------------------+-----------------|</span>
+<span class="o">|</span>      <span class="mi">1898816</span> <span class="o">|</span>          <span class="mi">1898816</span> <span class="o">|</span>          <span class="mi">3394080</span> <span class="o">|</span>         <span class="mi">678816</span> <span class="o">|</span>                 <span class="mi">1357632</span> <span class="o">|</span>          <span class="mi">678816</span> <span class="o">|</span>
+<span class="o">+--------------+------------------+------------------+----------------+-------------------------+-----------------+</span>
+</pre></div>
+</div>
+<p>To maintain readability, only summary information with non-zero values is reported.</p>
+</section>
+<section id="neo4j-reporter">
+<span id="id2"></span><h2>Neo4j Reporter<a class="headerlink" href="#neo4j-reporter" title="Link to this heading"></a></h2>
+<p>The <a class="reference internal" href="source/etl_lib.core.ProgressReporter.html#etl_lib.core.ProgressReporter.Neo4jProgressReporter" title="etl_lib.core.ProgressReporter.Neo4jProgressReporter"><code class="xref py py-class docutils literal notranslate"><span class="pre">Neo4jProgressReporter</span></code></a> extends the basic <a class="reference internal" href="source/etl_lib.core.ProgressReporter.html#etl_lib.core.ProgressReporter.ProgressReporter" title="etl_lib.core.ProgressReporter.ProgressReporter"><code class="xref py py-class docutils literal notranslate"><span class="pre">ProgressReporter</span></code></a>, allowing each ETL pipeline run to be persisted in a Neo4j database.</p>
+<p>Which implementation is used depends on the existence of the key <code class="docutils literal notranslate"><span class="pre">REPORTER_DATABASE</span></code> in <code class="docutils literal notranslate"><span class="pre">context.env</span></code>. This <code class="docutils literal notranslate"><span class="pre">env</span></code> dictionary should be built from the process environment.</p>
+<p>If the <code class="docutils literal notranslate"><span class="pre">REPORTER_DATABASE</span></code> key exists, its value determines the database where ETL status information is stored, enabling separation between application data and ETL metadata.</p>
+<p>Each ETL run creates an independent subgraph. The following diagram illustrates the structure of such a subgraph for a GTFS example:</p>
+<img alt="_images/schema.png" src="_images/schema.png" />
+<p>Green nodes represent <a class="reference internal" href="source/etl_lib.core.Task.html#etl_lib.core.Task.Task" title="etl_lib.core.Task.Task"><code class="xref py py-class docutils literal notranslate"><span class="pre">Task</span></code></a>, while blue nodes represent <a class="reference internal" href="source/etl_lib.core.Task.html#etl_lib.core.Task.TaskGroup" title="etl_lib.core.Task.TaskGroup"><code class="xref py py-class docutils literal notranslate"><span class="pre">TaskGroup</span></code></a>.</p>
+<p><code class="docutils literal notranslate"><span class="pre">ETLStats</span></code> nodes are created upon task completion and store summary information. For tasks with child tasks, the <code class="docutils literal notranslate"><span class="pre">ETLStats</span></code> node aggregates data from all children. To view the overall summary for a pipeline run, refer to the <code class="docutils literal notranslate"><span class="pre">ETLStats</span></code> node attached to the <code class="docutils literal notranslate"><span class="pre">ETLRun</span></code> node.</p>
+<p>Unlike the <a class="reference internal" href="#basic-reporter"><span class="std std-ref">Basic Reporter</span></a>, which only logs non-zero values, <code class="docutils literal notranslate"><span class="pre">ETLStats</span></code> nodes store all summary data, including zero values.</p>
+<p>The project’s root directory includes a <code class="docutils literal notranslate"><span class="pre">dashboard.json</span></code> file for use with <a class="reference external" href="https://github.com/neo4j-labs/neodash">Neodash Dashboard Builder</a>.</p>
+<div class="admonition attention">
+<p class="admonition-title">Attention</p>
+<p>The Neo4j reporter does not automatically create constraints for metadata. To manually create the constraint, execute the following Cypher query:</p>
+<div class="highlight-cypher notranslate"><div class="highlight"><pre><span></span><span class="k">CREATE</span><span class="w"> </span><span class="n">CONSTRAINT</span><span class="w"> </span><span class="n">IF</span><span class="w"> </span><span class="k">NOT</span><span class="w"> </span><span class="n">EXISTS</span><span class="w"> </span><span class="n">FOR</span><span class="w"> </span><span class="p">(</span><span class="n">n</span><span class="p">:</span><span class="n">ETLTask</span><span class="p">)</span>
+<span class="w">    </span><span class="n">REQUIRE</span><span class="w"> </span><span class="n">n</span><span class="p">.</span><span class="n">uuid</span><span class="w"> </span><span class="k">IS</span><span class="w"> </span><span class="k">UNIQUE</span>
+</pre></div>
+</div>
+<p>Alternatively, the <a class="reference internal" href="source/etl_lib.task.CreateReportingConstraintsTask.html#etl_lib.task.CreateReportingConstraintsTask.CreateReportingConstraintsTask" title="etl_lib.task.CreateReportingConstraintsTask.CreateReportingConstraintsTask"><code class="xref py py-class docutils literal notranslate"><span class="pre">CreateReportingConstraintsTask</span></code></a> can be added at the start of a pipeline to ensure the constraint is created if it does not exist.</p>
+</div>
+<p>Additionally, <a class="reference internal" href="cli.html"><span class="doc">CLI</span></a> provides details on using the command-line interface to query and manage ETL run history.</p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="parallel.html" class="btn btn-neutral float-left" title="Parallel Processing" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="validation.html" class="btn btn-neutral float-right" title="Validation" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright .</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

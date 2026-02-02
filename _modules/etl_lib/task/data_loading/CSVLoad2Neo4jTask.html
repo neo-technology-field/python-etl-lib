@@ -1,0 +1,215 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>etl_lib.task.data_loading.CSVLoad2Neo4jTask &mdash; neo4j-etl-lib 0.3.2 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/graphviz.css?v=4ae1632d" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/readthedocs-custom.css" />
+
+  
+      <script src="../../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../../_static/documentation_options.js?v=71d9d8e6"></script>
+      <script src="../../../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../../index.html" class="icon icon-home">
+            neo4j-etl-lib
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../index.html">Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../batching.html">Batching and Streaming</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../parallel.html">Parallel Processing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../reporting.html">Reporting</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../validation.html">Validation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../data-sources.html">Data Sources</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../data-sinks.html">Data Sinks</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../processing.html">Data Processing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../configuration.html">Configuration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../testing.html">Testing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../cli.html">CLI</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../source/etl_lib.html">API Reference</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../index.html">neo4j-etl-lib</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">etl_lib.task.data_loading.CSVLoad2Neo4jTask</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for etl_lib.task.data_loading.CSVLoad2Neo4jTask</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span><span class="w"> </span><span class="nn">abc</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pathlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">Path</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Type</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">etl_lib.core.ETLContext</span><span class="w"> </span><span class="kn">import</span> <span class="n">ETLContext</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">etl_lib.core.ClosedLoopBatchProcessor</span><span class="w"> </span><span class="kn">import</span> <span class="n">ClosedLoopBatchProcessor</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">etl_lib.core.Task</span><span class="w"> </span><span class="kn">import</span> <span class="n">Task</span><span class="p">,</span> <span class="n">TaskReturn</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">etl_lib.core.ValidationBatchProcessor</span><span class="w"> </span><span class="kn">import</span> <span class="n">ValidationBatchProcessor</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">etl_lib.data_sink.CypherBatchSink</span><span class="w"> </span><span class="kn">import</span> <span class="n">CypherBatchSink</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">etl_lib.data_source.CSVBatchSource</span><span class="w"> </span><span class="kn">import</span> <span class="n">CSVBatchSource</span>
+
+
+<div class="viewcode-block" id="CSVLoad2Neo4jTask">
+<a class="viewcode-back" href="../../../../source/etl_lib.task.data_loading.CSVLoad2Neo4jTask.html#etl_lib.task.data_loading.CSVLoad2Neo4jTask.CSVLoad2Neo4jTask">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">CSVLoad2Neo4jTask</span><span class="p">(</span><span class="n">Task</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">    Loads the specified CSV file to Neo4j.</span>
+
+<span class="sd">    Uses BatchProcessors to read, validate and write to Neo4j.</span>
+<span class="sd">    The validation step is using pydantic, hence a Pydantic model needs to be provided.</span>
+<span class="sd">    Rows with fail validation will be written to en error file. The location of the error file is determined as</span>
+<span class="sd">    follows:</span>
+
+<span class="sd">    If the context env vars hold an entry `ETL_ERROR_PATH` the file will be placed there, with the name set to name</span>
+<span class="sd">    of the provided filename appended with `.error.json`</span>
+
+<span class="sd">    If `ETL_ERROR_PATH` is not set, the file will be placed in the same directory as the CSV file.</span>
+
+<span class="sd">    Example usage: (from the gtfs demo)</span>
+
+<span class="sd">    .. code-block:: python</span>
+
+<span class="sd">        class LoadStopsTask(CSVLoad2Neo4jTask):</span>
+<span class="sd">            class Stop(BaseModel):</span>
+<span class="sd">                id: str = Field(alias=&quot;stop_id&quot;)</span>
+<span class="sd">                name: str = Field(alias=&quot;stop_name&quot;)</span>
+<span class="sd">                latitude: float = Field(alias=&quot;stop_lat&quot;)</span>
+<span class="sd">                longitude: float = Field(alias=&quot;stop_lon&quot;)</span>
+<span class="sd">                platform_code: Optional[str] = None</span>
+<span class="sd">                parent_station: Optional[str] = None</span>
+<span class="sd">                type: Optional[str] = Field(alias=&quot;location_type&quot;, default=None)</span>
+<span class="sd">                timezone: Optional[str] = Field(alias=&quot;stop_timezone&quot;, default=None)</span>
+<span class="sd">                code: Optional[str] = Field(alias=&quot;stop_code&quot;, default=None)</span>
+
+<span class="sd">            def __init__(self, context: ETLContext, file: Path):</span>
+<span class="sd">                super().__init__(context, LoadStopsTask.Stop, file)</span>
+
+<span class="sd">            def task_name(self) -&gt; str:</span>
+<span class="sd">                return f&quot;{self.__class__.__name__}(&#39;{self.file}&#39;)&quot;</span>
+
+<span class="sd">            def _query(self):</span>
+<span class="sd">                return &quot;&quot;&quot;</span>
+<span class="sd">                       UNWIND $batch AS row</span>
+<span class="sd">                       MERGE (s:Stop {id: row.id})</span>
+<span class="sd">                         SET s.name = row.name,</span>
+<span class="sd">                             s.location= point({latitude: row.latitude, longitude: row.longitude}),</span>
+<span class="sd">                             s.platformCode= row.platform_code,</span>
+<span class="sd">                             s.parentStation= row.parent_station,</span>
+<span class="sd">                             s.type= row.type,</span>
+<span class="sd">                             s.timezone= row.timezone,</span>
+<span class="sd">                             s.code= row.code</span>
+<span class="sd">                      &quot;&quot;&quot;</span>
+
+<span class="sd">    &#39;&#39;&#39;</span>
+<div class="viewcode-block" id="CSVLoad2Neo4jTask.__init__">
+<a class="viewcode-back" href="../../../../source/etl_lib.task.data_loading.CSVLoad2Neo4jTask.html#etl_lib.task.data_loading.CSVLoad2Neo4jTask.CSVLoad2Neo4jTask.__init__">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">context</span><span class="p">:</span> <span class="n">ETLContext</span><span class="p">,</span> <span class="n">model</span><span class="p">:</span> <span class="n">Type</span><span class="p">[</span><span class="n">BaseModel</span><span class="p">],</span> <span class="n">file</span><span class="p">:</span> <span class="n">Path</span><span class="p">,</span> <span class="n">batch_size</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">5000</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">context</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">batch_size</span> <span class="o">=</span> <span class="n">batch_size</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">model</span> <span class="o">=</span> <span class="n">model</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__module__</span><span class="si">}</span><span class="s2">.</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">file</span> <span class="o">=</span> <span class="n">file</span></div>
+
+
+<div class="viewcode-block" id="CSVLoad2Neo4jTask.run_internal">
+<a class="viewcode-back" href="../../../../source/etl_lib.task.data_loading.CSVLoad2Neo4jTask.html#etl_lib.task.data_loading.CSVLoad2Neo4jTask.CSVLoad2Neo4jTask.run_internal">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">run_internal</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">TaskReturn</span><span class="p">:</span>
+        <span class="n">error_path</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">context</span><span class="o">.</span><span class="n">env</span><span class="p">(</span><span class="s2">&quot;ETL_ERROR_PATH&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">error_path</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">error_file</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">file</span><span class="o">.</span><span class="n">with_suffix</span><span class="p">(</span><span class="s2">&quot;.error.json&quot;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">error_file</span> <span class="o">=</span> <span class="n">error_path</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">file</span><span class="o">.</span><span class="n">with_name</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">file</span><span class="o">.</span><span class="n">stem</span> <span class="o">+</span> <span class="s2">&quot;.error.json&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">name</span>
+
+        <span class="n">csv</span> <span class="o">=</span> <span class="n">CSVBatchSource</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">file</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">context</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span>
+        <span class="n">validator</span> <span class="o">=</span> <span class="n">ValidationBatchProcessor</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">context</span><span class="p">,</span> <span class="bp">self</span><span class="p">,</span> <span class="n">csv</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">,</span> <span class="n">error_file</span><span class="p">)</span>
+        <span class="n">cypher</span> <span class="o">=</span> <span class="n">CypherBatchSink</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">context</span><span class="p">,</span> <span class="bp">self</span><span class="p">,</span> <span class="n">validator</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_query</span><span class="p">())</span>
+        <span class="n">end</span> <span class="o">=</span> <span class="n">ClosedLoopBatchProcessor</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">context</span><span class="p">,</span> <span class="bp">self</span><span class="p">,</span> <span class="n">cypher</span><span class="p">)</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="nb">next</span><span class="p">(</span><span class="n">end</span><span class="o">.</span><span class="n">get_batch</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">batch_size</span><span class="p">))</span>
+
+        <span class="k">return</span> <span class="n">TaskReturn</span><span class="p">(</span><span class="kc">True</span><span class="p">,</span> <span class="n">result</span><span class="o">.</span><span class="n">statistics</span><span class="p">)</span></div>
+
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">(</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">file</span><span class="si">}</span><span class="s2">)&quot;</span>
+
+    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_query</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">pass</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright .</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
