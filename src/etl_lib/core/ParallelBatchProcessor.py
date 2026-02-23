@@ -79,10 +79,11 @@ class ParallelBatchProcessor(BatchProcessor):
                     total += out.batch_size
                     merged_chunk.extend(out.chunk if isinstance(out.chunk, list) else [out.chunk])
             except Exception as e:
+                self.logger.exception("bucket processing failed")
                 for g in futures:
                     g.cancel()
                 pool.shutdown(cancel_futures=True)
-                raise RuntimeError("bucket processing failed") from e
+                raise
 
         self.logger.debug(f"Finished wave with stats={merged_stats}")
         return BatchResults(chunk=merged_chunk, statistics=merged_stats, batch_size=total)

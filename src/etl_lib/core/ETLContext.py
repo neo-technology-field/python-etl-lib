@@ -1,5 +1,5 @@
 import logging
-from typing import Any, Dict, List, NamedTuple
+from typing import Any, Dict, List, NamedTuple, Optional
 
 from neo4j.exceptions import Neo4jError
 
@@ -69,12 +69,21 @@ class Neo4jContext:
         - `NEO4J_USERNAME`,
         - `NEO4J_PASSWORD`.
         - `NEO4J_DATABASE`,
+
+        Optional: pass Neo4j Python driver configuration via env vars using the prefix `NEO4J_DRIVER_`.
+        Example:
+        - `NEO4J_DRIVER_MAX_CONNECTION_POOL_SIZE=200`
+        - `NEO4J_DRIVER_CONNECTION_TIMEOUT=10`
+        - `NEO4J_DRIVER_KEEP_ALIVE=true`
+        - `NEO4J_DRIVER_NOTIFICATIONS_MIN_SEVERITY=OFF`
+        - `NEO4J_DRIVER_NOTIFICATIONS_DISABLED_CATEGORIES=DEPRECATION,PERFORMANCE`
         """
         self.logger = logging.getLogger(f"{self.__class__.__module__}.{self.__class__.__name__}")
         self.uri = env_vars["NEO4J_URI"]
         self.auth = (env_vars["NEO4J_USERNAME"],
                      env_vars["NEO4J_PASSWORD"])
         self.database = env_vars["NEO4J_DATABASE"]
+        self.driver_options = self.__driver_options_from_env(env_vars)
         self.__neo4j_connect()
 
     def query_database(self, session: Session, query, **kwargs) -> QueryResult:
@@ -137,11 +146,95 @@ class Neo4jContext:
             return self.driver.session(database=database, default_access_mode=WRITE_ACCESS)
 
     def __neo4j_connect(self):
-        self.driver = GraphDatabase.driver(uri=self.uri, auth=self.auth,
-                                           notifications_min_severity="OFF")
+        options = dict(self.driver_options)
+
+        self.driver = GraphDatabase.driver(uri=self.uri, auth=self.auth, **options)
         self.driver.verify_connectivity()
         self.logger.info(
             f"driver connected to instance at {self.uri} with username {self.auth[0]} and database {self.database}")
+
+    @classmethod
+    def __driver_options_from_env(cls, env_vars: dict) -> Dict[str, Any]:
+        prefix = "NEO4J_DRIVER_"
+
+        parsers = {
+            "connection_acquisition_timeout": cls.__parse_float,
+            "connection_timeout": cls.__parse_float,
+            "connection_write_timeout": cls.__parse_float,
+            "encrypted": cls.__parse_bool,
+            "keep_alive": cls.__parse_bool,
+            "max_connection_lifetime": cls.__parse_float,
+            "liveness_check_timeout": cls.__parse_float_or_none,
+            "max_connection_pool_size": cls.__parse_int,
+            "max_transaction_retry_time": cls.__parse_float,
+            "user_agent": cls.__parse_str,
+            "notifications_min_severity": cls.__parse_str,
+            "notifications_disabled_categories": cls.__parse_csv_list,
+            "notifications_disabled_classifications": cls.__parse_csv_list,
+            "warn_notification_severity": cls.__parse_str,
+            "telemetry_disabled": cls.__parse_bool,
+        }
+
+        out: Dict[str, Any] = {}
+        for k, v in env_vars.items():
+            if not isinstance(k, str) or not k.startswith(prefix):
+                continue
+
+            key = k[len(prefix):].lower()
+            parser = parsers.get(key)
+            if parser is None:
+                continue
+
+            out[key] = parser(k, v)
+
+        return out
+
+    @staticmethod
+    def __parse_str(env_key: str, value: Any) -> str:
+        if value is None:
+            return ""
+        return str(value)
+
+    @staticmethod
+    def __parse_int(env_key: str, value: Any) -> int:
+        try:
+            return int(str(value).strip())
+        except Exception as e:
+            raise ValueError(f"invalid int for {env_key}: {value!r}") from e
+
+    @staticmethod
+    def __parse_float(env_key: str, value: Any) -> float:
+        try:
+            return float(str(value).strip())
+        except Exception as e:
+            raise ValueError(f"invalid float for {env_key}: {value!r}") from e
+
+    @staticmethod
+    def __parse_float_or_none(env_key: str, value: Any) -> Optional[float]:
+        s = str(value).strip()
+        if s == "" or s.lower() == "none":
+            return None
+        try:
+            return float(s)
+        except Exception as e:
+            raise ValueError(f"invalid float/none for {env_key}: {value!r}") from e
+
+    @staticmethod
+    def __parse_bool(env_key: str, value: Any) -> bool:
+        s = str(value).strip().lower()
+        if s in {"1", "true", "yes", "y", "on"}:
+            return True
+        if s in {"0", "false", "no", "n", "off"}:
+            return False
+        raise ValueError(f"invalid bool for {env_key}: {value!r}")
+
+    @staticmethod
+    def __parse_csv_list(env_key: str, value: Any) -> list:
+        s = str(value).strip()
+        if s == "":
+            return []
+        parts = [p.strip() for p in s.split(",")]
+        return [p for p in parts if p]
 
 
 def gds(neo4j_context) -> GraphDataScience:

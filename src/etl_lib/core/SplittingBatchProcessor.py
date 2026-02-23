@@ -1,9 +1,11 @@
+import hashlib
 import logging
 from typing import Any, Callable, Dict, Generator, List, Tuple
 
+from tabulate import tabulate
+
 from etl_lib.core.BatchProcessor import BatchProcessor, BatchResults
 from etl_lib.core.utils import merge_summery
-from tabulate import tabulate
 
 
 def tuple_id_extractor(table_size: int = 10) -> Callable[[Tuple[str | int, str | int]], Tuple[int, int]]:
@@ -103,6 +105,56 @@ def canonical_integer_id_extractor(
             raise KeyError(f"Item missing keys: {start_key} or {end_key}")
         except Exception as e:
             raise ValueError(f"Failed to extract ID: {e}")
+
+    extractor.table_size = table_size
+    extractor.monopartite = True
+    return extractor
+
+
+def canonical_int_or_str_id_extractor(
+        table_size: int = 10,
+        start_key: str = "start",
+        end_key: str = "end",
+) -> Callable[[Dict[str, Any]], Tuple[int, int]]:
+    """
+    ID extractor for integer IDs and string IDs with canonical folding (row <= col).
+
+    Purpose
+    - This extractor is intended for SplittingBatchProcessor / ParallelBatchProcessor style fan-out where
+      you want a stable mapping from a row dict to a "bucket coordinate" (row, col) on a small grid.
+    - The coordinate is used only for bucketing/scheduling; it is not the domain identifier used in Neo4j.
+    - While blake2b is heavier than CRC32, CRC32 is much more likely to create collisions (as in wikipedia tage titles)
+    - Collisions would impact import performance, as non-overlapping waves are not a guarantee anymore
+
+    Design choices
+    - Strings are mapped to a 128-bit unsigned integer using blake2b with digest_size=16.
+      This is not "mathematically collision-free", but for practical purposes
+      the collision probability is negligible compared to CRC32.
+    - Integers are treated as stable IDs and mixed as 64-bit values.
+    - Canonical folding enforces row <= col so that (A,B) and (B,A) map to the same bucket. This is useful
+      when the write set is effectively undirected (or when you want symmetric scheduling for pairs).
+    """
+    MAGIC = 2654435761
+
+    def _to_u64(v: Any) -> int:
+        if isinstance(v, int):
+            return v & 0xFFFFFFFFFFFFFFFF
+        if isinstance(v, str):
+            digest = hashlib.blake2b(v.encode("utf-8"), digest_size=16).digest()
+            return int.from_bytes(digest[:8], byteorder="big", signed=False)
+        raise TypeError(f"Expected int or str, got {type(v).__name__}")
+
+    def extractor(item: Dict[str, Any]) -> Tuple[int, int]:
+        s_u64 = _to_u64(item[start_key])
+        e_u64 = _to_u64(item[end_key])
+
+        row = ((s_u64 * MAGIC) & 0xFFFFFFFFFFFFFFFF) % table_size
+        col = ((e_u64 * MAGIC) & 0xFFFFFFFFFFFFFFFF) % table_size
+
+        if row > col:
+            row, col = col, row
+
+        return int(row), int(col)
 
     extractor.table_size = table_size
     extractor.monopartite = True

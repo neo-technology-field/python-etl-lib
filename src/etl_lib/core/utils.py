@@ -1,6 +1,8 @@
+import io
 import logging
 import os
 import signal
+import sys
 
 
 def merge_summery(summery_1: dict, summery_2: dict) -> dict:
@@ -21,12 +23,28 @@ def setup_logging(log_file=None):
     fmt = '%(asctime)s - %(levelname)s - %(name)s - [%(threadName)s] - %(message)s'
     formatter = logging.Formatter(fmt)
 
-    root_handlers = [logging.StreamHandler()]
+    def _safe_console_stream(stream):
+        # handling streams that are not capable of UTF8 (and it looks like some Windows systems can't)
+        # most likely looks ugly, but does not crash
+        try:
+            enc = (getattr(stream, "encoding", None) or "").lower()
+            if enc.startswith("utf"):
+                return stream
+            buf = getattr(stream, "buffer", None)
+            if buf is not None:
+                return io.TextIOWrapper(buf, encoding="utf-8", errors="backslashreplace")
+        except (ValueError, OSError, AttributeError, TypeError):
+            pass
+        return stream
+
+    root_handlers = [logging.StreamHandler(stream=_safe_console_stream(sys.stderr))]
     if log_file:
-        root_handlers.append(logging.FileHandler(log_file))
+        root_handlers.append(logging.FileHandler(log_file, encoding="utf-8", errors="backslashreplace"))
+
     for h in root_handlers:
         h.setLevel(logging.INFO)
         h.setFormatter(formatter)
+
     logging.basicConfig(level=logging.INFO, handlers=root_handlers, force=True)
 
     raw = os.getenv("ETL_LIB_LOG_LEVEL", "INFO")
@@ -40,13 +58,13 @@ def setup_logging(log_file=None):
     etl_logger.propagate = False
     etl_logger.handlers.clear()
 
-    dbg_console = logging.StreamHandler()
+    dbg_console = logging.StreamHandler(stream=_safe_console_stream(sys.stderr))
     dbg_console.setLevel(logging.NOTSET)
     dbg_console.setFormatter(formatter)
     etl_logger.addHandler(dbg_console)
 
     if log_file:
-        dbg_file = logging.FileHandler(log_file)
+        dbg_file = logging.FileHandler(log_file, encoding="utf-8", errors="backslashreplace")
         dbg_file.setLevel(logging.NOTSET)
         dbg_file.setFormatter(formatter)
         etl_logger.addHandler(dbg_file)
@@ -60,9 +78,7 @@ def add_sigint_handler(handler_to_add):
     old_handler = signal.getsignal(signal.SIGINT)
 
     def chained_handler(signum, frame):
-        # first, run the new handler
         handler_to_add(signum, frame)
-        # then, if there was an old handler, call it
         if callable(old_handler):
             old_handler(signum, frame)
 

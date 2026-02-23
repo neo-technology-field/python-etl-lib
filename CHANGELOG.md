@@ -29,3 +29,8 @@
 ## [0.3.2]
 - changed most of the parallel processing logic to also work with mono-partite graphs
 - minor adjustments
+
+## [0.3.3]
+- hopefully fixes the bug #10 on Windows when writing to a log file that can not handle UTF8
+- added `canonical_int_or_str_id_extractor` to handle strings on for bucketing on, minimizing collision chances
+- added option to pass connection configuration ala `NEO4J_DRIVER_MAX_CONNECTION_POOL_SIZE=200` 

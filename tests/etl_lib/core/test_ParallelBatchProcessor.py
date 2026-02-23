@@ -158,7 +158,4 @@ def test_parallel_processing_fail_fast(etl_context):
         list(proc.get_batch(max_batch_size=10))
 
     # The RuntimeError message should indicate parallel processing failed
-    assert "bucket processing failed" in str(excinfo.value)
-    # The original exception from the worker should be preserved as __cause__
-    assert isinstance(excinfo.value.__cause__, RuntimeError)
-    assert "encountered -1" in str(excinfo.value.__cause__)
+    assert str(excinfo.value) == "Test failure: encountered -1"
