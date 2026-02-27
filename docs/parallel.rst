@@ -56,6 +56,7 @@ Two tasks implement these processors:
 
 * :class:`~etl_lib.task.data_loading.ParallelCSVLoad2Neo4jTask.ParallelCSVLoad2Neo4jTask` to execute Cypher with data from a CSV source.
 * :class:`~etl_lib.task.data_loading.ParallelSQLLoad2Neo4jTask.ParallelSQLLoad2Neo4jTask` to execute Cypher with data from a SQL source.
+* :class:`~etl_lib.task.data_loading.ParallelParquetLoad2Neo4jTask.ParallelParquetLoad2Neo4jTask` to execute Cypher with data from a Parquet source.
 
 
 For an usage example for the mix and batch technique see https://github.com/neo-technology-field/python-etl-lib/tree/main/examples/nyc-taxi

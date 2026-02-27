@@ -52,3 +52,65 @@ The following parameters are currently recognized:
         | Allows to run integration tests against an external Neo4j installation
         | without impacting other DBs.
 
+
+Neo4j Driver Configuration
+--------------------------
+
+You can pass configuration options directly to the Neo4j Python Driver by using environment variables prefixed with ``NEO4J_DRIVER_``.
+The prefix is stripped, the name is lowercased, and the value is parsed to the appropriate type before being passed to the driver constructor.
+
+See the `Neo4j Python Driver API documentation <https://neo4j.com/docs/api/python-driver/current/api.html#graphdatabase>`_ for a complete list of valid options and their meanings.
+
+.. list-table:: Driver Configuration Options
+    :header-rows: 1
+    :widths: 40 10 50
+
+    * - Name
+      - Type
+      - Description
+    * - ``NEO4J_DRIVER_MAX_CONNECTION_POOL_SIZE``
+      - int
+      - The maximum total number of connections allowed, per host, to be managed by the connection pool.
+    * - ``NEO4J_DRIVER_CONNECTION_TIMEOUT``
+      - float
+      - The maximum amount of time in seconds to wait for a TCP connection to be established.
+    * - ``NEO4J_DRIVER_CONNECTION_ACQUISITION_TIMEOUT``
+      - float
+      - The maximum amount of time in seconds to wait for a connection to become available from the pool.
+    * - ``NEO4J_DRIVER_CONNECTION_WRITE_TIMEOUT``
+      - float
+      - The maximum amount of time in seconds to wait for a TCP write operation to complete.
+    * - ``NEO4J_DRIVER_MAX_CONNECTION_LIFETIME``
+      - float
+      - The maximum time in seconds a pooled connection can remain open before being closed.
+    * - ``NEO4J_DRIVER_MAX_TRANSACTION_RETRY_TIME``
+      - float
+      - The maximum amount of time in seconds that a managed transaction will retry before failing.
+    * - ``NEO4J_DRIVER_LIVENESS_CHECK_TIMEOUT``
+      - float
+      - The maximum amount of time in seconds to wait for a connection liveness check.
+    * - ``NEO4J_DRIVER_KEEP_ALIVE``
+      - bool
+      - Specify whether TCP keep-alive should be enabled.
+    * - ``NEO4J_DRIVER_ENCRYPTED``
+      - bool
+      - Specify whether to use an encrypted connection between the driver and server.
+    * - ``NEO4J_DRIVER_USER_AGENT``
+      - str
+      - Specify the client agent name.
+    * - ``NEO4J_DRIVER_NOTIFICATIONS_MIN_SEVERITY``
+      - str
+      - Set the minimum severity for notifications the server should send to the client (e.g., ``OFF``, ``WARNING``).
+    * - ``NEO4J_DRIVER_NOTIFICATIONS_DISABLED_CATEGORIES``
+      - list
+      - A comma-separated list of notification categories to disable (e.g., ``DEPRECATION``, ``PERFORMANCE``).
+    * - ``NEO4J_DRIVER_NOTIFICATIONS_DISABLED_CLASSIFICATIONS``
+      - list
+      - A comma-separated list of notification classifications to disable.
+    * - ``NEO4J_DRIVER_WARN_NOTIFICATION_SEVERITY``
+      - str
+      - The severity level at which notifications should be logged as warnings by the driver.
+    * - ``NEO4J_DRIVER_TELEMETRY_DISABLED``
+      - bool
+      - Specify whether to disable sending anonymous telemetry data to the server.
+

@@ -173,3 +173,10 @@ class DummyPredecessor:
 
     def get_batch(self, batch_size):
         yield from self.batches
+
+
+def get_test_file(filename):
+    """
+    Get the path to a test file in the 'data' directory relative to this file.
+    """
+    return Path(__file__).parents[3] / "tests/data" / filename

@@ -25,6 +25,34 @@ The :class:`~etl_lib.task.data_loading.CSVLoad2Neo4jTask.CSVLoad2Neo4jTask` prov
 
 See the gtfs in examples for a demo.
 
+Parquet
+-------
+
+The :class:`~etl_lib.data_source.ParquetBatchSource.ParquetBatchSource` implementation enables reading Parquet files in batches.
+
+It utilizes the `pyarrow <https://arrow.apache.org/docs/python/>`_ library. The constructor forwards `kwargs` to `pyarrow.parquet.ParquetFile.iter_batches`, allowing customization of the reading process.
+
+This data source requires the optional `parquet` dependency:
+
+.. code-block:: console
+
+    pip install "neo4j-etl-lib[parquet]"
+
+Example usage:
+
+.. code-block:: python
+
+    from pathlib import Path
+    from etl_lib.data_source.ParquetBatchSource import ParquetBatchSource
+
+    parquet_source = ParquetBatchSource(Path("input.parquet"), context)
+
+The library provides two task implementations for loading Parquet data:
+
+* :class:`~etl_lib.task.data_loading.ParquetLoad2Neo4jTask.ParquetLoad2Neo4jTask`: For sequential loading.
+* :class:`~etl_lib.task.data_loading.ParallelParquetLoad2Neo4jTask.ParallelParquetLoad2Neo4jTask`: For parallel loading using the mix-and-batch strategy.
+
+
 Neo4j / Cypher
 --------------
 
@@ -52,6 +80,11 @@ Each row in the returned batch is a dictionary.
 This datasource is only enabled if the module ``sqlalchemy`` is installed.
 The connection url is expected in the environment variable ``SQLALCHEMY_URI``.
 
-The :class:`~etl_lib.task.data_loading.SQLLoad2Neo4jTask.SQLLoad2Neo4jTask` provides an convenience implementation that only needs two queries: one SQL query to extract data and an Cypher query to write the data to Neo4j.
+Using the below classes, the implementation of 2 functions is needed: one return the SQL query to retrieve the data and another to return the Cypher query to write the data into Neo4j.
+
+The library provides two task implementations for loading from SQL databases:
+
+* :class:`~etl_lib.task.data_loading.SQLLoad2Neo4jTask.SQLLoad2Neo4jTask` : For sequential loading.
+* :class:`~etl_lib.task.data_loading.SQLLoad2Neo4jTask.ParallelSQLLoad2Neo4jTask` :For parallel loading using the mix-and-batch strategy.
 
 See the Musikbrainz demo in examples the examples folder.

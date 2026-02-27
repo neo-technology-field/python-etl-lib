@@ -1,7 +1,10 @@
 from typing import Generator
+
 from sqlalchemy import text
+
+from etl_lib.core.BatchProcessor import (BatchProcessor, BatchResults,
+                                         append_result)
 from etl_lib.core.ETLContext import ETLContext
-from etl_lib.core.BatchProcessor import BatchProcessor, BatchResults, append_result
 from etl_lib.core.Task import Task
 
 

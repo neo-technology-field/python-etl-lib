@@ -100,6 +100,7 @@ class Task:
         try:
             result = self.run_internal(**kwargs)
         except Exception as e:
+            self.logger.exception(f"Exception while executing task: {e}")
             result = TaskReturn(success=False, summery={}, error=str(e))
 
         self.context.reporter.finished_task(task=self,result=result)

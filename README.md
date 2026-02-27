@@ -18,3 +18,25 @@ The library can be installed via
 ```bash
 pip install neo4j-etl-lib
 ```
+
+## System Dependencies
+
+Some components or documentation tools require additional system-level packages.
+
+### Graphviz
+If you are building the documentation locally and want to generate diagrams (e.g., using `make docs`), you need Graphviz installed.
+
+**Debian/Ubuntu:**
+```bash
+sudo apt install graphviz
+```
+
+**Fedora/RHEL/CentOS:**
+```bash
+sudo dnf install graphviz
+```
+
+**Arch Linux / CachyOS:**
+```bash
+sudo pacman -S graphviz
+```

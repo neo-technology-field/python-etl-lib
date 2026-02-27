@@ -2,11 +2,11 @@ import csv
 from pathlib import Path
 
 import pytest
+from etl_lib.test_utils.utils import get_test_file, DummyContext
 
 from etl_lib.core.BatchProcessor import BatchResults
 from etl_lib.data_source.CSVBatchSource import CSVBatchSource
-from test_utils.utils import DummyContext
-from test_utils.utils import get_test_file
+
 
 TEST_FILES = [
     (get_test_file("coma-double-quotes.csv"), {"delimiter": ",", "quotechar": '"', "escapechar": "\\"}),

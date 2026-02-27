@@ -1,6 +1,5 @@
 from abc import abstractmethod
 
-from etl_lib.core.ETLContext import ETLContext
 from sqlalchemy import text
 
 from etl_lib.core.ClosedLoopBatchProcessor import ClosedLoopBatchProcessor
