@@ -31,3 +31,5 @@
 /.idea/csv-editor.xml
 /.coverage
 /.idea/libraries/my_test_package.xml
+/.idea/
+/.vscode/
