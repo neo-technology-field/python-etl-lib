@@ -8,6 +8,7 @@ from neo4j import Driver
 from neo4j.time import Date
 
 from etl_lib.core.ETLContext import ETLContext, Neo4jContext, QueryResult, SQLContext, gds
+from etl_lib.core.InstrumentationWriter import NoopInstrumentationWriter
 from etl_lib.core.Task import Task
 
 
@@ -111,6 +112,7 @@ class MockETLContext(ETLContext):
         self.logger = logging.getLogger(self.__class__.__name__)
         self.__env_vars = {"ETL_ERROR_PATH": tmp_path}
         self.neo4j = MockNeo4jContext(driver)
+        self.instrumentation_writer = NoopInstrumentationWriter()
         self.reporter = DummyReporter()
 
     def env(self, key: str) -> Any:
@@ -122,6 +124,7 @@ class MockSQLETLContext(ETLContext):
 
     def __init__(self, sql_uri):
         self.logger = logging.getLogger(self.__class__.__name__)
+        self.instrumentation_writer = NoopInstrumentationWriter()
         self.reporter = DummyReporter()
         self.__env_vars = {}
         self.sql = SQLContext(sql_uri)
@@ -133,16 +136,25 @@ class MockSQLETLContext(ETLContext):
 
 class DummyReporter:
 
+    def __init__(self):
+        self.run_id = None
+
     def register_tasks(self, main: Task):
-        pass
+        self.run_id = main.uuid
 
     def started_task(self, task: Task) -> Task:
-        pass
+        return task
 
     def finished_task(self, task, result) -> Task:
-        pass
+        return task
 
     def report_progress(self, task, batches: int, expected_batches: int, stats: dict) -> None:
+        pass
+
+    def instrumentation_enabled(self) -> bool:
+        return False
+
+    def instrument(self, task: Task, event_type: str, payload: dict | None = None) -> None:
         pass
 
 
@@ -162,6 +174,7 @@ class DummyContext:
     path_import: Path
     path_processed: Path
     reporter = DummyReporter()
+    instrumentation_writer = NoopInstrumentationWriter()
 
     def env(self, key: str) -> Any:
         pass

@@ -13,7 +13,7 @@ class TaskReturn:
     success: bool
     """Success or failure of the task."""
     summery: dict
-    """dict holding statistics about the task performed, such as rows inserted, updated."""
+    """dict holding statistics about the task performed, such as rows inserted, updated. The values must be int"""
     error: str
     """Error message."""
 
@@ -42,6 +42,8 @@ class TaskReturn:
         # Merge the summery dictionaries by summing their values
         merged_summery = self.summery.copy()
         for key, value in other.summery.items():
+            if not isinstance(value, int):
+                raise ValueError(f"TaskReturn value '{value}' is not an int with key '{key}'")
             merged_summery[key] = merged_summery.get(key, 0) + value
 
         # Combine success values and errors
@@ -103,7 +105,7 @@ class Task:
             self.logger.exception(f"Exception while executing task: {e}")
             result = TaskReturn(success=False, summery={}, error=str(e))
 
-        self.context.reporter.finished_task(task=self,result=result)
+        self.context.reporter.finished_task(task=self, result=result)
 
         return result
 

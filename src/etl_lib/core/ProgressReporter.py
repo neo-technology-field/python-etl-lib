@@ -1,5 +1,5 @@
 import logging
-from datetime import datetime
+from datetime import datetime, timezone
 
 from tabulate import tabulate
 
@@ -20,6 +20,8 @@ class ProgressReporter:
     def __init__(self, context):
         self.context = context
         self.logger = logging.getLogger(f"{self.__class__.__module__}.{self.__class__.__name__}")
+        self.run_uuid = None
+        self._instrumentation_writer = context.instrumentation_writer
 
     def register_tasks(self, main: Task):
         """
@@ -30,7 +32,45 @@ class ProgressReporter:
         Args:
             main: Root of the task tree.
         """
+        self.run_uuid = main.uuid
         self.logger.info("\n" + self.__print_tree(main))
+
+    def instrumentation_enabled(self) -> bool:
+        """
+        Indicates if instrumentation output is enabled.
+
+        Returns:
+            `True` when instrumentation writing is enabled.
+        """
+        return self._instrumentation_writer.enabled
+
+    def instrument(self, task: Task, event_type: str, payload: dict | None = None) -> None:
+        """
+        Writes one instrumentation event.
+
+        The event is enriched with common metadata such as task identity and run id.
+
+        Args:
+            task: Task associated with the event.
+            event_type: Event type name.
+            payload: Event-specific payload fields.
+        """
+        if not self._instrumentation_writer.enabled:
+            return
+
+        if self.run_uuid is None and task is not None:
+            self.run_uuid = task.uuid
+
+        event = {
+            "ts": datetime.now(timezone.utc).isoformat(),
+            "run_id": self.run_uuid,
+            "event_type": event_type,
+            "task_uuid": task.uuid if task is not None else None,
+            "task_name": task.task_name() if task is not None else None,
+        }
+        if payload is not None:
+            event.update(payload)
+        self._instrumentation_writer.write(event)
 
     def started_task(self, task: Task) -> Task:
         """
@@ -120,7 +160,6 @@ class Neo4jProgressReporter(ProgressReporter):
             database: Name of the database to write the status updates to.
         """
         super().__init__(context)
-        self.run_uuid = None
         self.database = database
         self.logger.info(f"progress reporting to database: {self.database}")
         self.__create_constraints()
@@ -129,7 +168,6 @@ class Neo4jProgressReporter(ProgressReporter):
     def register_tasks(self, root: Task, **kwargs):
         super().register_tasks(root)
 
-        self.run_uuid = root.uuid
         with self.context.neo4j.session(self.database) as session:
             order = 0
             session.run(
@@ -205,8 +243,9 @@ class Neo4jProgressReporter(ProgressReporter):
                 SET task.status = 'aborted'
                 RETURN count(task) AS cnt
                 """, runId=self.run_uuid
-                ).single()['cnt']
+                                  ).single()['cnt']
             self.logger.info(f"marked {cnt} tasks as aborted.")
+
         add_sigint_handler(shutdown_handler)
 
 

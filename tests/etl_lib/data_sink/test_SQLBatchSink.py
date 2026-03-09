@@ -37,7 +37,7 @@ def test_sql_batch_sink(sql_context, setup_database):
     ])
 
     sut = SQLBatchSink(context=sql_context, task=None, predecessor=predecessor, query=query)
-    result_gen = sut.get_batch(batch_size=2)
+    result_gen = sut.get_batch(max_batch_size=2)
     statistics = [result.statistics for result in result_gen]
 
     assert statistics == [{'sql_rows_written': 2}]
@@ -50,7 +50,7 @@ def test_sql_batch_sink_with_empty_batch(sql_context, setup_database):
     predecessor = DummyPredecessor([])
 
     sut = SQLBatchSink(context=sql_context, task=None, predecessor=predecessor, query=query)
-    result_gen = sut.get_batch(batch_size=3)
+    result_gen = sut.get_batch(max_batch_size=3)
     data = list(result_gen)
 
     assert data == []
@@ -68,7 +68,7 @@ def test_sql_batch_sink_with_parameters(sql_context, setup_database):
     ])
 
     sut = SQLBatchSink(context=sql_context, task=None, predecessor=predecessor, query=query)
-    result_gen = sut.get_batch(batch_size=2)
+    result_gen = sut.get_batch(max_batch_size=2)
     statistics = [result.statistics for result in result_gen]
 
     assert statistics == [{'sql_rows_written': 2}]

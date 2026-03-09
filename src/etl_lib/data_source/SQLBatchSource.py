@@ -1,4 +1,5 @@
 import logging
+import time
 from typing import Generator, Callable, Optional
 
 from sqlalchemy import text
@@ -54,6 +55,7 @@ class SQLBatchSource(BatchProcessor):
 
                 chunk = []
                 count = 0
+                t0 = time.perf_counter()
 
                 for row in result_proxy.mappings():
                     item = self.record_transformer(dict(row)) if self.record_transformer else dict(row)
@@ -62,19 +64,32 @@ class SQLBatchSource(BatchProcessor):
 
                     # Yield when batch is full
                     if len(chunk) >= max_batch_size:
+                        dt_ms = (time.perf_counter() - t0) * 1000.0
+                        chunk_len = len(chunk)
+                        self._instrument("sql_read_batch", {
+                            "rows": chunk_len,
+                            "dt_ms": round(dt_ms, 3),
+                        })
                         yield BatchResults(
                             chunk=chunk,
-                            statistics={"sql_rows_read": len(chunk)},
-                            batch_size=len(chunk),
+                            statistics={"sql_rows_read": chunk_len},
+                            batch_size=chunk_len,
                         )
                         chunk = []  # Clear memory
+                        t0 = time.perf_counter()
 
                 # Yield any remaining rows
                 if chunk:
+                    dt_ms = (time.perf_counter() - t0) * 1000.0
+                    chunk_len = len(chunk)
+                    self._instrument("sql_read_batch", {
+                        "rows": chunk_len,
+                        "dt_ms": round(dt_ms, 3),
+                    })
                     yield BatchResults(
                         chunk=chunk,
-                        statistics={"sql_rows_read": len(chunk)},
-                        batch_size=len(chunk),
+                        statistics={"sql_rows_read": chunk_len},
+                        batch_size=chunk_len,
                     )
 
                 self.logger.info(f"SQL Stream finished. Total rows read: {count}")

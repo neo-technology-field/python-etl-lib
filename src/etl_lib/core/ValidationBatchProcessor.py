@@ -39,10 +39,10 @@ class ValidationBatchProcessor(BatchProcessor):
         self.error_file = error_file
         self.model = model
 
-    def get_batch(self, max_batch__size: int) -> Generator[BatchResults, None, None]:
+    def get_batch(self, max_batch_size: int) -> Generator[BatchResults, None, None]:
         assert self.predecessor is not None
 
-        for batch in self.predecessor.get_batch(max_batch__size):
+        for batch in self.predecessor.get_batch(max_batch_size):
             valid_rows = []
             invalid_rows = []
 

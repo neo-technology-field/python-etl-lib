@@ -1,4 +1,5 @@
 import csv
+import time
 from pathlib import Path
 from typing import Generator
 
@@ -29,11 +30,16 @@ class CSVBatchSink(BatchProcessor):
         self.file_initialized = False
         self.csv_kwargs = kwargs
 
-    def get_batch(self, batch_size: int) -> Generator[BatchResults, None, None]:
+    def get_batch(self, max_batch_size: int) -> Generator[BatchResults, None, None]:
         assert self.predecessor is not None
 
-        for batch_result in self.predecessor.get_batch(batch_size):
+        for batch_result in self.predecessor.get_batch(max_batch_size):
+            t0 = time.perf_counter()
             self._write_to_csv(batch_result.chunk)
+            self._instrument("csv_write_batch", {
+                "rows": len(batch_result.chunk),
+                "dt_ms": round((time.perf_counter() - t0) * 1000.0, 3),
+            })
             yield append_result(batch_result, {"rows_written": len(batch_result.chunk)})
 
     def _write_to_csv(self, data: list[dict]):

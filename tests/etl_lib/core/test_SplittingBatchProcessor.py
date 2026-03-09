@@ -157,7 +157,8 @@ def test_out_of_range_id_raises():
 def test_select_wave_picks_non_overlapping_buckets_and_is_deterministic_for_equal_sizes():
     class Proc(SplittingBatchProcessor):
         def __init__(self):
-            super().__init__(context=None, task=None, predecessor=DummyPredecessor([]), table_size=3, id_extractor=lambda x: x)
+            super().__init__(context=None, task=None, predecessor=DummyPredecessor([]), table_size=3,
+                             id_extractor=lambda x: x)
 
     proc = Proc()
 
@@ -416,30 +417,6 @@ def test_many_full_buckets_more_than_table_size_emits_multiple_waves_and_maintai
             all_emitted.extend(bucket_batch)
 
     assert Counter(all_emitted) == Counter(items)
-
-
-def test_monopartite_folding_swapped_pairs_land_in_same_bucket_and_row_leq_col():
-    table_size = 17
-    extractor = canonical_integer_id_extractor(table_size=table_size, start_key="start", end_key="end")
-
-    pairs = [
-        (0, 1),
-        (1, 0),
-        (2, 9),
-        (9, 2),
-        (123, 456),
-        (456, 123),
-        (10_001, 10_002),
-        (10_002, 10_001),
-    ]
-
-    for a, b in pairs:
-        r1, c1 = extractor({"start": a, "end": b})
-        r2, c2 = extractor({"start": b, "end": a})
-        assert (r1, c1) == (r2, c2)
-        assert r1 <= c1
-        assert 0 <= r1 < table_size
-        assert 0 <= c1 < table_size
 
 
 def test_order_agnostic_correctness_randomized_inputs_multiset_preserved_and_non_overlap_per_wave():

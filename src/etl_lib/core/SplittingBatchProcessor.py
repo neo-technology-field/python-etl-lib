@@ -1,5 +1,6 @@
 import hashlib
 import logging
+import time
 from typing import Any, Callable, Dict, Generator, List, Tuple
 
 from tabulate import tabulate
@@ -74,9 +75,10 @@ def canonical_integer_id_extractor(
         table_size: int = 10,
         start_key: str = "start",
         end_key: str = "end",
+        monopartite: bool = True,
 ) -> Callable[[Dict[str, Any]], Tuple[int, int]]:
     """
-    ID extractor for integer IDs with canonical folding.
+    ID extractor for integer IDs with optional canonical folding.
 
     - Uses Knuth's multiplicative hashing to scatter sequential integers across the grid.
     - Canonical folding ensures (A,B) and (B,A) land in the same bucket by folding the lower
@@ -97,9 +99,6 @@ def canonical_integer_id_extractor(
             row = s_hash % table_size
             col = e_hash % table_size
 
-            if row > col:
-                row, col = col, row
-
             return row, col
         except KeyError:
             raise KeyError(f"Item missing keys: {start_key} or {end_key}")
@@ -107,7 +106,7 @@ def canonical_integer_id_extractor(
             raise ValueError(f"Failed to extract ID: {e}")
 
     extractor.table_size = table_size
-    extractor.monopartite = True
+    extractor.monopartite = monopartite
     return extractor
 
 
@@ -115,9 +114,10 @@ def canonical_int_or_str_id_extractor(
         table_size: int = 10,
         start_key: str = "start",
         end_key: str = "end",
+        monopartite: bool = True,
 ) -> Callable[[Dict[str, Any]], Tuple[int, int]]:
     """
-    ID extractor for integer IDs and string IDs with canonical folding (row <= col).
+    ID extractor for integer IDs and string IDs with optional canonical folding (row <= col).
 
     Purpose
     - This extractor is intended for SplittingBatchProcessor / ParallelBatchProcessor style fan-out where
@@ -151,13 +151,10 @@ def canonical_int_or_str_id_extractor(
         row = ((s_u64 * MAGIC) & 0xFFFFFFFFFFFFFFFF) % table_size
         col = ((e_u64 * MAGIC) & 0xFFFFFFFFFFFFFFFF) % table_size
 
-        if row > col:
-            row, col = col, row
-
         return int(row), int(col)
 
     extractor.table_size = table_size
-    extractor.monopartite = True
+    extractor.monopartite = monopartite
     return extractor
 
 
@@ -320,19 +317,32 @@ class SplittingBatchProcessor(BatchProcessor):
         """
         self._log_buffer_matrix(wave=wave)
 
+        t0 = time.perf_counter()
         bucket_batches: List[List[Any]] = []
+        sizes = []
+        buffered_before = sum(len(self.buffer[r][c]) for r in range(self.table_size) for c in range(self.table_size))
         for r, c in wave:
             q = self.buffer[r][c]
             take = min(max_batch_size, len(q))
             bucket_batches.append(q[:take])
             self.buffer[r][c] = q[take:]
+            sizes.append(take)
 
-        emitted = sum(len(b) for b in bucket_batches)
-
+        dt_ms = (time.perf_counter() - t0) * 1000.0
+        self._instrument("splitter_flush", {
+            "wave_size": len(wave),
+            "emitted_rows": sum(sizes),
+            "bucket_min": min(sizes) if sizes else 0,
+            "bucket_p50": sorted(sizes)[len(sizes) // 2] if sizes else 0,
+            "bucket_max": max(sizes) if sizes else 0,
+            "buffered_before": buffered_before,
+            "table_size": self.table_size,
+            "dt_ms": round(dt_ms, 3),
+        })
         return BatchResults(
             chunk=bucket_batches,
             statistics=statistics or {},
-            batch_size=emitted,
+            batch_size=(sum(len(b) for b in bucket_batches)),
         )
 
     def _log_buffer_matrix(self, *, wave: List[Tuple[int, int]]) -> None:
@@ -386,7 +396,7 @@ class SplittingBatchProcessor(BatchProcessor):
         if self.predecessor is None:
             return
 
-        accum_stats: Dict[str, Any] = {}
+        accumulated_stats: Dict[str, Any] = {}
         pending: BatchResults | None = None
 
         near_full_threshold = max(1, int(max_batch_size * self.near_full_ratio))
@@ -394,7 +404,7 @@ class SplittingBatchProcessor(BatchProcessor):
 
         for upstream in self.predecessor.get_batch(max_batch_size):
             if upstream.statistics:
-                accum_stats = merge_summery(accum_stats, upstream.statistics)
+                accumulated_stats = merge_summery(accumulated_stats, upstream.statistics)
 
             for item in upstream.chunk:
                 r, c = self._id_extractor(item)
@@ -440,4 +450,14 @@ class SplittingBatchProcessor(BatchProcessor):
             pending = br
 
         if pending is not None:
-            yield BatchResults(chunk=pending.chunk, statistics=accum_stats, batch_size=pending.batch_size)
+            yield BatchResults(chunk=pending.chunk, statistics=accumulated_stats, batch_size=pending.batch_size)
+
+    def estimate_wave_count(self, expected_rows: int, max_workers: int, max_batch_size: int) -> int:
+        """Estimate number of waves for given row count."""
+        if expected_rows <= 0:
+            return 0
+        near_full = max(1, int(max_batch_size * self.near_full_ratio))
+        usable_buckets = self.table_size if self._monopartite else self.table_size * self.table_size
+        buckets_per_wave = min(max_workers, usable_buckets)
+        rows_per_wave = buckets_per_wave * near_full
+        return max(1, (expected_rows + rows_per_wave - 1) // rows_per_wave)

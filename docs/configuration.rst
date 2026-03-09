@@ -40,6 +40,18 @@ The following parameters are currently recognized:
       - Validation
       - | Directory where error files should be created.
         | See :doc:`validation` for more details. If not provided, error files will be placed into the same directory as the input files.
+    * - ``ETL_LIB_INSTRUMENT``
+      - Instrumentation
+      - | Instrumentation output mode.
+        | Supported values: ``none`` (default), ``csv``.
+    * - ``ETL_LIB_INSTRUMENT_CSV_PATH``
+      - Instrumentation
+      - | Output file path for CSV instrumentation.
+        | Default: ``etl_instrumentation.csv`` in the current working directory.
+    * - ``ETL_LIB_INSTRUMENT_SAMPLE``
+      - Instrumentation
+      - | Sampling factor for instrumentation rows.
+        | ``1`` writes every event, ``N`` writes every Nth event.
     * - ``NEO4J_TEST_CONTAINER``
       - Testing
       - | Docker image name to use for testing, esp.: ``neo4j:5.26.1-enterprise``.
@@ -113,4 +125,3 @@ See the `Neo4j Python Driver API documentation <https://neo4j.com/docs/api/pytho
     * - ``NEO4J_DRIVER_TELEMETRY_DISABLED``
       - bool
       - Specify whether to disable sending anonymous telemetry data to the server.
-

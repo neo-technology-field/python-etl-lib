@@ -4,6 +4,7 @@ import pytest
 from neo4j import Driver
 
 from etl_lib.core.ETLContext import ETLContext
+from etl_lib.core.InstrumentationWriter import NoopInstrumentationWriter
 from etl_lib.core.ProgressReporter import Neo4jProgressReporter
 from etl_lib.core.Task import Task, TaskReturn, TaskGroup
 from etl_lib.test_utils.utils import MockNeo4jContext, get_database_name
@@ -15,6 +16,7 @@ class MockETLContext(ETLContext):
         self.logger = logging.getLogger(self.__class__.__name__)
         self.__env_vars = {}
         self.neo4j = MockNeo4jContext(driver)
+        self.instrumentation_writer = NoopInstrumentationWriter()
         self.reporter = Neo4jProgressReporter(self, get_database_name())
 
 
