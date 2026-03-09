@@ -1,3 +1,4 @@
+import time
 from typing import Generator, Callable, Optional
 
 from neo4j import Record
@@ -54,7 +55,13 @@ class CypherBatchSource(BatchProcessor):
         # automatic retry logic would help, as we do not want to start the query again
         with self.context.neo4j.session() as session:
             with session.begin_transaction() as tx:
+                t0 = time.perf_counter()
                 for chunk in self.__read_records(tx, max_batch_size):
+                    self._instrument("cypher_read_batch", {
+                        "rows": len(chunk),
+                        "dt_ms": round((time.perf_counter() - t0) * 1000.0, 3),
+                    })
+                    t0 = time.perf_counter()
                     yield BatchResults(
                         chunk=chunk,
                         statistics={"cypher_rows_read": len(chunk)},

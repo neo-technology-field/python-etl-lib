@@ -1,17 +1,52 @@
 import os
+import subprocess
 import uuid
 from pathlib import Path
 
 import pytest
 from dotenv import load_dotenv
 from neo4j import GraphDatabase, WRITE_ACCESS
-from testcontainers.postgres import PostgresContainer
 
 from etl_lib.core.ETLContext import ETLContext
 from etl_lib.test_utils.utils import get_database_name, MockETLContext, MockSQLETLContext
 
 test_env = Path(__file__).parent / "../../.env"
 load_dotenv(test_env)
+
+
+def _configure_testcontainers_runtime() -> None:
+    """Set Testcontainers defaults that work for Podman without affecting Docker/CI."""
+    docker_host = os.getenv("DOCKER_HOST")
+
+    if not docker_host:
+        container_host = os.getenv("CONTAINER_HOST")
+        if container_host:
+            docker_host = container_host
+            os.environ["DOCKER_HOST"] = container_host
+
+    if not docker_host:
+        # Don't override with Podman if the default Docker socket is present
+        # This keeps GitHub Actions and standard Docker setups working smoothly
+        if not Path("/var/run/docker.sock").exists():
+            try:
+                result = subprocess.run(
+                    ["podman", "info", "--format", "{{.Host.RemoteSocket.Path}}"],
+                    capture_output=True,
+                    text=True,
+                    check=False,
+                )
+                socket_path = result.stdout.strip()
+                if result.returncode == 0 and socket_path:
+                    docker_host = socket_path if socket_path.startswith("unix://") else f"unix://{socket_path}"
+                    os.environ["DOCKER_HOST"] = docker_host
+            except OSError:
+                pass
+
+    if docker_host and "podman" in docker_host:
+        os.environ.setdefault("TESTCONTAINERS_RYUK_DISABLED", "true")
+
+
+_configure_testcontainers_runtime()
 
 
 @pytest.fixture(scope="session")
@@ -71,6 +106,8 @@ def etl_context(neo4j_driver_with_empty_db, tmp_path) -> ETLContext:
 @pytest.fixture(scope="session")
 def postgres_container():
     """Starts a PostgreSQL TestContainer and provides a connection URL."""
+    from testcontainers.postgres import PostgresContainer
+
     with PostgresContainer("postgres:15") as postgres:
         yield postgres
 
@@ -79,4 +116,3 @@ def postgres_container():
 def sql_context(postgres_container):
     """Creates an ETLContext with an initialized SQLContext."""
     return MockSQLETLContext(postgres_container.get_connection_url())
-

@@ -1,7 +1,8 @@
 import queue
 import threading
+import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from typing import Any, Callable, Generator, List
+from typing import Any, Callable, Generator, List, cast
 
 from etl_lib.core.BatchProcessor import BatchProcessor, BatchResults
 from etl_lib.core.utils import merge_summery
@@ -64,6 +65,7 @@ class ParallelBatchProcessor(BatchProcessor):
         Statistics:
             `wave.statistics` is used as the initial merged stats, then merged with each worker's stats.
         """
+        t0 = time.perf_counter()
         merged_stats = dict(wave.statistics or {})
         merged_chunk = []
         total = 0
@@ -86,6 +88,14 @@ class ParallelBatchProcessor(BatchProcessor):
                 raise
 
         self.logger.debug(f"Finished wave with stats={merged_stats}")
+        dt_ms = (time.perf_counter() - t0) * 1000.0
+        self._instrument("parallel_wave_done", {
+            "buckets": len(wave.chunk),
+            "rows": total,
+            "max_workers": self.max_workers,
+            "prefetch": self.prefetch,
+            "dt_ms": round(dt_ms, 3),
+        })
         return BatchResults(chunk=merged_chunk, statistics=merged_stats, batch_size=total)
 
     def get_batch(self, max_batch_size: int) -> Generator[BatchResults, None, None]:
@@ -119,7 +129,7 @@ class ParallelBatchProcessor(BatchProcessor):
                     self.logger.error("Upstream producer failed", exc_info=True)
                     raise exc
                 break
-            yield self._process_wave(wave)
+            yield self._process_wave(cast(ParallelBatchResult, wave))
 
     class SingleBatchWrapper(BatchProcessor):
         """
@@ -131,7 +141,7 @@ class ParallelBatchProcessor(BatchProcessor):
             super().__init__(context=context, predecessor=None)
             self._batch = batch
 
-        def get_batch(self, max_size: int) -> Generator[BatchResults, None, None]:
+        def get_batch(self, max_batch_size: int) -> Generator[BatchResults, None, None]:
             yield BatchResults(
                 chunk=self._batch,
                 statistics={},
@@ -146,6 +156,12 @@ class ParallelBatchProcessor(BatchProcessor):
         wrapper = self.SingleBatchWrapper(self.context, bucket_batch)
         worker = self.worker_factory()
         worker.predecessor = wrapper
+        start = time.perf_counter()
         result = next(worker.get_batch(len(bucket_batch)))
+        elapsed_ms = (time.perf_counter() - start) * 1000.0
+        self._instrument("bucket_done", {
+            "rows": result.batch_size,
+            "dt_ms": round(elapsed_ms, 3),
+        })
         self.logger.debug(f"Finished bucket batch stats={result.statistics}")
         return result

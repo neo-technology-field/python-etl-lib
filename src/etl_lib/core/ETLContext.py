@@ -25,6 +25,7 @@ except ImportError:
     create_engine = None  # this and next line needed to prevent PyCharm warning
     Engine = None
 
+from etl_lib.core.InstrumentationWriter import create_instrumentation_writer
 from etl_lib.core.ProgressReporter import get_reporter
 
 
@@ -285,11 +286,13 @@ class ETLContext:
             env_vars: Environment variables. Stored internally and can be accessed via :func:`~env` .
 
         The context created will contain an :class:`~Neo4jContext` and a :class:`~etl_lib.core.ProgressReporter.ProgressReporter`.
+        It also configures an instrumentation writer from environment values.
         See there for keys used from the provided `env_vars` dict.
         """
         self.logger = logging.getLogger(f"{self.__class__.__module__}.{self.__class__.__name__}")
         self.neo4j = Neo4jContext(env_vars)
         self.__env_vars = env_vars
+        self.instrumentation_writer = create_instrumentation_writer(env_vars)
         self.reporter = get_reporter(self)
         sql_uri = self.env("SQLALCHEMY_URI")
         if sql_uri is not None and sqlalchemy_available:

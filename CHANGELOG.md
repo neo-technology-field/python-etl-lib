@@ -34,3 +34,8 @@
 - hopefully fixes the bug #10 on Windows when writing to a log file that can not handle UTF8
 - added `canonical_int_or_str_id_extractor` to handle strings on for bucketing on, minimizing collision chances
 - added option to pass connection configuration ala `NEO4J_DRIVER_MAX_CONNECTION_POOL_SIZE=200` 
+
+## [0.3.4]
+- added instrumentation to support tuning of parameters for performance
+- fixed bug leading to wrong reporting of expected batches in parallel operations
+- 

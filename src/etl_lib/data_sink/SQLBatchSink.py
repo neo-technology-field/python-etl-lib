@@ -1,3 +1,4 @@
+import time
 from typing import Generator
 
 from sqlalchemy import text
@@ -28,12 +29,16 @@ class SQLBatchSink(BatchProcessor):
         self.query = query
         self.engine = context.sql.engine
 
-    def get_batch(self, batch_size: int) -> Generator[BatchResults, None, None]:
+    def get_batch(self, max_batch_size: int) -> Generator[BatchResults, None, None]:
         assert self.predecessor is not None
 
         with self.engine.connect() as conn:
             with conn.begin():
-                for batch_result in self.predecessor.get_batch(batch_size):
+                for batch_result in self.predecessor.get_batch(max_batch_size):
+                    t0 = time.perf_counter()
                     conn.execute(text(self.query), batch_result.chunk)
+                    self._instrument("sql_write_batch", {
+                        "rows": len(batch_result.chunk),
+                        "dt_ms": round((time.perf_counter() - t0) * 1000.0, 3),
+                    })
                     yield append_result(batch_result, {"sql_rows_written": len(batch_result.chunk)})
-

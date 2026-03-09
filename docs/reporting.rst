@@ -87,3 +87,79 @@ The project's root directory includes a ``dashboard.json`` file for use with `Ne
     Alternatively, the :class:`~etl_lib.task.CreateReportingConstraintsTask.CreateReportingConstraintsTask` can be added at the start of a pipeline to ensure the constraint is created if it does not exist.
 
 Additionally, :doc:`cli` provides details on using the command-line interface to query and manage ETL run history.
+
+
+Instrumentation
+---------------
+
+The library provides optional runtime instrumentation focused on throughput and resource efficiency.
+Its purpose is to make tuning decisions measurable, for example when adjusting ``batch_size``, ``table_size``, ``max_workers`` or ``prefetch``.
+
+Instrumentation is disabled by default and only active when explicitly enabled.
+When disabled, no instrumentation rows are written.
+
+Current output mode is none and csv.
+The writer is configured by :class:`~etl_lib.core.ETLContext.ETLContext`.
+
+Each event writen includes the task name and ETL run uuid.
+
+Enable instrumentation via environment variables:
+
+.. code-block:: bash
+
+    ETL_LIB_INSTRUMENT=csv
+    ETL_LIB_INSTRUMENT_CSV_PATH=etl_instrumentation.csv
+    ETL_LIB_INSTRUMENT_SAMPLE=1
+
+Written fields include:
+
+* ``ts``: UTC timestamp when the event was recorded.
+* ``run_id``: ETL run UUID, allowing comparison between repeated imports.
+* ``task_uuid`` and ``task_name``: task identity for attribution.
+* ``event_type``: instrumentation event category.
+* ``dt_ms`` and ``rows``: primary latency and throughput indicators.
+* optional event-specific fields such as ``wave_size``, ``buckets``, ``max_workers``, ``prefetch``, ``table_size``, ``bucket_min``, ``bucket_p50``, ``bucket_max`` and ``buffered_before``.
+
+To keep the dataset focused, instrumentation is intended for processing and sink performance events rather than generic task lifecycle logging.
+
+Current event mapping:
+
+.. list-table:: Instrumentation Events
+    :header-rows: 1
+
+    * - Event Type
+      - Emitted By
+      - Key Fields
+    * - ``splitter_flush``
+      - :class:`~etl_lib.core.SplittingBatchProcessor.SplittingBatchProcessor`
+      - ``wave_size``, ``emitted_rows``, ``bucket_min``, ``bucket_p50``, ``bucket_max``, ``buffered_before``, ``table_size``, ``dt_ms``
+    * - ``parallel_wave_done``
+      - :class:`~etl_lib.core.ParallelBatchProcessor.ParallelBatchProcessor`
+      - ``buckets``, ``rows``, ``max_workers``, ``prefetch``, ``dt_ms``
+    * - ``bucket_done``
+      - :class:`~etl_lib.core.ParallelBatchProcessor.ParallelBatchProcessor`
+      - ``rows``, ``dt_ms``
+    * - ``cypher_tx_done``
+      - :class:`~etl_lib.data_sink.CypherBatchSink.CypherBatchSink`
+      - ``rows``, ``dt_ms``
+    * - ``csv_read_batch``
+      - :class:`~etl_lib.data_source.CSVBatchSource.CSVBatchSource`
+      - ``rows``, ``dt_ms``
+    * - ``parquet_read_batch``
+      - :class:`~etl_lib.data_source.ParquetBatchSource.ParquetBatchSource`
+      - ``rows``, ``dt_ms``
+    * - ``sql_read_batch``
+      - :class:`~etl_lib.data_source.SQLBatchSource.SQLBatchSource`
+      - ``rows``, ``dt_ms``
+    * - ``cypher_read_batch``
+      - :class:`~etl_lib.data_source.CypherBatchSource.CypherBatchSource`
+      - ``rows``, ``dt_ms``
+    * - ``csv_write_batch``
+      - :class:`~etl_lib.data_sink.CSVBatchSink.CSVBatchSink`
+      - ``rows``, ``dt_ms``
+    * - ``sql_write_batch``
+      - :class:`~etl_lib.data_sink.SQLBatchSink.SQLBatchSink`
+      - ``rows``, ``dt_ms``
+
+The ``ETL_LIB_INSTRUMENT_SAMPLE`` value controls down-sampling.
+For example, a value of ``10`` writes every 10th event.

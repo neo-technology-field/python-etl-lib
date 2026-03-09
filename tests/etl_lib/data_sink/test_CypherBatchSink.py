@@ -23,7 +23,7 @@ def test_cypher_batch_sink(etl_context):
     ])
 
     sut = CypherBatchSink(context=etl_context, task=None, predecessor=predecessor, query=query)
-    result_gen = sut.get_batch(batch_size=3)
+    result_gen = sut.get_batch(max_batch_size=3)
     statistics = [result.statistics for result in result_gen]
 
     assert statistics == [{'constraints_added': 0,
@@ -61,7 +61,7 @@ def test_cypher_batch_sink_with_empty_batch(etl_context):
     predecessor = DummyPredecessor([])
 
     sut = CypherBatchSink(context=etl_context, task=None, predecessor=predecessor, query=query)
-    result_gen = sut.get_batch(batch_size=3)
+    result_gen = sut.get_batch(max_batch_size=3)
     data = list(result_gen)
 
     assert data == []  # No data should be returned
@@ -83,7 +83,7 @@ def test_cypher_batch_sink_with_parameters(etl_context):
 
     sut = CypherBatchSink(context=etl_context, task=None, predecessor=predecessor, query=query, param1="param1",
                           param2="param2")
-    result_gen = sut.get_batch(batch_size=2)
+    result_gen = sut.get_batch(max_batch_size=2)
     data = [result.statistics for result in result_gen]
 
     assert data == [{'constraints_added': 0,

@@ -2,7 +2,7 @@ import abc
 import logging
 import sys
 from dataclasses import dataclass, field
-from typing import Generator, List, Any
+from typing import Any, Generator, List, Optional
 
 from etl_lib.core.Task import Task
 from etl_lib.core.utils import merge_summery
@@ -52,7 +52,7 @@ class BatchProcessor(abc.ABC):
     and returned in batches to the caller. Usage of `Generators` ensure that not all data must be loaded at once.
     """
 
-    def __init__(self, context, task: Task = None, predecessor=None):
+    def __init__(self, context, task: Optional[Task] = None, predecessor=None):
         """
         Constructs a new :py:class:`etl_lib.core.BatchProcessor` instance.
 
@@ -72,16 +72,28 @@ class BatchProcessor(abc.ABC):
         """The :py:class:`etl_lib.core.Task.Task` owning instance."""
 
     @abc.abstractmethod
-    def get_batch(self, max_batch__size: int) -> Generator[BatchResults, None, None]:
+    def get_batch(self, max_batch_size: int) -> Generator[BatchResults, None, None]:
         """
         Provides a batch of data to the caller.
 
         The batch itself could be called and processed from the provided predecessor or generated from other sources.
 
         Args:
-            max_batch__size: The max size of the batch the caller expects to receive.
+            max_batch_size: The max size of the batch the caller expects to receive.
 
         Returns
             A generator that yields batches.
         """
         pass
+
+    def _instrument(self, event_type: str, payload: dict) -> None:
+        """
+        Emits an instrumentation event via the configured reporter.
+
+        Args:
+            event_type: Event type identifier.
+            payload: Event-specific key/value data.
+        """
+        if self.task is None or self.context is None:
+            return
+        self.context.reporter.instrument(self.task, event_type, payload)

@@ -1,4 +1,5 @@
 import logging
+import time
 from pathlib import Path
 from typing import Generator, Optional
 
@@ -48,6 +49,7 @@ class ParquetBatchSource(BatchProcessor):
         batch_iter = parquet_file.iter_batches(batch_size=max_batch_size, **self.kwargs)
 
         row_counter = 0
+        t0 = time.perf_counter()
 
         for batch in batch_iter:
             rows = batch.to_pylist()
@@ -57,6 +59,12 @@ class ParquetBatchSource(BatchProcessor):
 
             batch_len = len(rows)
             row_counter += batch_len
+
+            self._instrument("parquet_read_batch", {
+                "rows": batch_len,
+                "dt_ms": round((time.perf_counter() - t0) * 1000.0, 3),
+            })
+            t0 = time.perf_counter()
 
             yield BatchResults(
                 chunk=rows,
