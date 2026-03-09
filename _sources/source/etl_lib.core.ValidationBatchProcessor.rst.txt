@@ -1,0 +1,7 @@
+etl\_lib.core.ValidationBatchProcessor module
+=============================================
+
+.. automodule:: etl_lib.core.ValidationBatchProcessor
+   :members:
+   :show-inheritance:
+   :undoc-members:

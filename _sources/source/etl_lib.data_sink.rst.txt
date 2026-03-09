@@ -1,0 +1,20 @@
+etl\_lib.data\_sink package
+===========================
+
+Submodules
+----------
+
+.. toctree::
+   :maxdepth: 4
+
+   etl_lib.data_sink.CSVBatchSink
+   etl_lib.data_sink.CypherBatchSink
+   etl_lib.data_sink.SQLBatchSink
+
+Module contents
+---------------
+
+.. automodule:: etl_lib.data_sink
+   :members:
+   :show-inheritance:
+   :undoc-members:

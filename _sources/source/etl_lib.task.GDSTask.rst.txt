@@ -1,0 +1,7 @@
+etl\_lib.task.GDSTask module
+============================
+
+.. automodule:: etl_lib.task.GDSTask
+   :members:
+   :show-inheritance:
+   :undoc-members:
