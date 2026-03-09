@@ -25,19 +25,22 @@ def _configure_testcontainers_runtime() -> None:
             os.environ["DOCKER_HOST"] = container_host
 
     if not docker_host:
-        try:
-            result = subprocess.run(
-                ["podman", "info", "--format", "{{.Host.RemoteSocket.Path}}"],
-                capture_output=True,
-                text=True,
-                check=False,
-            )
-            socket_path = result.stdout.strip()
-            if result.returncode == 0 and socket_path:
-                docker_host = socket_path if socket_path.startswith("unix://") else f"unix://{socket_path}"
-                os.environ["DOCKER_HOST"] = docker_host
-        except OSError:
-            pass
+        # Don't override with Podman if the default Docker socket is present
+        # This keeps GitHub Actions and standard Docker setups working smoothly
+        if not Path("/var/run/docker.sock").exists():
+            try:
+                result = subprocess.run(
+                    ["podman", "info", "--format", "{{.Host.RemoteSocket.Path}}"],
+                    capture_output=True,
+                    text=True,
+                    check=False,
+                )
+                socket_path = result.stdout.strip()
+                if result.returncode == 0 and socket_path:
+                    docker_host = socket_path if socket_path.startswith("unix://") else f"unix://{socket_path}"
+                    os.environ["DOCKER_HOST"] = docker_host
+            except OSError:
+                pass
 
     if docker_host and "podman" in docker_host:
         os.environ.setdefault("TESTCONTAINERS_RYUK_DISABLED", "true")
