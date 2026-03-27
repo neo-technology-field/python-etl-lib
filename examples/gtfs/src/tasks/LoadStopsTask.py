@@ -20,7 +20,7 @@ class LoadStopsTask(CSVLoad2Neo4jTask):
         code: Optional[str] = Field(alias="stop_code", default=None)
 
     def __init__(self, context: ETLContext, file: Path):
-        super().__init__(context, LoadStopsTask.Stop, file)
+        super().__init__(context, file, model=LoadStopsTask.Stop)
 
     def task_name(self) -> str:
         return f"{self.__class__.__name__}('{self.file}')"

@@ -33,7 +33,7 @@ dependencies = [
 [project.optional-dependencies]
 dev = [
     "pytest>=8.3.0; python_version >= '3.8'",
-    "testcontainers[neo4j]==4.9.0; python_version >= '3.9' and python_version < '4.0'",
+    "testcontainers[neo4j]; python_version >= '3.9' and python_version < '4.0'",
     "pytest-cov", "bumpver", "isort", "pip-tools",
     "sphinx", "sphinx-rtd-theme", "pydata-sphinx-theme", "sphinx-autodoc-typehints",
     "sphinxcontrib-napoleon", "sphinx-autoapi", "sqlalchemy", "psycopg2-binary"

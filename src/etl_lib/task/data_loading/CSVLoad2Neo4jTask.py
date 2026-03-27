@@ -17,8 +17,8 @@ class CSVLoad2Neo4jTask(Task):
     '''
     Loads the specified CSV file to Neo4j.
 
-    Uses BatchProcessors to read, validate and write to Neo4j.
-    The validation step is using pydantic, hence a Pydantic model needs to be provided.
+    Uses BatchProcessors to read, optionally validate, and write to Neo4j.
+    The validation step uses Pydantic and is only enabled when a model is provided.
     Rows with fail validation will be written to en error file. The location of the error file is determined as
     follows:
 
@@ -44,7 +44,7 @@ class CSVLoad2Neo4jTask(Task):
                 code: Optional[str] = Field(alias="stop_code", default=None)
 
             def __init__(self, context: ETLContext, file: Path):
-                super().__init__(context, LoadStopsTask.Stop, file)
+                super().__init__(context, file, model=LoadStopsTask.Stop)
 
             def task_name(self) -> str:
                 return f"{self.__class__.__name__}('{self.file}')"
@@ -63,7 +63,11 @@ class CSVLoad2Neo4jTask(Task):
                       """
 
     '''
-    def __init__(self, context: ETLContext, model: Type[BaseModel], file: Path, batch_size: int = 5000):
+    def __init__(self,
+                 context: ETLContext,
+                 file: Path,
+                 model: Type[BaseModel] | None = None,
+                 batch_size: int = 5000):
         super().__init__(context)
         self.batch_size = batch_size
         self.model = model
@@ -71,15 +75,19 @@ class CSVLoad2Neo4jTask(Task):
         self.file = file
 
     def run_internal(self, **kwargs) -> TaskReturn:
-        error_path = self.context.env("ETL_ERROR_PATH")
-        if error_path is None:
-            error_file = self.file.with_suffix(".error.json")
-        else:
-            error_file = error_path / self.file.with_name(self.file.stem + ".error.json").name
-
         csv = CSVBatchSource(self.file, self.context, self)
-        validator = ValidationBatchProcessor(self.context, self, csv, self.model, error_file)
-        cypher = CypherBatchSink(self.context, self, validator, self._query())
+        predecessor = csv
+
+        if self.model is not None:
+            error_path = self.context.env("ETL_ERROR_PATH")
+            if error_path is None:
+                error_file = self.file.with_suffix(".error.json")
+            else:
+                error_file = error_path / self.file.with_name(self.file.stem + ".error.json").name
+
+            predecessor = ValidationBatchProcessor(self.context, self, csv, self.model, error_file)
+
+        cypher = CypherBatchSink(self.context, self, predecessor, self._query())
         end = ClosedLoopBatchProcessor(self.context, self, cypher)
         result = next(end.get_batch(self.batch_size))
 
@@ -89,5 +97,5 @@ class CSVLoad2Neo4jTask(Task):
         return f"{self.__class__.__name__}({self.file})"
 
     @abc.abstractmethod
-    def _query(self):
+    def _query(self) -> str:
         pass

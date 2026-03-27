@@ -38,4 +38,5 @@
 ## [0.3.4]
 - added instrumentation to support tuning of parameters for performance
 - fixed bug leading to wrong reporting of expected batches in parallel operations
-- 
+## [0.3.5]
+- validation support for CSV loading was not optional (doc claimed so). It is now. This, unfortunately breaks the init parameters. 

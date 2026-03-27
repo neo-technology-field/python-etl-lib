@@ -15,7 +15,12 @@ class ValidationBatchProcessor(BatchProcessor):
     Batch processor for validation, using Pydantic.
     """
 
-    def __init__(self, context: ETLContext, task: Task, predecessor, model: Type[BaseModel], error_file: Path):
+    def __init__(self,
+                 context: ETLContext,
+                 task: Task,
+                 predecessor,
+                 model: Type[BaseModel] | None,
+                 error_file: Path | None):
         """
         Constructs a new ValidationBatchProcessor.
 
@@ -29,9 +34,9 @@ class ValidationBatchProcessor(BatchProcessor):
             context: :py:class:`etl_lib.core.ETLContext.ETLContext` instance.
             task: :py:class:`etl_lib.core.Task.Task` instance owning this batchProcessor.
             predecessor: BatchProcessor which :py:func:`~get_batch` function will be called to receive batches to process.
-            model: Pydantic model class used to validate each row in the batch.
+            model: Pydantic model class used to validate each row in the batch. Optional.
             error_file: Path to the file that will receive each row that did not pass validation.
-                Each row in this file will contain the original data together with all validation errors for this row.
+                Required if `model` is provided.
         """
         super().__init__(context, task, predecessor)
         if model is not None and error_file is None:
@@ -41,6 +46,18 @@ class ValidationBatchProcessor(BatchProcessor):
 
     def get_batch(self, max_batch_size: int) -> Generator[BatchResults, None, None]:
         assert self.predecessor is not None
+
+        if self.model is None:
+            for batch in self.predecessor.get_batch(max_batch_size):
+                yield BatchResults(
+                    chunk=batch.chunk,
+                    statistics=merge_summery(batch.statistics, {
+                        "valid_rows": len(batch.chunk),
+                        "invalid_rows": 0
+                    }),
+                    batch_size=len(batch.chunk)
+                )
+            return
 
         for batch in self.predecessor.get_batch(max_batch_size):
             valid_rows = []
@@ -57,6 +74,7 @@ class ValidationBatchProcessor(BatchProcessor):
 
             # Write invalid rows to the error file
             if invalid_rows:
+                assert self.error_file is not None
                 with open(self.error_file, "a") as f:
                     for invalid in invalid_rows:
                         # the following is needed as ValueError (contained in 'ctx') is not json serializable

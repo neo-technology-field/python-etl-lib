@@ -15,7 +15,7 @@ class LoadStopTimesTask(CSVLoad2Neo4jTask):
         stop_sequence: int
 
     def __init__(self, context: ETLContext, file: Path):
-        super().__init__(context, LoadStopTimesTask.StopTime, file)
+        super().__init__(context, file, model=LoadStopTimesTask.StopTime)
 
     def task_name(self) -> str:
         return f"{self.__class__.__name__}('{self.file}')"
