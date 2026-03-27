@@ -1,3 +1,4 @@
+import csv
 from datetime import date
 from pathlib import Path
 
@@ -41,7 +42,7 @@ class Customer(BaseModel):
 
 class CustomerLoadTask(CSVLoad2Neo4jTask):
     def __init__(self, context):
-        super().__init__(context, Customer, file=Path(__file__).parent / "../../../data/customers.csv", batch_size=20)
+        super().__init__(context, Path(__file__).parent / "../../../data/customers.csv", model=Customer, batch_size=20)
 
     def _query(self):
         return """
@@ -68,6 +69,26 @@ class CustomerLoadTask(CSVLoad2Neo4jTask):
 
     def file_prefix(self):
         pass
+
+
+class NoValidationLoadTask(CSVLoad2Neo4jTask):
+    def __init__(self, context, file: Path):
+        super().__init__(context, file, batch_size=10)
+
+    def _query(self):
+        return """
+        UNWIND $batch AS r
+        MERGE (c:RawCustomer {id: r.customerId})
+            SET c.name = r.surname
+        """
+
+
+def _write_simple_customer_csv(path: Path):
+    with path.open("w", newline="") as f:
+        writer = csv.DictWriter(f, fieldnames=["customerId", "surname"])
+        writer.writeheader()
+        writer.writerow({"customerId": "1", "surname": "Alice"})
+        writer.writerow({"customerId": "2", "surname": "Bob"})
 
 
 def test_load(etl_context, neo4j_driver):
@@ -97,3 +118,23 @@ def test_load(etl_context, neo4j_driver):
     # one of the 60 customers is not valid
     assert 59 == get_node_count(neo4j_driver, 'Customer')
     assert 58 == get_node_count(neo4j_driver, 'City')
+
+
+def test_load_without_validation_model(etl_context):
+    csv_file = Path(etl_context.env("ETL_ERROR_PATH")) / "raw_customers.csv"
+    _write_simple_customer_csv(csv_file)
+
+    task = NoValidationLoadTask(etl_context, csv_file)
+    etl_context.reporter.register_tasks(task)
+    result = task.execute()
+
+    assert result is not None
+    assert result.success is True
+    assert result.error is None
+    assert result.summery.get("valid_rows") is None
+    assert result.summery.get("invalid_rows") is None
+
+    with etl_context.neo4j.session() as sess:
+        records = sess.run("MATCH (c:RawCustomer) RETURN c.id AS id, c.name AS name")
+        customers = {(r["id"], r["name"]) for r in records}
+    assert customers == {("1", "Alice"), ("2", "Bob")}

@@ -23,7 +23,7 @@ An example class from the GTFS example demonstrates the implementation of loadin
             lang: str = Field(alias="agency_lang")
 
         def __init__(self, context: ETLContext, file: Path):
-            super().__init__(context, LoadAgenciesTask.Agency, file)
+            super().__init__(context, file, model=LoadAgenciesTask.Agency)
 
         def _query(self):
             return """ UNWIND $batch AS row
@@ -35,3 +35,4 @@ An example class from the GTFS example demonstrates the implementation of loadin
             """
 
 The ``class Agency(BaseModel)`` defines a simple Pydantic model for validation purposes.
+If no validation is needed, construct ``CSVLoad2Neo4jTask`` without a model (for example ``super().__init__(context, file)``).

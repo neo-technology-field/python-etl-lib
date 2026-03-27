@@ -30,7 +30,7 @@ class LoadAgenciesTask(CSVLoad2Neo4jTask):
             }
 
     def __init__(self, context: ETLContext, file: Path):
-        super().__init__(context, LoadAgenciesTask.Agency, file)
+        super().__init__(context, file, model=LoadAgenciesTask.Agency)
 
     def task_name(self) -> str:
         return f"{self.__class__.__name__}('{self.file}')"

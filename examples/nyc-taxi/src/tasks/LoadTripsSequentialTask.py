@@ -11,7 +11,7 @@ class LoadTripsSequentialTask(CSVLoad2Neo4jTask):
     """Sequential loader for NYC Yellow Taxi CSV data."""
 
     def __init__(self, context: ETLContext, csv_path: Path):
-        super().__init__(context, Trip, csv_path, batch_size=5000)
+        super().__init__(context, csv_path, model=Trip, batch_size=5000)
 
     def _query(self):
         return """

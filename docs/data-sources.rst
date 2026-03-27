@@ -21,7 +21,7 @@ Example usage:
     csv_source = CSVBatchSource(Path("input.csv"), context, delimiter=';', quotechar='"')
 
 
-The :class:`~etl_lib.task.data_loading.CSVLoad2Neo4jTask.CSVLoad2Neo4jTask` provides implementation that utilises the :class:`~etl_lib.data_source.CSVBatchSource.CSVBatchSource` together with Pydantic to stream data from CSV to Neo4j.
+The :class:`~etl_lib.task.data_loading.CSVLoad2Neo4jTask.CSVLoad2Neo4jTask` provides an implementation that utilises the :class:`~etl_lib.data_source.CSVBatchSource.CSVBatchSource` to stream data from CSV to Neo4j, with optional Pydantic validation.
 
 See the gtfs in examples for a demo.
 

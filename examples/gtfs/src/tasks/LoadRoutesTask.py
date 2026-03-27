@@ -36,7 +36,7 @@ class LoadRoutesTask(CSVLoad2Neo4jTask):
             return self
 
     def __init__(self, context: ETLContext, file: Path):
-        super().__init__(context, LoadRoutesTask.Route, file)
+        super().__init__(context, file, model=LoadRoutesTask.Route)
 
     def task_name(self) -> str:
         return f"{self.__class__.__name__}('{self.file}')"

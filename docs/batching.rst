@@ -50,17 +50,20 @@ For the CSV loading task mentioned above, see the figure below:
 An implementation of this can be found in :class:`~etl_lib.task.data_loading.CSVLoad2Neo4jTask.CSVLoad2Neo4jTask`::
 
     def run_internal(self, **kwargs) -> TaskReturn:
-        error_file = self.file.with_suffix(".error.json")
+        csv = CSVBatchSource(self.file, self.context, self)
+        predecessor = csv
 
-        csv = CSVBatchProcessor(self.file, self.context, self)
-        validator = ValidationBatchProcessor(self.context, self, csv, self.model, error_file)
-        cypher = CypherBatchProcessor(self.context, self, validator, self._query())
+        if self.model is not None:
+            error_file = self.file.with_suffix(".error.json")
+            predecessor = ValidationBatchProcessor(self.context, self, csv, self.model, error_file)
+
+        cypher = CypherBatchSink(self.context, self, predecessor, self._query())
         end = ClosedLoopBatchProcessor(self.context, self, cypher)
         result = next(end.get_batch(self.batch_size))
 
         return TaskReturn(True, result.statistics)
 
-If validation is not needed, the ``validator`` can simply be removed or substituted with another implementation.
+If validation is not needed, ``self.model`` can be set to ``None`` and the pipeline bypasses ``ValidationBatchProcessor``.
 
 The library provides several ``BatchProcessor`` implementations to build tasks from.
 

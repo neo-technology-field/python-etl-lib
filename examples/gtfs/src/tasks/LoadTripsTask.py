@@ -21,7 +21,7 @@ class LoadTripsTask(CSVLoad2Neo4jTask):
         shapeId: str = Field(alias="shape_id")
 
     def __init__(self, context: ETLContext, file: Path):
-        super().__init__(context, LoadTripsTask.Trip, file)
+        super().__init__(context, file, model=LoadTripsTask.Trip)
 
     def task_name(self) -> str:
         return f"{self.__class__.__name__}('{self.file}')"

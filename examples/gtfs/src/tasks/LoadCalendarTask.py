@@ -38,7 +38,7 @@ class LoadCalendarTask(CSVLoad2Neo4jTask):
             return label_array
 
     def __init__(self, context: ETLContext, file: Path):
-        super().__init__(context, LoadCalendarTask.Calendar, file)
+        super().__init__(context, file, model=LoadCalendarTask.Calendar)
 
     def task_name(self) -> str:
         return f"{self.__class__.__name__}('{self.file}')"
