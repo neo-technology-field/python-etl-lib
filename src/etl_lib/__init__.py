@@ -1,4 +1,4 @@
 """
 Building blocks for ETL pipelines.
 """
-__version__ = "0.3.5"
+__version__ = "0.3.6"

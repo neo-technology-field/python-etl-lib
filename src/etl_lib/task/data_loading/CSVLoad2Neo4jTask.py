@@ -75,7 +75,7 @@ class CSVLoad2Neo4jTask(Task):
         self.file = file
 
     def run_internal(self, **kwargs) -> TaskReturn:
-        csv = CSVBatchSource(self.file, self.context, self)
+        csv = CSVBatchSource(self.file, self.context, self, **kwargs)
         predecessor = csv
 
         if self.model is not None:

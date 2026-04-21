@@ -39,4 +39,7 @@
 - added instrumentation to support tuning of parameters for performance
 - fixed bug leading to wrong reporting of expected batches in parallel operations
 ## [0.3.5]
-- validation support for CSV loading was not optional (doc claimed so). It is now. This, unfortunately breaks the init parameters. 
+- validation support for CSV loading was not optional (doc claimed so). It is now. This, unfortunately breaks the init parameters.
+
+## [0.3.6]
+- fixed `CSVLoad2Neo4jTask.run_internal()` not forwarding `**kwargs` to `CSVBatchSource`, making it impossible to pass reader options such as `delimiter='\t'` for TSV files

@@ -83,6 +83,20 @@ class NoValidationLoadTask(CSVLoad2Neo4jTask):
         """
 
 
+class TSVLoadTask(CSVLoad2Neo4jTask):
+    """Loads a tab-delimited file to verify kwargs forwarding to CSVBatchSource."""
+
+    def __init__(self, context, file: Path):
+        super().__init__(context, file, batch_size=10)
+
+    def _query(self):
+        return """
+        UNWIND $batch AS r
+        MERGE (n:TSVRow {string: r.string})
+            SET n.integer = r.integer, n.float = r.float
+        """
+
+
 def _write_simple_customer_csv(path: Path):
     with path.open("w", newline="") as f:
         writer = csv.DictWriter(f, fieldnames=["customerId", "surname"])
@@ -138,3 +152,21 @@ def test_load_without_validation_model(etl_context):
         records = sess.run("MATCH (c:RawCustomer) RETURN c.id AS id, c.name AS name")
         customers = {(r["id"], r["name"]) for r in records}
     assert customers == {("1", "Alice"), ("2", "Bob")}
+
+
+def test_load_tsv(etl_context, neo4j_driver):
+    """kwargs (e.g. delimiter) must be forwarded from run_internal to CSVBatchSource."""
+    tsv_file = Path(__file__).parent / "../../../data/tab-no-quotes.csv"
+    task = TSVLoadTask(etl_context, tsv_file)
+    etl_context.reporter.register_tasks(task)
+
+    result = task.execute(delimiter="\t")
+
+    assert result.success is True
+    assert result.summery.get("csv_lines_read") == 3
+
+    with etl_context.neo4j.session() as sess:
+        records = sess.run("MATCH (n:TSVRow) RETURN n.string AS s ORDER BY n.string")
+        strings = [r["s"] for r in records]
+    assert len(strings) == 3
+    assert "Hello, World!" in strings
