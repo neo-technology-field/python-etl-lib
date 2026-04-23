@@ -1,6 +1,10 @@
 import logging
+import time
+import urllib.parse
+import urllib.request
 from typing import Any, Dict, List, NamedTuple, Optional
 
+import json
 from neo4j.exceptions import Neo4jError
 
 try:
@@ -12,7 +16,8 @@ except ImportError:
     logging.info("Graph Data Science not installed, skipping")
     GraphDataScience = None
 
-from neo4j import GraphDatabase, Session, WRITE_ACCESS, SummaryCounters
+from neo4j import GraphDatabase, Session, WRITE_ACCESS, SummaryCounters, bearer_auth
+from neo4j.auth_management import AuthManagers, ExpiringAuth
 
 try:
     from sqlalchemy import create_engine
@@ -27,6 +32,38 @@ except ImportError:
 
 from etl_lib.core.InstrumentationWriter import create_instrumentation_writer
 from etl_lib.core.ProgressReporter import get_reporter
+
+
+def _fetch_oauth2_token(token_url: str, client_id: str, client_secret: str,
+                        scope: Optional[str]) -> tuple[int, str]:
+    """
+    Fetch a bearer token via the OAuth2 client credentials flow.
+
+    Args:
+        token_url: Full token endpoint URL (e.g. Azure AD, Keycloak, Okta).
+        client_id: OAuth2 client ID.
+        client_secret: OAuth2 client secret.
+        scope: Optional scope string; omitted from the request if None.
+
+    Returns:
+        Tuple of (expires_in_seconds, access_token).
+    """
+    data: dict = {
+        "grant_type": "client_credentials",
+        "client_id": client_id,
+        "client_secret": client_secret,
+    }
+    if scope:
+        data["scope"] = scope
+
+    encoded = urllib.parse.urlencode(data).encode("utf-8")
+    req = urllib.request.Request(token_url, data=encoded, method="POST")
+    req.add_header("Content-Type", "application/x-www-form-urlencoded")
+
+    with urllib.request.urlopen(req) as resp:
+        body = json.loads(resp.read())
+
+    return int(body["expires_in"]), body["access_token"]
 
 
 class QueryResult(NamedTuple):
@@ -65,11 +102,18 @@ class Neo4jContext:
         """
         Create a new Neo4j context.
 
-        Reads the following env_vars keys:
-        - `NEO4J_URI`,
-        - `NEO4J_USERNAME`,
-        - `NEO4J_PASSWORD`.
-        - `NEO4J_DATABASE`,
+        **Basic auth** (default): reads `NEO4J_USERNAME` and `NEO4J_PASSWORD`.
+
+        **Token auth** (OAuth2 client credentials): activated when `NEO4J_CLIENT_ID` is present.
+        Reads:
+        - `NEO4J_CLIENT_ID`: OAuth2 client ID.
+        - `NEO4J_CLIENT_SECRET`: OAuth2 client secret.
+        - `NEO4J_TOKEN_URL`: Full token endpoint URL (Azure AD, Keycloak, Okta, …).
+        - `NEO4J_SCOPE`: Optional scope string.
+
+        Both modes read:
+        - `NEO4J_URI`: bolt/neo4j connection URI.
+        - `NEO4J_DATABASE`: target database name.
 
         Optional: pass Neo4j Python driver configuration via env vars using the prefix `NEO4J_DRIVER_`.
         Example:
@@ -81,10 +125,22 @@ class Neo4jContext:
         """
         self.logger = logging.getLogger(f"{self.__class__.__module__}.{self.__class__.__name__}")
         self.uri = env_vars["NEO4J_URI"]
-        self.auth = (env_vars["NEO4J_USERNAME"],
-                     env_vars["NEO4J_PASSWORD"])
         self.database = env_vars["NEO4J_DATABASE"]
         self.driver_options = self.__driver_options_from_env(env_vars)
+
+        client_id = env_vars.get("NEO4J_CLIENT_ID")
+        if client_id:
+            token_url = env_vars["NEO4J_TOKEN_URL"]
+            client_secret = env_vars["NEO4J_CLIENT_SECRET"]
+            scope = env_vars.get("NEO4J_SCOPE")
+            self.auth = None
+            self._auth_manager = self.__make_token_auth_manager(
+                token_url, client_id, client_secret, scope
+            )
+        else:
+            self.auth = (env_vars["NEO4J_USERNAME"], env_vars["NEO4J_PASSWORD"])
+            self._auth_manager = None
+
         self.__neo4j_connect()
 
     def query_database(self, session: Session, query, **kwargs) -> QueryResult:
@@ -146,13 +202,30 @@ class Neo4jContext:
         else:
             return self.driver.session(database=database, default_access_mode=WRITE_ACCESS)
 
+    @staticmethod
+    def __make_token_auth_manager(token_url: str, client_id: str, client_secret: str,
+                                  scope: Optional[str]) -> AuthManagers:
+        """Build an AuthManagers.bearer that fetches and auto-refreshes tokens."""
+
+        def provider() -> ExpiringAuth:
+            expires_in, token = _fetch_oauth2_token(token_url, client_id, client_secret, scope)
+            return ExpiringAuth(bearer_auth(token), time.monotonic() + expires_in - 10)
+
+        return AuthManagers.bearer(provider)
+
     def __neo4j_connect(self):
         options = dict(self.driver_options)
 
-        self.driver = GraphDatabase.driver(uri=self.uri, auth=self.auth, **options)
+        if self._auth_manager is not None:
+            self.driver = GraphDatabase.driver(uri=self.uri, auth_manager=self._auth_manager, **options)
+            self.logger.info(
+                f"driver connected to instance at {self.uri} using token auth and database {self.database}")
+        else:
+            self.driver = GraphDatabase.driver(uri=self.uri, auth=self.auth, **options)
+            self.logger.info(
+                f"driver connected to instance at {self.uri} with username {self.auth[0]} and database {self.database}")
+
         self.driver.verify_connectivity()
-        self.logger.info(
-            f"driver connected to instance at {self.uri} with username {self.auth[0]} and database {self.database}")
 
     @classmethod
     def __driver_options_from_env(cls, env_vars: dict) -> Dict[str, Any]:

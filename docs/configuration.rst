@@ -23,11 +23,27 @@ The following parameters are currently recognized:
       - Neo4j Connection
       - Connection URL, such as ``neo4j://localhost:7687``
     * - ``NEO4J_USERNAME``
-      - Neo4j Connection
-      - Database user that the ETL pipeline will use
+      - Neo4j Connection (basic auth)
+      - Database user. Required when ``NEO4J_CLIENT_ID`` is **not** set.
     * - ``NEO4J_PASSWORD``
-      - Neo4j Connection
-      - Password for the specified database user
+      - Neo4j Connection (basic auth)
+      - Password for the specified database user. Required when ``NEO4J_CLIENT_ID`` is **not** set.
+    * - ``NEO4J_CLIENT_ID``
+      - Neo4j Connection (token auth)
+      - | OAuth2 client ID. When present, token-based auth is used instead of username/password.
+        | The driver will automatically fetch and refresh tokens before they expire.
+    * - ``NEO4J_CLIENT_SECRET``
+      - Neo4j Connection (token auth)
+      - OAuth2 client secret. Required when ``NEO4J_CLIENT_ID`` is set.
+    * - ``NEO4J_TOKEN_URL``
+      - Neo4j Connection (token auth)
+      - | Full OAuth2 token endpoint URL. Required when ``NEO4J_CLIENT_ID`` is set.
+        | Example (Azure AD): ``https://login.microsoftonline.com/{tenant_id}/oauth2/v2.0/token``
+        | Example (Keycloak): ``https://keycloak.example.com/realms/{realm}/protocol/openid-connect/token``
+    * - ``NEO4J_SCOPE``
+      - Neo4j Connection (token auth)
+      - | OAuth2 scope string. Optional; omitted from the token request when not set.
+        | Example (Azure AD): ``https://graph.microsoft.com/.default``
     * - ``NEO4J_DATABASE``
       - Neo4j Connection
       - Name of the database to use during the ETL pipeline

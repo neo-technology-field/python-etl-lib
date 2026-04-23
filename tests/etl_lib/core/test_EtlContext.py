@@ -1,5 +1,10 @@
+import json
+import time
+import urllib.parse
+from unittest.mock import MagicMock, call, patch
+
 import pytest
-from etl_lib.core.ETLContext import QueryResult, append_results
+from etl_lib.core.ETLContext import QueryResult, append_results, _fetch_oauth2_token, Neo4jContext
 from etl_lib.test_utils.utils import MockETLContext
 from neo4j.exceptions import Neo4jError
 
@@ -111,6 +116,126 @@ def test_query_database_with_parameters(etl_context: MockETLContext):
 
     assert len(result.data) == 1
     assert result.data[0]["name"] == "ParametrizedNode"
+
+
+def _mock_urlopen(response_body: dict):
+    """Return a context manager mock that yields a fake HTTP response."""
+    mock_resp = MagicMock()
+    mock_resp.read.return_value = json.dumps(response_body).encode()
+    mock_resp.__enter__ = lambda s: s
+    mock_resp.__exit__ = MagicMock(return_value=False)
+    return MagicMock(return_value=mock_resp)
+
+
+def test_fetch_oauth2_token_sends_correct_request():
+    """_fetch_oauth2_token builds the right POST body and returns parsed fields."""
+    payload = {"expires_in": 3600, "access_token": "test-token-abc"}
+
+    with patch("urllib.request.urlopen", _mock_urlopen(payload)) as mock_open:
+        expires_in, token = _fetch_oauth2_token(
+            "https://idp.example.com/token", "my-client", "my-secret", "openid"
+        )
+
+    assert expires_in == 3600
+    assert token == "test-token-abc"
+
+    called_req = mock_open.call_args[0][0]
+    body = urllib.parse.parse_qs(called_req.data.decode())
+    assert body["grant_type"] == ["client_credentials"]
+    assert body["client_id"] == ["my-client"]
+    assert body["client_secret"] == ["my-secret"]
+    assert body["scope"] == ["openid"]
+
+
+def test_fetch_oauth2_token_omits_scope_when_none():
+    """_fetch_oauth2_token does not include scope when None is passed."""
+    payload = {"expires_in": 1800, "access_token": "no-scope-token"}
+
+    with patch("urllib.request.urlopen", _mock_urlopen(payload)) as mock_open:
+        _fetch_oauth2_token("https://idp.example.com/token", "c", "s", None)
+
+    body = urllib.parse.parse_qs(mock_open.call_args[0][0].data.decode())
+    assert "scope" not in body
+
+
+def _make_driver_mock():
+    """Return a minimal GraphDatabase.driver mock that satisfies Neo4jContext.__neo4j_connect."""
+    mock_driver = MagicMock()
+    mock_driver.verify_connectivity.return_value = None
+    return mock_driver
+
+
+_BASE_ENV = {
+    "NEO4J_URI": "neo4j://localhost:7687",
+    "NEO4J_DATABASE": "neo4j",
+}
+
+_BASIC_ENV = {**_BASE_ENV, "NEO4J_USERNAME": "neo4j", "NEO4J_PASSWORD": "secret"}
+
+_TOKEN_ENV = {
+    **_BASE_ENV,
+    "NEO4J_CLIENT_ID": "my-client",
+    "NEO4J_CLIENT_SECRET": "my-secret",
+    "NEO4J_TOKEN_URL": "https://idp.example.com/token",
+    "NEO4J_SCOPE": "neo4j/.default",
+}
+
+
+def test_neo4j_context_basic_auth_uses_username_password():
+    """Neo4jContext passes (username, password) to the driver when no client ID is set."""
+    mock_driver = _make_driver_mock()
+    with patch("etl_lib.core.ETLContext.GraphDatabase") as mock_gdb:
+        mock_gdb.driver.return_value = mock_driver
+        ctx = Neo4jContext(_BASIC_ENV)
+
+    assert ctx.auth == ("neo4j", "secret")
+    assert ctx._auth_manager is None
+    _, kwargs = mock_gdb.driver.call_args
+    assert kwargs["auth"] == ("neo4j", "secret")
+    assert "auth_manager" not in kwargs
+
+
+def test_neo4j_context_token_auth_uses_auth_manager():
+    """Neo4jContext passes auth_manager (not auth) to the driver when NEO4J_CLIENT_ID is set."""
+    mock_driver = _make_driver_mock()
+    payload = {"expires_in": 3600, "access_token": "tok-xyz"}
+
+    with patch("etl_lib.core.ETLContext.GraphDatabase") as mock_gdb, \
+         patch("urllib.request.urlopen", _mock_urlopen(payload)):
+        mock_gdb.driver.return_value = mock_driver
+        ctx = Neo4jContext(_TOKEN_ENV)
+
+    assert ctx.auth is None
+    assert ctx._auth_manager is not None
+    _, kwargs = mock_gdb.driver.call_args
+    assert "auth_manager" in kwargs
+    assert "auth" not in kwargs
+
+
+def test_neo4j_context_token_auth_provider_calls_fetch_with_correct_args():
+    """When the bearer provider is invoked, it calls _fetch_oauth2_token with the configured credentials."""
+    mock_driver = _make_driver_mock()
+    captured_manager = None
+
+    def capture_driver(*args, **kwargs):
+        nonlocal captured_manager
+        captured_manager = kwargs.get("auth_manager")
+        return mock_driver
+
+    with patch("etl_lib.core.ETLContext.GraphDatabase") as mock_gdb, \
+         patch("etl_lib.core.ETLContext._fetch_oauth2_token", return_value=(3600, "tok-abc")) as mock_fetch:
+        mock_gdb.driver.side_effect = capture_driver
+        Neo4jContext(_TOKEN_ENV)
+
+        assert captured_manager is not None
+        captured_manager.get_auth()
+
+    mock_fetch.assert_called_with(
+        "https://idp.example.com/token",
+        "my-client",
+        "my-secret",
+        "neo4j/.default",
+    )
 
 
 def test_gds_context_creation(etl_context: MockETLContext):

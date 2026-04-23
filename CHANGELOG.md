@@ -43,3 +43,8 @@
 
 ## [0.3.6]
 - fixed `CSVLoad2Neo4jTask.run_internal()` not forwarding `**kwargs` to `CSVBatchSource`, making it impossible to pass reader options such as `delimiter='\t'` for TSV files
+
+## [0.4.0]
+- added OAuth2 client credentials token auth for Neo4j connections
+- when `NEO4J_CLIENT_ID` is present, the driver authenticates via bearer token instead of username/password
+- tokens are fetched and refreshed automatically; works with any standards-compliant OAuth2 provider (Azure AD, Okta, Keycloak, …)
