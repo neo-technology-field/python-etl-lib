@@ -1,4 +1,5 @@
 /.env
+/uv.lock
 /tests/data/customers.error.json
 **/__pycache__/
 **/.env

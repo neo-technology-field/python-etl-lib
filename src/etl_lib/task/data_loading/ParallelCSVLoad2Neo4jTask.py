@@ -64,7 +64,7 @@ class ParallelCSVLoad2Neo4jTask(Task):
         self.csv_reader_kwargs = csv_reader_kwargs
 
     def run_internal(self) -> TaskReturn:
-        csv = CSVBatchSource(self.file, self.context, self, **self.csv_reader_kwargs)
+        csv = CSVBatchSource(self.context, self, self.file, **self.csv_reader_kwargs)
         predecessor = csv
         if self.model is not None:
             predecessor = ValidationBatchProcessor(self.context, self, csv, self.model, self.error_file)

@@ -10,14 +10,14 @@ from neo4j.exceptions import Neo4jError
 try:
     from graphdatascience import GraphDataScience
 
-    gds_available = False
+    gds_available = True
 except ImportError:
     gds_available = False
     logging.info("Graph Data Science not installed, skipping")
     GraphDataScience = None
 
 from neo4j import GraphDatabase, Session, WRITE_ACCESS, SummaryCounters, bearer_auth
-from neo4j.auth_management import AuthManagers, ExpiringAuth
+from neo4j.auth_management import AuthManagers, AuthManager, ExpiringAuth
 
 try:
     from sqlalchemy import create_engine
@@ -70,7 +70,7 @@ class QueryResult(NamedTuple):
     """Result of a query against the neo4j database."""
     data: List[Any]
     """Data as returned from the query."""
-    summery: Dict[str, int]
+    summary: Dict[str, int]
     """Counters as reported by neo4j. Contains entries such as `nodes_created`, `nodes_deleted`, etc."""
 
 
@@ -85,12 +85,12 @@ def append_results(r1: QueryResult, r2: QueryResult) -> QueryResult:
     Returns:
         A new QueryResult object with combined data and summed summary counts.
     """
-    combined_summery = r1.summery.copy()
+    combined_summary = r1.summary.copy()
 
-    for key, value in r2.summery.items():
-        combined_summery[key] = combined_summery.get(key, 0) + value
+    for key, value in r2.summary.items():
+        combined_summary[key] = combined_summary.get(key, 0) + value
 
-    return QueryResult(r1.data + r2.data, combined_summery)
+    return QueryResult(r1.data + r2.data, combined_summary)
 
 
 class Neo4jContext:
@@ -164,7 +164,7 @@ class Neo4jContext:
 
         try:
             records, counters = session.execute_write(_tx, query, kwargs)
-            return QueryResult(records, self.__counters_2_dict(counters))
+            return QueryResult(data=records, summary=self.__counters_2_dict(counters))
         except Neo4jError as e:
             self.logger.error(e)
             raise
@@ -204,7 +204,7 @@ class Neo4jContext:
 
     @staticmethod
     def __make_token_auth_manager(token_url: str, client_id: str, client_secret: str,
-                                  scope: Optional[str]) -> AuthManagers:
+                                  scope: Optional[str]) -> AuthManager:
         """Build an AuthManagers.bearer that fetches and auto-refreshes tokens."""
 
         def provider() -> ExpiringAuth:

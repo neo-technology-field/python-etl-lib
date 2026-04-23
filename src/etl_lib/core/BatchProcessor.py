@@ -5,7 +5,7 @@ from dataclasses import dataclass, field
 from typing import Any, Generator, List, Optional
 
 from etl_lib.core.Task import Task
-from etl_lib.core.utils import merge_summery
+from etl_lib.core.utils import merge_summary
 
 
 @dataclass
@@ -34,7 +34,7 @@ def append_result(org: BatchResults, stats: dict) -> BatchResults:
             provided parameters. Values in the dicts with the same key are added.
 
     """
-    return BatchResults(chunk=org.chunk, statistics=merge_summery(org.statistics, stats),
+    return BatchResults(chunk=org.chunk, statistics=merge_summary(org.statistics, stats),
                         batch_size=org.batch_size)
 
 

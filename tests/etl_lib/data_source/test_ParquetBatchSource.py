@@ -20,7 +20,7 @@ def test_parquet_batch_source_read(tmp_path):
     _write_parquet(parquet_file, data)
 
     # Test reading with small batch size
-    source = ParquetBatchSource(parquet_file, DummyContext())
+    source = ParquetBatchSource(DummyContext(), file=parquet_file)
     batches = list(source.get_batch(max_batch_size=3))
 
     # Expected: 10 rows / 3 = 3 batches of 3, plus 1 batch of 1 = 4 batches

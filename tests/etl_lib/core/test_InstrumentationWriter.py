@@ -49,7 +49,7 @@ class DummyTask(Task):
         Returns:
             Successful empty result.
         """
-        return TaskReturn(success=True, summery={})
+        return TaskReturn(success=True, summary={})
 
 
 def _read_rows(path: Path) -> list[dict]:

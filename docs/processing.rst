@@ -19,7 +19,7 @@ The :class:`~etl_lib.task.GDSTask.GDSTask` uses the `GDS client <https://neo4j.c
             gds.graph.drop("neo4j-offices", failIfMissing=False)
             g_office, project_result = gds.graph.project("neo4j-offices", "City", "FLY_TO")
             mutate_result = gds.pageRank.write(g_office, tolerance=0.5, writeProperty="rank")
-            return TaskReturn(success=True, summery=transform_dict(mutate_result.to_dict()))
+            return TaskReturn(success=True, summary=transform_dict(mutate_result.to_dict()))
 
 
 .. DANGER::

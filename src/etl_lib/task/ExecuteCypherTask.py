@@ -2,7 +2,7 @@ import abc
 
 from etl_lib.core.ETLContext import ETLContext
 from etl_lib.core.Task import Task, TaskReturn
-from etl_lib.core.utils import merge_summery
+from etl_lib.core.utils import merge_summary
 
 
 class ExecuteCypherTask(Task):
@@ -23,11 +23,11 @@ class ExecuteCypherTask(Task):
                 stats = {}
                 for query in self._query():
                     result = self.context.neo4j.query_database(session=session, query=query, **kwargs)
-                    stats = merge_summery(stats, result.summery)
-                return TaskReturn(success=True, summery=stats)
+                    stats = merge_summary(stats, result.summary)
+                return TaskReturn(success=True, summary=stats)
             else:
                 result = self.context.neo4j.query_database(session=session, query=self._query(), **kwargs)
-                return TaskReturn(success=True, summery=result.summery)
+                return TaskReturn(success=True, summary=result.summary)
 
     @abc.abstractmethod
     def _query(self) -> str | list[str]:

@@ -240,7 +240,7 @@ class FakeNeo4jContext:
             Query result with `nodes_created` count.
         """
         batch = kwargs.get("batch", [])
-        return QueryResult(data=[], summery={"nodes_created": len(batch)})
+        return QueryResult(data=[], summary={"nodes_created": len(batch)})
 
 
 def test_cypher_batch_sink_emits_transaction_instrumentation():

@@ -5,7 +5,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from typing import Any, Callable, Generator, List, cast
 
 from etl_lib.core.BatchProcessor import BatchProcessor, BatchResults
-from etl_lib.core.utils import merge_summery
+from etl_lib.core.utils import merge_summary
 
 
 class ParallelBatchResult(BatchResults):
@@ -77,7 +77,7 @@ class ParallelBatchProcessor(BatchProcessor):
             try:
                 for f in as_completed(futures):
                     out = f.result()
-                    merged_stats = merge_summery(merged_stats, out.statistics or {})
+                    merged_stats = merge_summary(merged_stats, out.statistics or {})
                     total += out.batch_size
                     merged_chunk.extend(out.chunk if isinstance(out.chunk, list) else [out.chunk])
             except Exception as e:

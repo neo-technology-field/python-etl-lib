@@ -21,13 +21,14 @@ class ParquetBatchSource(BatchProcessor):
     starting with 0.
     """
 
-    def __init__(self, file: Path, context: ETLContext, task: Optional[Task] = None, **kwargs):
+    def __init__(self, context: ETLContext, task: Optional[Task] = None, file: Path = None, **kwargs):
         """
         Constructs a new ParquetBatchSource.
 
         Args:
-            file: Path to the Parquet file.
             context: :class:`etl_lib.core.ETLContext.ETLContext` instance.
+            task: :class:`etl_lib.core.Task.Task` instance owning this processor.
+            file: Path to the Parquet file.
             kwargs: Will be passed on to the `pyarrow.parquet.ParquetFile.iter_batches` method.
         """
         super().__init__(context, task)

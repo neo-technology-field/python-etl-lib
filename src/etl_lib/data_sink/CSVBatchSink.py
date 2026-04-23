@@ -31,7 +31,8 @@ class CSVBatchSink(BatchProcessor):
         self.csv_kwargs = kwargs
 
     def get_batch(self, max_batch_size: int) -> Generator[BatchResults, None, None]:
-        assert self.predecessor is not None
+        if self.predecessor is None:
+            raise ValueError(f"{self.__class__.__name__} requires a predecessor")
 
         for batch_result in self.predecessor.get_batch(max_batch_size):
             t0 = time.perf_counter()

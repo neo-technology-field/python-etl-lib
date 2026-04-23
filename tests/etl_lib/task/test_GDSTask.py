@@ -9,7 +9,7 @@ def test_GDSTask(etl_context):
         gds.graph.drop("neo4j-offices", failIfMissing=False)
         g_office, project_result = gds.graph.project("neo4j-offices", "City", "FLY_TO")
         mutate_result = gds.pageRank.write(g_office, tolerance=0.5, writeProperty="rank")
-        return TaskReturn(success=True, summery=transform_dict(mutate_result.to_dict()))
+        return TaskReturn(success=True, summary=transform_dict(mutate_result.to_dict()))
 
     with etl_context.neo4j.session() as session:
         session.run("""
@@ -26,8 +26,8 @@ def test_GDSTask(etl_context):
     task = GDSTask(etl_context, gds_fun)
     task_return = task.execute()
     assert task_return.success is True
-    assert task_return.summery is not None
-    assert task_return.summery["didConverge"] is True
-    assert task_return.summery["nodePropertiesWritten"] == 3
+    assert task_return.summary is not None
+    assert task_return.summary["didConverge"] is True
+    assert task_return.summary["nodePropertiesWritten"] == 3
 
     assert check_property_exists(etl_context.neo4j.driver, "City", "rank")

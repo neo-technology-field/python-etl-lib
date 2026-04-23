@@ -24,7 +24,8 @@ class ClosedLoopBatchProcessor(BatchProcessor):
         self.expected_batches = expected_batches
 
     def get_batch(self, max_batch_size: int) -> Generator[BatchResults, None, None]:
-        assert self.predecessor is not None
+        if self.predecessor is None:
+            raise ValueError(f"{self.__class__.__name__} requires a predecessor")
         batch_cnt = 0
         result = BatchResults(chunk=[], statistics={}, batch_size=max_batch_size)
         for batch in self.predecessor.get_batch(max_batch_size):
@@ -41,4 +42,4 @@ class ClosedLoopBatchProcessor(BatchProcessor):
             return self.expected_batches
         if not self.expected_rows or not batch_size:
             return 0
-        return self.expected_rows + batch_size - 1
+        return (self.expected_rows + batch_size - 1) // batch_size

@@ -14,8 +14,6 @@ class ProgressReporter:
     This specific implementation uses the python logging module to log progress.
     Non-error logging is using the INFO level.
     """
-    start_time: datetime
-    end_time: datetime
 
     def __init__(self, context):
         self.context = context
@@ -92,27 +90,27 @@ class ProgressReporter:
         """
         Marks the task as finished.
 
-        Stops the time recording for the tasks and performs logging. Logging will include details from the provided summery.
+        Stops the time recording for the tasks and performs logging. Logging will include details from the provided summary.
 
         Args:
             task: Task to be marked as finished.
-            result: result of the task execution, such as status and summery information.
+            result: result of the task execution, such as status and summary information.
 
         Returns:
             Task to be marked as started.
         """
         task.end_time = datetime.now()
         task.success = result.success
-        task.summery = result.summery
+        task.summary = result.summary
 
         report = f"finished {task.task_name()} in {task.end_time - task.start_time} with status: {'success' if result.success else 'failed'}"
         if result.error is not None:
             report += f", error: \n{result.error}"
         else:
             # for the logger, remove entries with 0, but keep them in the original for reporting
-            cleaned_summery = {key: value for key, value in result.summery.items() if value != 0}
-            if len(cleaned_summery) > 0:
-                report += f"\n{tabulate([cleaned_summery], headers='keys', tablefmt='psql')}"
+            cleaned_summary = {key: value for key, value in result.summary.items() if value != 0}
+            if len(cleaned_summary) > 0:
+                report += f"\n{tabulate([cleaned_summary], headers='keys', tablefmt='psql')}"
         self.logger.info(report)
         return task
 
@@ -217,9 +215,9 @@ class Neo4jProgressReporter(ProgressReporter):
         with self.context.neo4j.session(self.database) as session:
             session.run("""
             MATCH (t:ETLTask {uuid:$id}) SET t.endTime = $end_time, t.status = $status, t.error = $error
-            CREATE (s:ETLStats) SET s=$summery
+            CREATE (s:ETLStats) SET s=$summary
             CREATE (t)-[:HAS_STATS]->(s)
-            """, id=task.uuid, end_time=task.end_time, summery=result.summery, status=status, error=result.error)
+            """, id=task.uuid, end_time=task.end_time, summary=result.summary, status=status, error=result.error)
         return task
 
     def __create_constraints(self):

@@ -18,7 +18,7 @@ def test_execute_cypher_task(etl_context):
     assert res is not None
     assert res.success is True
     assert res.error is None
-    stats = {key: value for key, value in res.summery.items() if value != 0}
+    stats = {key: value for key, value in res.summary.items() if value != 0}
     assert stats == {"nodes_created": 2, "relationships_created": 1, "properties_set": 2, "labels_added": 2}
 
 

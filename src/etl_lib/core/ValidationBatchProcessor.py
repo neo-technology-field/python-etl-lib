@@ -7,7 +7,7 @@ from pydantic import BaseModel, ValidationError
 from etl_lib.core.BatchProcessor import BatchProcessor, BatchResults
 from etl_lib.core.ETLContext import ETLContext
 from etl_lib.core.Task import Task
-from etl_lib.core.utils import merge_summery
+from etl_lib.core.utils import merge_summary
 
 
 class ValidationBatchProcessor(BatchProcessor):
@@ -45,13 +45,14 @@ class ValidationBatchProcessor(BatchProcessor):
         self.model = model
 
     def get_batch(self, max_batch_size: int) -> Generator[BatchResults, None, None]:
-        assert self.predecessor is not None
+        if self.predecessor is None:
+            raise ValueError(f"{self.__class__.__name__} requires a predecessor")
 
         if self.model is None:
             for batch in self.predecessor.get_batch(max_batch_size):
                 yield BatchResults(
                     chunk=batch.chunk,
-                    statistics=merge_summery(batch.statistics, {
+                    statistics=merge_summary(batch.statistics, {
                         "valid_rows": len(batch.chunk),
                         "invalid_rows": 0
                     }),
@@ -74,7 +75,6 @@ class ValidationBatchProcessor(BatchProcessor):
 
             # Write invalid rows to the error file
             if invalid_rows:
-                assert self.error_file is not None
                 with open(self.error_file, "a") as f:
                     for invalid in invalid_rows:
                         # the following is needed as ValueError (contained in 'ctx') is not json serializable
@@ -86,7 +86,7 @@ class ValidationBatchProcessor(BatchProcessor):
             # Yield BatchResults with statistics
             yield BatchResults(
                 chunk=valid_rows,
-                statistics=merge_summery(batch.statistics, {
+                statistics=merge_summary(batch.statistics, {
                     "valid_rows": len(valid_rows),
                     "invalid_rows": len(invalid_rows)
                 }),

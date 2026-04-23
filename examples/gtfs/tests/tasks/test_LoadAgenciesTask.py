@@ -20,7 +20,7 @@ def test_load_agencies_task(etl_context, neo4j_driver):
                         'indexes_removed': 0, 'invalid_rows': 3, 'labels_added': 7, 'labels_removed': 0,
                         'nodes_created': 7, 'nodes_deleted': 0, 'properties_set': 56, 'relationships_created': 0,
                         'relationships_deleted': 0, 'valid_rows': 7}
-    assert expected_summary == result.summery
+    assert expected_summary == result.summary
 
     cypher_query = """
         MATCH (a:Agency) WHERE NOT a.id CONTAINS '-'

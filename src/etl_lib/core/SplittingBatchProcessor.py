@@ -6,7 +6,7 @@ from typing import Any, Callable, Dict, Generator, List, Tuple
 from tabulate import tabulate
 
 from etl_lib.core.BatchProcessor import BatchProcessor, BatchResults
-from etl_lib.core.utils import merge_summery
+from etl_lib.core.utils import merge_summary
 
 
 def tuple_id_extractor(table_size: int = 10) -> Callable[[Tuple[str | int, str | int]], Tuple[int, int]]:
@@ -404,7 +404,7 @@ class SplittingBatchProcessor(BatchProcessor):
 
         for upstream in self.predecessor.get_batch(max_batch_size):
             if upstream.statistics:
-                accumulated_stats = merge_summery(accumulated_stats, upstream.statistics)
+                accumulated_stats = merge_summary(accumulated_stats, upstream.statistics)
 
             for item in upstream.chunk:
                 r, c = self._id_extractor(item)

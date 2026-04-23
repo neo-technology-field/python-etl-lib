@@ -14,4 +14,4 @@ class CreateReportingConstraintsTask(Task):
         with self.context.neo4j.session(database) as session:
             result = self.context.neo4j.query_database(session=session,
                                                        query="CREATE CONSTRAINT IF NOT EXISTS FOR (n:ETLTask) REQUIRE n.uuid IS UNIQUE")
-            return TaskReturn(True, result.summery)
+            return TaskReturn(True, result.summary)

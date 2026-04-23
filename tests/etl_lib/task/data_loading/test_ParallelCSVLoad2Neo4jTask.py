@@ -79,10 +79,10 @@ def test_parallel_csv_success(etl_context, tmp_path):
 
     assert result.success is True
     # Neo4j summary counters from MERGE operations
-    assert result.summery['labels_added'] == 6
-    assert result.summery['properties_set'] == 6
-    assert result.summery['relationships_created'] == 3
-    assert result.summery['nodes_created'] == 6
+    assert result.summary['labels_added'] == 6
+    assert result.summary['properties_set'] == 6
+    assert result.summary['relationships_created'] == 3
+    assert result.summary['nodes_created'] == 6
 
     # sanity check: relationships present
     with etl_context.neo4j.session() as sess:
@@ -121,8 +121,8 @@ def test_parallel_csv_with_validation(etl_context, tmp_path):
 
     assert result.success is True
     # ValidationBatchProcessor contributes to merged summary
-    assert result.summery.get("valid_rows") == 3
-    assert result.summery.get("invalid_rows") == 1
+    assert result.summary.get("valid_rows") == 3
+    assert result.summary.get("invalid_rows") == 1
 
     with etl_context.neo4j.session() as sess:
         records = sess.run(

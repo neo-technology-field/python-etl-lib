@@ -30,7 +30,8 @@ class SQLBatchSink(BatchProcessor):
         self.engine = context.sql.engine
 
     def get_batch(self, max_batch_size: int) -> Generator[BatchResults, None, None]:
-        assert self.predecessor is not None
+        if self.predecessor is None:
+            raise ValueError(f"{self.__class__.__name__} requires a predecessor")
 
         with self.engine.connect() as conn:
             with conn.begin():

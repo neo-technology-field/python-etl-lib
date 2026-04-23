@@ -50,9 +50,9 @@ def test_parquet_load_success(etl_context, tmp_path):
     result = task.execute()
 
     assert result.success is True
-    assert result.summery['nodes_created'] == 3
-    assert result.summery['labels_added'] == 3
-    assert result.summery['properties_set'] == 6
+    assert result.summary['nodes_created'] == 3
+    assert result.summary['labels_added'] == 3
+    assert result.summary['properties_set'] == 6
 
     # Verify data in Neo4j
     with etl_context.neo4j.session() as sess:

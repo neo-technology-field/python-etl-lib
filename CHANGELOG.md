@@ -48,3 +48,28 @@
 - added OAuth2 client credentials token auth for Neo4j connections
 - when `NEO4J_CLIENT_ID` is present, the driver authenticates via bearer token instead of username/password
 - tokens are fetched and refreshed automatically; works with any standards-compliant OAuth2 provider (Azure AD, Okta, Keycloak, …)
+
+## [0.5.0] — breaking changes
+- cleanup, inconsistencies, ... 
+### Breaking changes
+- `TaskReturn.summery` renamed to `TaskReturn.summary` — update all call sites and attribute access
+- `QueryResult.summery` renamed to `QueryResult.summary` — same
+- `merge_summery()` in `etl_lib.core.utils` renamed to `merge_summary()`
+- `CSVBatchSource.__init__` parameter order changed: `(csv_file, context, task)` → `(context, task, csv_file)`
+- `ParquetBatchSource.__init__` parameter order changed: `(file, context, task)` → `(context, task, file)`
+- The Neo4j property written by `Neo4jProgressReporter` for task stats is now `$summary` (was `$summery`)
+
+### Bug fixes
+- `ETLContext`: `gds_available` was always `False` even when `graphdatascience` was installed — GDS context
+  was therefore never initialised
+- `TaskGroup.run_internal`: abort-on-failure check used `task_ret == False` which never matched because
+  `TaskReturn` has no `__eq__`; the entire abort path was dead code
+- `TaskGroup.abort_on_fail`: returned `None` instead of `False` when no child requested abort
+- `ClosedLoopBatchProcessor._safe_calculate_count`: returned `expected_rows + batch_size - 1` (almost the
+  row count) instead of the correct ceiling-division batch count
+
+### Other
+- `assert` guards on `predecessor` in `CypherBatchSink`, `ClosedLoopBatchProcessor`, `ValidationBatchProcessor`,
+  `CSVBatchSink`, and `SQLBatchSink` replaced with `ValueError` (assertions are disabled by `-O`)
+- Misleading class-level `start_time`/`end_time` annotations removed from `ProgressReporter`
+- Docstring typo "Rask" → "Task" in `TaskGroup.__init__`

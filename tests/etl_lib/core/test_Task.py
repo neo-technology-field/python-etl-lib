@@ -1,13 +1,13 @@
 from datetime import datetime
 
 from etl_lib.core.Task import Task, TaskReturn, TaskGroup, ParallelTaskGroup
-from etl_lib.core.utils import merge_summery
+from etl_lib.core.utils import merge_summary
 from etl_lib.task.ExecuteCypherTask import ExecuteCypherTask
 from etl_lib.test_utils.utils import DummyContext, DummyReporter
 
 
-def test_merge_summery():
-    merged = merge_summery({"a": 2, "b": 3}, {"b": 2, "c": 4})
+def test_merge_summary():
+    merged = merge_summary({"a": 2, "b": 3}, {"b": 2, "c": 4})
 
     assert merged == {"a": 2, "b": 5, "c": 4}
 
@@ -15,31 +15,31 @@ def test_merge_summery():
 def test_simple_task():
     class DummyTask(Task):
         def run_internal(self, *args, **kwargs):
-            return TaskReturn(success=False, summery={"rows inserted": 21, "labels created": 2})
+            return TaskReturn(success=False, summary={"rows inserted": 21, "labels created": 2})
 
     task = DummyTask(DummyContext())
     ret = task.execute()
     assert ret.success == False
-    assert ret.summery == {'labels created': 2, 'rows inserted': 21}
+    assert ret.summary == {'labels created': 2, 'rows inserted': 21}
 
 
 def test_task_group():
     class DummyTask1(Task):
         def run_internal(self, *args, **kwargs):
-            return TaskReturn(success=False, summery={"rows inserted": 2, "labels created": 2})
+            return TaskReturn(success=False, summary={"rows inserted": 2, "labels created": 2})
 
         def abort_on_fail(self) -> bool:
             return False
 
     class DummyTask2(Task):
         def run_internal(self, *args, **kwargs):
-            return TaskReturn(success=True, summery={"rows inserted": 3, "labels created": 3, "foo": 4})
+            return TaskReturn(success=True, summary={"rows inserted": 3, "labels created": 3, "foo": 4})
 
     group = TaskGroup(DummyContext(), [DummyTask1(DummyContext()), DummyTask2(DummyContext())], "test-group")
     ret = group.execute()
 
     assert ret.success == False
-    assert ret.summery == {"foo": 4, "rows inserted": 5, "labels created": 5}
+    assert ret.summary == {"foo": 4, "rows inserted": 5, "labels created": 5}
 
 
 def test_parallel_task_group(etl_context):
@@ -87,13 +87,83 @@ def test_parallel_task_group(etl_context):
     etl_context.reporter.register_tasks(task_group)
     ret = task_group.execute()
     assert ret.success == True
-    assert ret.summery["labels_added"] == 2002
-    assert ret.summery["properties_set"] == 2002
-    assert ret.summery["relationships_created"] == 2000
+    assert ret.summary["labels_added"] == 2002
+    assert ret.summary["properties_set"] == 2002
+    assert ret.summary["relationships_created"] == 2000
 
     assert task1.end_time > task2.start_time
 
     etl_context.reporter = DummyReporter()
+
+
+def test_task_group_aborts_on_failure():
+    """TaskGroup must stop execution when a failing task has abort_on_fail=True."""
+    executed = []
+
+    class FailingTask(Task):
+        def run_internal(self, **kwargs):
+            executed.append("failing")
+            return TaskReturn(success=False, summary={})
+
+    class ShouldNotRunTask(Task):
+        def run_internal(self, **kwargs):
+            executed.append("should_not_run")
+            return TaskReturn(success=True, summary={})
+
+    group = TaskGroup(
+        DummyContext(),
+        [FailingTask(DummyContext()), ShouldNotRunTask(DummyContext())],
+        "abort-test"
+    )
+    ret = group.execute()
+
+    assert ret.success is False
+    assert "failing" in executed
+    assert "should_not_run" not in executed
+
+
+def test_task_group_continues_when_abort_on_fail_false():
+    """TaskGroup must continue past a failing task when abort_on_fail returns False."""
+    executed = []
+
+    class FailingTask(Task):
+        def run_internal(self, **kwargs):
+            executed.append("failing")
+            return TaskReturn(success=False, summary={})
+
+        def abort_on_fail(self) -> bool:
+            return False
+
+    class FollowUpTask(Task):
+        def run_internal(self, **kwargs):
+            executed.append("follow_up")
+            return TaskReturn(success=True, summary={})
+
+    group = TaskGroup(
+        DummyContext(),
+        [FailingTask(DummyContext()), FollowUpTask(DummyContext())],
+        "continue-test"
+    )
+    ret = group.execute()
+
+    assert ret.success is False
+    assert executed == ["failing", "follow_up"]
+
+
+def test_task_group_abort_on_fail_returns_bool():
+    """TaskGroup.abort_on_fail must return False (not None) when no child aborts."""
+
+    class NeverAbortTask(Task):
+        def run_internal(self, **kwargs):
+            return TaskReturn()
+
+        def abort_on_fail(self) -> bool:
+            return False
+
+    group = TaskGroup(DummyContext(), [NeverAbortTask(DummyContext())], "bool-test")
+    result = group.abort_on_fail()
+    assert result is False
+    assert isinstance(result, bool)
 
 
 def test_kwargs_passing():
@@ -104,7 +174,7 @@ def test_kwargs_passing():
 
         def run_internal(self, *args, **kwargs):
             self.test = kwargs
-            return TaskReturn(success=False, summery=kwargs)
+            return TaskReturn(success=False, summary=kwargs)
 
     expected = {"a": 2, "b": 3, "c": 4}
     d1 = DummyTask(DummyContext())

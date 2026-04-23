@@ -12,18 +12,18 @@ class TaskReturn:
 
     success: bool
     """Success or failure of the task."""
-    summery: dict
+    summary: dict
     """dict holding statistics about the task performed, such as rows inserted, updated. The values must be int"""
     error: str
     """Error message."""
 
-    def __init__(self, success: bool = True, summery: dict = None, error: str = None):
+    def __init__(self, success: bool = True, summary: dict = None, error: str = None):
         self.success = success
-        self.summery = summery if summery else {}
+        self.summary = summary if summary else {}
         self.error = error
 
     def __repr__(self):
-        return f"TaskReturn({self.success=}, {self.summery=}, {self.error=})"
+        return f"TaskReturn({self.success=}, {self.summary=}, {self.error=})"
 
     def __add__(self, other):
         """
@@ -34,17 +34,17 @@ class TaskReturn:
 
         Returns:
               New TaskReturn instance. `success` is the logical AND of the instances.
-              `summery` is the merged dict. For the values of the same key the values are added.
+              `summary` is the merged dict. For the values of the same key the values are added.
         """
         if not isinstance(other, TaskReturn):
             return NotImplemented
 
-        # Merge the summery dictionaries by summing their values
-        merged_summery = self.summery.copy()
-        for key, value in other.summery.items():
+        # Merge the summary dictionaries by summing their values
+        merged_summary = self.summary.copy()
+        for key, value in other.summary.items():
             if not isinstance(value, int):
                 raise ValueError(f"TaskReturn value '{value}' is not an int with key '{key}'")
-            merged_summery[key] = merged_summery.get(key, 0) + value
+            merged_summary[key] = merged_summary.get(key, 0) + value
 
         # Combine success values and errors
         combined_success = self.success and other.success
@@ -52,7 +52,7 @@ class TaskReturn:
             else f"{self.error or ''} | {other.error or ''}".strip(" |")
 
         return TaskReturn(
-            success=combined_success, summery=merged_summery, error=combined_error
+            success=combined_success, summary=merged_summary, error=combined_error
         )
 
 
@@ -82,6 +82,8 @@ class Task:
         """Time when the :func:`~execute` has finished., `None` before."""
         self.success: bool
         """True if the task has finished successful. False otherwise, `None` before the task has finished."""
+        self.summary: dict = {}
+        """Statistics reported by the task after execution. Set by the reporter."""
         self.depth: int = 0
         """Level or depth of the task in the hierarchy. The root task is depth 0. Updated by the Reporter"""
 
@@ -103,7 +105,7 @@ class Task:
             result = self.run_internal(**kwargs)
         except Exception as e:
             self.logger.exception(f"Exception while executing task: {e}")
-            result = TaskReturn(success=False, summery={}, error=str(e))
+            result = TaskReturn(success=False, summary={}, error=str(e))
 
         self.context.reporter.finished_task(task=self, result=result)
 
@@ -154,7 +156,7 @@ class TaskGroup(Task):
     Base class to allow wrapping of Task or TaskGroups to form a hierarchy of jobs.
 
     Implementations only need to provide the Tasks to execute as an array.
-    The summery statistic object returned from the group execute method will be a merged/aggregated one.
+    The summary statistic object returned from the group execute method will be a merged/aggregated one.
     """
 
     def __init__(self, context, tasks: list[Task], name: str):
@@ -163,7 +165,7 @@ class TaskGroup(Task):
 
         Args:
             context: :py:class:`etl_lib.core.ETLContext.ETLContext` instance.
-            tasks: a list of `:py:class:`etl_lib.core.Task.Rask` instances.
+            tasks: a list of `:py:class:`etl_lib.core.Task.Task` instances.
                 These will be executed in the order provided when :py:func:`~run_internal` is called.
             name: short name of the TaskGroup for reporting.
         """
@@ -178,7 +180,7 @@ class TaskGroup(Task):
         ret = TaskReturn()
         for task in self.tasks:
             task_ret = task.execute(**kwargs)
-            if task_ret == False and task.abort_on_fail():
+            if not task_ret.success and task.abort_on_fail():
                 self.logger.warning(
                     f"Task {self.task_name()} failed. Aborting execution."
                 )
@@ -186,10 +188,11 @@ class TaskGroup(Task):
             ret = ret + task_ret
         return ret
 
-    def abort_on_fail(self):
+    def abort_on_fail(self) -> bool:
         for task in self.tasks:
             if task.abort_on_fail():
                 return True
+        return False
 
     def task_name(self) -> str:
         return self.name
@@ -248,7 +251,7 @@ class ParallelTaskGroup(TaskGroup):
                     self.logger.error(
                         f"Task {task.task_name()} encountered an error: {str(e)}"
                     )
-                    error_result = TaskReturn(success=False, summery={}, error=str(e))
+                    error_result = TaskReturn(success=False, summary={}, error=str(e))
                     combined_result += error_result
 
                     # Handle abort logic for unexpected exceptions

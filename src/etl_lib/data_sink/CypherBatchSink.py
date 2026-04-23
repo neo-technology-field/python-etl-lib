@@ -34,7 +34,8 @@ class CypherBatchSink(BatchProcessor):
         :param max_batch_size: The maximum batch size to use when requesting from predecessor.
         :return: Generator[BatchResults, None, None]
         """
-        assert self.predecessor is not None
+        if self.predecessor is None:
+            raise ValueError(f"{self.__class__.__name__} requires a predecessor")
 
         with self.neo4j.session() as session:
             for batch_result in self.predecessor.get_batch(max_batch_size):
@@ -48,4 +49,4 @@ class CypherBatchSink(BatchProcessor):
                     "rows": len(batch_result.chunk),
                     "dt_ms": round(elapsed_ms, 3),
                 })
-                yield append_result(batch_result, result.summery)
+                yield append_result(batch_result, result.summary)

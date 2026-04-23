@@ -30,7 +30,7 @@ def test_load_routes_task(etl_context, neo4j_driver):
         'nodes_created': 4, 'nodes_deleted': 0, 'properties_set': 16, 'relationships_created':4,
         'relationships_deleted': 0, 'valid_rows': 5
     }
-    assert result.summery == expected_summary
+    assert result.summary == expected_summary
 
     cypher_query = """
         MATCH (r:Route) 

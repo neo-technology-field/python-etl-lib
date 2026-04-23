@@ -113,7 +113,7 @@ def test_load(etl_context, neo4j_driver):
     assert result is not None
     assert result.success is True
     assert result.error is None
-    assert result.summery == {'constraints_added': 0,
+    assert result.summary == {'constraints_added': 0,
                               'constraints_removed': 0,
                               'indexes_added': 0,
                               'indexes_removed': 0,
@@ -145,8 +145,8 @@ def test_load_without_validation_model(etl_context):
     assert result is not None
     assert result.success is True
     assert result.error is None
-    assert result.summery.get("valid_rows") is None
-    assert result.summery.get("invalid_rows") is None
+    assert result.summary.get("valid_rows") is None
+    assert result.summary.get("invalid_rows") is None
 
     with etl_context.neo4j.session() as sess:
         records = sess.run("MATCH (c:RawCustomer) RETURN c.id AS id, c.name AS name")
@@ -163,7 +163,7 @@ def test_load_tsv(etl_context, neo4j_driver):
     result = task.execute(delimiter="\t")
 
     assert result.success is True
-    assert result.summery.get("csv_lines_read") == 3
+    assert result.summary.get("csv_lines_read") == 3
 
     with etl_context.neo4j.session() as sess:
         records = sess.run("MATCH (n:TSVRow) RETURN n.string AS s ORDER BY n.string")
