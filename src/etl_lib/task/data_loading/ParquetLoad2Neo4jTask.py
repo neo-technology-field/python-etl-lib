@@ -41,7 +41,7 @@ class ParquetLoad2Neo4jTask(Task):
         """
         pass
 
-    def run_internal(self) -> TaskReturn:
+    def run_internal(self, **kwargs) -> TaskReturn:
         total_count = ParquetBatchSource.get_total_rows(self.file)
 
         source = ParquetBatchSource(self.context, self, self.file)

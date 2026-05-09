@@ -163,28 +163,20 @@ class Neo4jProgressReporter(ProgressReporter):
         self.__create_constraints()
         self._register_shutdown_handler()
 
-    def register_tasks(self, root: Task, **kwargs):
-        super().register_tasks(root)
+    def register_tasks(self, main: Task, **kwargs):
+        super().register_tasks(main)
 
         with self.context.neo4j.session(self.database) as session:
             order = 0
             session.run(
                 "CREATE (t:ETLTask:ETLRun {uuid:$id, task:$task, order:$order, name:$name, status: 'open'}) SET t +=$other",
-                id=root.uuid, order=order, task=root.__repr__(), name=root.task_name(), other=kwargs)
-            self.__persist_task(session, root, order)
+                id=main.uuid, order=order, task=main.__repr__(), name=main.task_name(), other=kwargs)
+            self.__persist_task(session, main, order)
 
     def __persist_task(self, session, task: Task | TaskGroup, order: int) -> int:
         """Writes task information to the database."""
 
-        if type(task) is Task:
-            order += 1
-            session.run(
-                """
-                MERGE (t:ETLTask { uuid: $id })
-                    SET t.task=$task, t.order=$order, t.name=$name, t.status='open'
-                """,
-                id=task.uuid, task=task.__repr__(), order=order, name=task.task_name())
-        else:
+        if isinstance(task, TaskGroup):
             for child in task.sub_tasks():
                 order += 1
                 session.run(
@@ -196,6 +188,14 @@ class Neo4jProgressReporter(ProgressReporter):
                     parent_id=task.uuid, id=child.uuid, task=child.__repr__(), order=order, name=child.task_name())
                 if isinstance(child, TaskGroup):
                     order = self.__persist_task(session, child, order)
+        else:
+            order += 1
+            session.run(
+                """
+                MERGE (t:ETLTask { uuid: $id })
+                    SET t.task=$task, t.order=$order, t.name=$name, t.status='open'
+                """,
+                id=task.uuid, task=task.__repr__(), order=order, name=task.task_name())
         return order
 
     def started_task(self, task: Task) -> Task:

@@ -63,7 +63,7 @@ class ParallelCSVLoad2Neo4jTask(Task):
         self.prefetch = prefetch
         self.csv_reader_kwargs = csv_reader_kwargs
 
-    def run_internal(self) -> TaskReturn:
+    def run_internal(self, **kwargs) -> TaskReturn:
         csv = CSVBatchSource(self.context, self, self.file, **self.csv_reader_kwargs)
         predecessor = csv
         if self.model is not None:
@@ -81,7 +81,7 @@ class ParallelCSVLoad2Neo4jTask(Task):
             context=self.context,
             task=self,
             predecessor=splitter,
-            worker_factory=lambda: CypherBatchSink(self.context, self, None, self._query()),
+            worker_factory=lambda: CypherBatchSink(self.context, self, cast(BatchProcessor, None), self._query()),
             max_workers=self.max_workers,
             prefetch=self.prefetch
         )
@@ -94,5 +94,5 @@ class ParallelCSVLoad2Neo4jTask(Task):
         return dict_id_extractor()
 
     @abc.abstractmethod
-    def _query(self):
+    def _query(self) -> str:
         pass

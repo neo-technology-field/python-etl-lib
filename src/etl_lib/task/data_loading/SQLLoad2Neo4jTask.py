@@ -1,8 +1,10 @@
 from abc import abstractmethod
+from typing import Optional
 
 from sqlalchemy import text
 
 from etl_lib.core.ClosedLoopBatchProcessor import ClosedLoopBatchProcessor
+from etl_lib.core.ETLContext import ETLContext
 from etl_lib.core.Task import Task, TaskReturn
 from etl_lib.data_sink.CypherBatchSink import CypherBatchSink
 from etl_lib.data_source.SQLBatchSource import SQLBatchSource
@@ -67,7 +69,7 @@ class SQLLoad2Neo4jTask(Task):
         """
         return None
 
-    def run_internal(self) -> TaskReturn:
+    def run_internal(self, **kwargs) -> TaskReturn:
         total_count = self.__get_source_count()
         source = SQLBatchSource(self.context, self, self._sql_query())
         sink = CypherBatchSink(self.context, self, source, self._cypher_query())
@@ -77,7 +79,7 @@ class SQLLoad2Neo4jTask(Task):
         result = next(end.get_batch(self.batch_size))
         return TaskReturn(True, result.statistics)
 
-    def __get_source_count(self):
+    def __get_source_count(self) -> Optional[int]:
         count_query = self._count_query()
         if count_query is None:
             return None

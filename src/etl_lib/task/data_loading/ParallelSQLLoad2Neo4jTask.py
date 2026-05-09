@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Callable, Union
+from typing import Callable, Union, Optional, Any, cast
 
 from etl_lib.core.ClosedLoopBatchProcessor import ClosedLoopBatchProcessor
 from etl_lib.core.ETLContext import ETLContext
@@ -34,7 +34,7 @@ class ParallelSQLLoad2Neo4jTask(Task, ABC):
             context: ETLContext,
             batch_size: int = 5000,
             table_size: int = 10,
-            max_workers: int = None,
+            max_workers: Optional[int] = None,
             prefetch: int = 4
     ):
         super().__init__(context)
@@ -73,7 +73,7 @@ class ParallelSQLLoad2Neo4jTask(Task, ABC):
         """
         return dict_id_extractor()
 
-    def run_internal(self) -> TaskReturn:
+    def run_internal(self, **kwargs) -> TaskReturn:
         # total count for ClosedLoopBatchProcessor
         total_count = self.__get_source_count()
         # source of raw rows
@@ -111,7 +111,7 @@ class ParallelSQLLoad2Neo4jTask(Task, ABC):
         result = next(closing.get_batch(self.batch_size))
         return TaskReturn(True, result.statistics)
 
-    def __get_source_count(self):
+    def __get_source_count(self) -> Optional[int]:
         count_query = self._count_query()
         if count_query is None:
             return None

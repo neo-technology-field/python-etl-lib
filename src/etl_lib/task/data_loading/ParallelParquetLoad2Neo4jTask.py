@@ -1,6 +1,6 @@
 import abc
 from pathlib import Path
-from typing import Optional, Type
+from typing import Optional, Type, Any, cast
 
 from pydantic import BaseModel
 
@@ -41,7 +41,7 @@ class ParallelParquetLoad2Neo4jTask(Task):
         self.prefetch = prefetch
         self.parquet_reader_kwargs = parquet_reader_kwargs
 
-    def run_internal(self) -> TaskReturn:
+    def run_internal(self, **kwargs) -> TaskReturn:
         total_count = ParquetBatchSource.get_total_rows(self.file)
 
         source = ParquetBatchSource(self.context, self, self.file, **self.parquet_reader_kwargs)
@@ -75,5 +75,5 @@ class ParallelParquetLoad2Neo4jTask(Task):
         return dict_id_extractor()
 
     @abc.abstractmethod
-    def _query(self):
+    def _query(self) -> str:
         pass
