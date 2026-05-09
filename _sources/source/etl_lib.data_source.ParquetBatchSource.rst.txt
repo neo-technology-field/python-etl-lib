@@ -1,0 +1,7 @@
+etl\_lib.data\_source.ParquetBatchSource module
+===============================================
+
+.. automodule:: etl_lib.data_source.ParquetBatchSource
+   :members:
+   :show-inheritance:
+   :undoc-members:

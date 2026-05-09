@@ -1,0 +1,7 @@
+etl\_lib.data\_sink.SQLBatchSink module
+=======================================
+
+.. automodule:: etl_lib.data_sink.SQLBatchSink
+   :members:
+   :show-inheritance:
+   :undoc-members:

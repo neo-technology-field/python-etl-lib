@@ -1,0 +1,7 @@
+etl\_lib.data\_source.SQLBatchSource module
+===========================================
+
+.. automodule:: etl_lib.data_source.SQLBatchSource
+   :members:
+   :show-inheritance:
+   :undoc-members:

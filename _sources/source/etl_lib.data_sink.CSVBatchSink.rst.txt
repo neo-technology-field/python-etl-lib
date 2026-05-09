@@ -1,0 +1,7 @@
+etl\_lib.data\_sink.CSVBatchSink module
+=======================================
+
+.. automodule:: etl_lib.data_sink.CSVBatchSink
+   :members:
+   :show-inheritance:
+   :undoc-members:

@@ -1,0 +1,7 @@
+etl\_lib.core.ParallelBatchProcessor module
+===========================================
+
+.. automodule:: etl_lib.core.ParallelBatchProcessor
+   :members:
+   :show-inheritance:
+   :undoc-members:

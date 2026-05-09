@@ -1,0 +1,7 @@
+etl\_lib.task.data\_loading.SQLLoad2Neo4jTask module
+====================================================
+
+.. automodule:: etl_lib.task.data_loading.SQLLoad2Neo4jTask
+   :members:
+   :show-inheritance:
+   :undoc-members:
