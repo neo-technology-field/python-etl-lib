@@ -7,12 +7,12 @@ on:
 jobs:
   # Read Python versions from noxfile.py once, then reuse in matrices
   discover:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     outputs:
       py_versions: ${{ steps.get.outputs.py_versions }}
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
         with:
           python-version: "3.11"
           cache: pip
@@ -26,14 +26,14 @@ jobs:
   # Matrix over Python versions — nox runs tests vs latest Neo4j
   python-versions:
     needs: discover
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     strategy:
       fail-fast: false
       matrix:
         python-version: ${{ fromJSON(needs.discover.outputs.py_versions) }}
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
         with:
           python-version: ${{ matrix.python-version }}
           cache: pip
@@ -45,10 +45,10 @@ jobs:
   # Neo4j variants — single Python; nox runs both LTS + latest sequentially
   neo4j-variants:
     needs: discover
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
         with:
           python-version: "3.13"
           cache: pip
