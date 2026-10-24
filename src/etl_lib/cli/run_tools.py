@@ -18,11 +18,11 @@ def __duration_from_start_end(start_time: DateTime | None, end_time: DateTime | 
         return None
 
     # Convert neo4j.time.DateTime to native Python datetime
-    start_time = start_time.to_native()
-    end_time = end_time.to_native()
+    start_dt = start_time.to_native()
+    end_dt = end_time.to_native()
 
     # Calculate the duration as a timedelta
-    duration = end_time - start_time
+    duration = end_dt - start_dt
 
     # Extract hours, minutes, and seconds
     total_seconds = int(duration.total_seconds())
@@ -193,8 +193,9 @@ def delete(ctx, run_id, before, older):
                 """,
                 result_transformer_=neo4j.Result.single,
                 before=before)
-            ids = record[0]
-            delete_runs(ctx, ids)
+            if record:
+                ids = record[0]
+                delete_runs(ctx, ids)
 
     elif older:
         print(f"Deleting runs older than: {older}")
@@ -205,8 +206,9 @@ def delete(ctx, run_id, before, older):
                 """,
                 result_transformer_=neo4j.Result.single,
                 days=older)
-            ids = record[0]
-            delete_runs(ctx, ids)
+            if record:
+                ids = record[0]
+                delete_runs(ctx, ids)
 
 
 def delete_runs(ctx, ids):
