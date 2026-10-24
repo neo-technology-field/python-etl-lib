@@ -11,7 +11,7 @@ class CypherBatchSink(BatchProcessor):
     BatchProcessor to write batches of data to a Neo4j database.
     """
 
-    def __init__(self, context: ETLContext, task: Task, predecessor: BatchProcessor, query: str, **kwargs):
+    def __init__(self, context: ETLContext, task: Task, predecessor: BatchProcessor | None, query: str, **kwargs):
         """
         Constructs a new CypherBatchSink.
 
@@ -19,6 +19,7 @@ class CypherBatchSink(BatchProcessor):
             context: :class:`etl_lib.core.ETLContext.ETLContext` instance.
             task: :class:`etl_lib.core.Task.Task` instance owning this batchProcessor.
             predecessor: BatchProcessor which :func:`~get_batch` function will be called to receive batches to process.
+                May be None for sink instances used as parallel workers, which only ever process batches.
             query: Cypher to write the query to Neo4j.
                 Data will be passed as `batch` parameter.
                 Therefore, the query should start with a `UNWIND $batch AS row`.

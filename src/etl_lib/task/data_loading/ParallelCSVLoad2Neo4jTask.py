@@ -81,7 +81,7 @@ class ParallelCSVLoad2Neo4jTask(Task):
             context=self.context,
             task=self,
             predecessor=splitter,
-            worker_factory=lambda: CypherBatchSink(self.context, self, cast(BatchProcessor, None), self._query()),
+            worker_factory=lambda: CypherBatchSink(self.context, self, None, self._query()),
             max_workers=self.max_workers,
             prefetch=self.prefetch
         )
