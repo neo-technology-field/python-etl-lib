@@ -7,7 +7,8 @@ from _pytest.tmpdir import tmp_path
 from neo4j import Driver
 from neo4j.time import Date
 
-from etl_lib.core.ETLContext import ETLContext, Neo4jContext, QueryResult, SQLContext, gds
+from etl_lib.core.ETLContext import (ETLContext, Neo4jContext, QueryResult,
+                                     SQLContext, gds, gds_available)
 from etl_lib.core.InstrumentationWriter import NoopInstrumentationWriter
 from etl_lib.core.Task import Task
 
@@ -103,7 +104,8 @@ class MockNeo4jContext(Neo4jContext):
         self.logger = logging.getLogger(self.__class__.__name__)
         self.driver = driver
         self.database = get_database_name()
-        self.gds = gds(self)
+        if gds_available:
+            self.gds = gds(self)
 
 
 class MockETLContext(ETLContext):

@@ -1,15 +1,20 @@
+import pytest
+
 from etl_lib.core.Task import TaskReturn
 from etl_lib.task.GDSTask import GDSTask, transform_dict
 from etl_lib.test_utils.utils import check_property_exists
 
 
 def test_GDSTask(etl_context):
+    if getattr(etl_context.neo4j, "gds", None) is None:
+        pytest.skip("graphdatascience not available on this Python version")
+
     def gds_fun(etl_context):
         gds =  etl_context.neo4j.gds
-        gds.graph.drop("neo4j-offices", failIfMissing=False)
-        g_office, project_result = gds.graph.project("neo4j-offices", "City", "FLY_TO")
-        mutate_result = gds.pageRank.write(g_office, tolerance=0.5, writeProperty="rank")
-        return TaskReturn(success=True, summary=transform_dict(mutate_result.to_dict()))
+        gds.graph.drop("neo4j-offices", fail_if_missing=False)
+        g_office, project_result = gds.graph.project.native("neo4j-offices", "City", "FLY_TO")
+        write_result = gds.page_rank.write(g_office, tolerance=0.5, write_property="rank")
+        return TaskReturn(success=True, summary=transform_dict(write_result.model_dump(by_alias=True)))
 
     with etl_context.neo4j.session() as session:
         session.run("""

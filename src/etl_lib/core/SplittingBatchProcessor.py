@@ -119,20 +119,31 @@ def canonical_int_or_str_id_extractor(
     """
     ID extractor for integer IDs and string IDs with optional canonical folding (row <= col).
 
-    Purpose
+    Purpose:
+
     - This extractor is intended for SplittingBatchProcessor / ParallelBatchProcessor style fan-out where
       you want a stable mapping from a row dict to a "bucket coordinate" (row, col) on a small grid.
     - The coordinate is used only for bucketing/scheduling; it is not the domain identifier used in Neo4j.
     - While blake2b is heavier than CRC32, CRC32 is much more likely to create collisions (as in wikipedia tage titles)
     - Collisions would impact import performance, as non-overlapping waves are not a guarantee anymore
 
-    Design choices
+    Design choices:
+
     - Strings are mapped to a 128-bit unsigned integer using blake2b with digest_size=16.
       This is not "mathematically collision-free", but for practical purposes
       the collision probability is negligible compared to CRC32.
     - Integers are treated as stable IDs and mixed as 64-bit values.
     - Canonical folding enforces row <= col so that (A,B) and (B,A) map to the same bucket. This is useful
       when the write set is effectively undirected (or when you want symmetric scheduling for pairs).
+
+    Args:
+        table_size: size of the square bucket grid.
+        start_key: key in the row dict holding the start id.
+        end_key: key in the row dict holding the end id.
+        monopartite: whether both ids come from the same node space.
+
+    Returns:
+        A callable mapping a row dict to a ``(row, col)`` bucket coordinate.
     """
     MAGIC = 2654435761
 

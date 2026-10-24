@@ -3,6 +3,10 @@
   <component name="ProjectModuleManager">
     <modules>
       <module fileurl="file://$PROJECT_DIR$/.idea/etl-lib.iml" filepath="$PROJECT_DIR$/.idea/etl-lib.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/etl-lib-example-nyc-taxi.iml" filepath="$PROJECT_DIR$/.idea/etl-lib-example-nyc-taxi.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/etl_lib example to load a GTFS feed.iml" filepath="$PROJECT_DIR$/.idea/etl_lib example to load a GTFS feed.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/etl_lib-example-musicbrainz.iml" filepath="$PROJECT_DIR$/.idea/etl_lib-example-musicbrainz.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/neo4j-etl-lib.iml" filepath="$PROJECT_DIR$/.idea/neo4j-etl-lib.iml" />
     </modules>
   </component>
 </project>

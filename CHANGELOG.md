@@ -73,3 +73,8 @@
   `CSVBatchSink`, and `SQLBatchSink` replaced with `ValueError` (assertions are disabled by `-O`)
 - Misleading class-level `start_time`/`end_time` annotations removed from `ProgressReporter`
 - Docstring typo "Rask" → "Task" in `TaskGroup.__init__`
+
+## [0.5.1]
+- dropped Python 3.10 (end of life)
+- updated dependencies, including `graphdatascience` 2.x for the `gds` extra
+- added testing against Python 3.15

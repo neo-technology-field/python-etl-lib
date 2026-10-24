@@ -65,8 +65,9 @@ help:
 	"  nox-list          List nox sessions" \
 	"  nox               Run nox sessions in NOX_SESSIONS (default: $(NOX_SESSIONS))" \
 	"  nox-py            Current Python vs latest Neo4j (nox -s py)" \
-	"  nox-pyall         Python 3.10–3.13 vs latest Neo4j (nox -s pyall)" \
+	"  nox-pyall         Python 3.11–3.15 vs latest Neo4j (nox -s pyall)" \
 	"  nox-neo4j         Current Python vs LTS + latest Neo4j (nox -s neo4j)" \
+	"  nox-matrix        Python 3.11–3.15 × LTS + latest Neo4j (nox -s matrix)" \
 	"" \
 	"Cleaning" \
 	"  clean             Remove common build/test artifacts" \
@@ -125,6 +126,11 @@ nox-pyall:
 .PHONY: nox-neo4j
 nox-neo4j:
 	@$(PYTHON) -m nox $(NOXOPTS) -s neo4j
+
+# Every Python version against every Neo4j image
+.PHONY: nox-matrix
+nox-matrix:
+	@$(PYTHON) -m nox $(NOXOPTS) -s matrix
 
 # ----- Cleaning --------------------------------------------------------------
 

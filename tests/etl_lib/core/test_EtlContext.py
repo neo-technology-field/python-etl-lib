@@ -242,7 +242,7 @@ def test_gds_context_creation(etl_context: MockETLContext):
     """Test that the GDS client is correctly created from the Neo4j context."""
     # This test is conditional on gds_available being True.
     if hasattr(etl_context.neo4j, "gds"):
-        # The return value of GraphDataScience.from_neo4j_driver is a client object.
+        # The return value of GraphDataScience(...) is a client object.
         # We can't really inspect it much here without making a call, so this is a basic check.
         assert etl_context.neo4j.gds is not None
     else:

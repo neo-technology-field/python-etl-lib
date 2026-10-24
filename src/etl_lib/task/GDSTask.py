@@ -29,10 +29,10 @@ class GDSTask(Task):
 
         def gds_fun(etl_context):
             gds =  etl_context.neo4j.gds
-            gds.graph.drop("neo4j-offices", failIfMissing=False)
-            g_office, project_result = gds.graph.project("neo4j-offices", "City", "FLY_TO")
-            mutate_result = gds.pageRank.write(g_office, tolerance=0.5, writeProperty="rank")
-            return TaskReturn(success=True, summary=transform_dict(mutate_result.to_dict()))
+            gds.graph.drop("neo4j-offices", fail_if_missing=False)
+            g_office, project_result = gds.graph.project.native("neo4j-offices", "City", "FLY_TO")
+            write_result = gds.page_rank.write(g_office, tolerance=0.5, write_property="rank")
+            return TaskReturn(success=True, summary=transform_dict(write_result.model_dump(by_alias=True)))
 
         Notes: Do *NOT* use `etl_context.neo4j.gds` with a context manager. The GDS client closes the underlying
             connection when exiting the context.

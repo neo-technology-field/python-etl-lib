@@ -321,7 +321,7 @@ def gds(neo4j_context) -> GraphDataScience:
     Returns:
         gds client.
     """
-    return GraphDataScience.from_neo4j_driver(driver=neo4j_context.driver, database=neo4j_context.database)
+    return GraphDataScience(endpoint=neo4j_context.driver, database=neo4j_context.database)
 
 
 if sqlalchemy_available:

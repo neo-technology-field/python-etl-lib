@@ -3,6 +3,7 @@ from abc import abstractmethod
 from sqlalchemy import text
 
 from etl_lib.core.ClosedLoopBatchProcessor import ClosedLoopBatchProcessor
+from etl_lib.core.ETLContext import ETLContext
 from etl_lib.core.Task import Task, TaskReturn
 from etl_lib.data_sink.CypherBatchSink import CypherBatchSink
 from etl_lib.data_source.SQLBatchSource import SQLBatchSource
