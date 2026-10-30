@@ -81,6 +81,13 @@ Example usage:
 
     json_source = JSONBatchSource(context, task, Path("input.jsonl"))
 
+Two task implementations build on this source:
+
+* :class:`~etl_lib.task.data_loading.JSONLoad2Neo4jTask.JSONLoad2Neo4jTask`: For sequential loading.
+* :class:`~etl_lib.task.data_loading.ParallelJSONLoad2Neo4jTask.ParallelJSONLoad2Neo4jTask`: For parallel loading using the mix-and-batch strategy.
+
+Both accept a Pydantic model for validation, and both derive the error file the same way as the CSV task: under ``ETL_ERROR_PATH`` when set, otherwise next to the input file.
+
 
 Neo4j / Cypher
 --------------

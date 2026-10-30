@@ -82,3 +82,6 @@
 ## [0.6.0]
 - added json support as source and sink
 - constructor consistency cleanup
+
+## [0.6.1]
+- added `JSONLoad2Neo4jTask` and `ParallelJSONLoad2Neo4jTask`

@@ -61,6 +61,8 @@ There are ready to use Task implementations for comon jobs, such as:
 
 * Loading from CSV: :class:`~etl_lib.task.data_loading.CSVLoad2Neo4jTask.CSVLoad2Neo4jTask`
 * Loading from CSV in parallel: :class:`~etl_lib.task.data_loading.ParallelCSVLoad2Neo4jTask.ParallelCSVLoad2Neo4jTask`
+* Loading from JSON: :class:`~etl_lib.task.data_loading.JSONLoad2Neo4jTask.JSONLoad2Neo4jTask`
+* Loading from JSON in parallel: :class:`~etl_lib.task.data_loading.ParallelJSONLoad2Neo4jTask.ParallelJSONLoad2Neo4jTask`
 * Loading from Parquet: :class:`~etl_lib.task.data_loading.ParquetLoad2Neo4jTask.ParquetLoad2Neo4jTask`
 * Loading from Parquet in parallel: :class:`~etl_lib.task.data_loading.ParallelParquetLoad2Neo4jTask.ParallelParquetLoad2Neo4jTask`
 * Loading from SQL: :class:`~etl_lib.task.data_loading.SQLLoad2Neo4jTask.SQLLoad2Neo4jTask`
