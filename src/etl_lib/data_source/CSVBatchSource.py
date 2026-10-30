@@ -17,13 +17,14 @@ class CSVBatchSource(BatchProcessor):
     starting with 0.
     """
 
-    def __init__(self, context, task: Task | None = None, csv_file: Path = None, **kwargs):
+    def __init__(self, context, task: Task | None, csv_file: Path, **kwargs):
         """
         Constructs a new CSVBatchSource.
 
         Args:
             context: :class:`etl_lib.core.ETLContext.ETLContext` instance.
-            task: :class:`etl_lib.core.Task.Task` instance owning this processor.
+            task: :class:`etl_lib.core.Task.Task` instance owning this processor. Pass `None` if the
+                source is used outside a task, for example in a test.
             csv_file: Path to the CSV file.
             kwargs: Will be passed on to the `csv.DictReader` providing a way to customise the reading to different
                 csv formats.

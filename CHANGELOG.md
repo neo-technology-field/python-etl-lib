@@ -78,3 +78,7 @@
 - dropped Python 3.10 (end of life)
 - updated dependencies, including `graphdatascience` 2.x for the `gds` extra
 - added testing against Python 3.15
+
+## [0.6.0]
+- added json support as source and sink
+- constructor consistency cleanup

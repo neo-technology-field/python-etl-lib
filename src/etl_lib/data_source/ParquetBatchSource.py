@@ -1,7 +1,7 @@
 import logging
 import time
 from pathlib import Path
-from typing import Generator, Optional
+from typing import Generator
 
 try:
     import pyarrow.parquet as pq
@@ -21,13 +21,14 @@ class ParquetBatchSource(BatchProcessor):
     starting with 0.
     """
 
-    def __init__(self, context: ETLContext, task: Optional[Task] = None, file: Path = None, **kwargs):
+    def __init__(self, context: ETLContext, task: Task | None, file: Path, **kwargs):
         """
         Constructs a new ParquetBatchSource.
 
         Args:
             context: :class:`etl_lib.core.ETLContext.ETLContext` instance.
-            task: :class:`etl_lib.core.Task.Task` instance owning this processor.
+            task: :class:`etl_lib.core.Task.Task` instance owning this processor. Pass `None` if the
+                source is used outside a task, for example in a test.
             file: Path to the Parquet file.
             kwargs: Will be passed on to the `pyarrow.parquet.ParquetFile.iter_batches` method.
         """

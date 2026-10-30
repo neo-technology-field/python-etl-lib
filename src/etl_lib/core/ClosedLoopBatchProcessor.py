@@ -15,10 +15,10 @@ class ClosedLoopBatchProcessor(BatchProcessor):
 
     def __init__(self,
                  context: ETLContext,
-                 task: Task,
+                 task: Task | None,
                  predecessor: BatchProcessor,
-                 expected_rows: int = None,
-                 expected_batches: int = None):
+                 expected_rows: int | None = None,
+                 expected_batches: int | None = None):
         super().__init__(context, task, predecessor)
         self.expected_rows = expected_rows
         self.expected_batches = expected_batches

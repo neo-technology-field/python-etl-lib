@@ -14,7 +14,7 @@ class SQLBatchSink(BatchProcessor):
     BatchProcessor to write batches of data to an SQL database.
     """
 
-    def __init__(self, context: ETLContext, task: Task, predecessor: BatchProcessor, query: str):
+    def __init__(self, context: ETLContext, task: Task | None, predecessor: BatchProcessor, query: str):
         """
         Constructs a new SQLBatchSink.
 

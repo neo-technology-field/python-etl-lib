@@ -58,8 +58,9 @@ def test_single_partition_batch(etl_context):
 
     proc = ParallelBatchProcessor(
         context=etl_context,
-        worker_factory=lambda: DummyWorker(context=etl_context),
+        task=None,
         predecessor=pred,
+        worker_factory=lambda: DummyWorker(context=etl_context),
         max_workers=2,
         prefetch=1,
     )
@@ -78,8 +79,9 @@ def test_multiple_partitions_order_and_stats(etl_context):
 
     proc = ParallelBatchProcessor(
         context=etl_context,
-        worker_factory=lambda: DummyWorker(context=etl_context),
+        task=None,
         predecessor=pred,
+        worker_factory=lambda: DummyWorker(context=etl_context),
         max_workers=3,
         prefetch=1,
     )
@@ -100,8 +102,9 @@ def test_multiple_batches_prefetching(etl_context):
 
     proc = ParallelBatchProcessor(
         context=etl_context,
-        worker_factory=lambda: DummyWorker(context=etl_context),
+        task=None,
         predecessor=pred,
+        worker_factory=lambda: DummyWorker(context=etl_context),
         max_workers=2,
         prefetch=2,
     )
@@ -148,8 +151,9 @@ def test_parallel_processing_fail_fast(etl_context):
 
     proc = ParallelBatchProcessor(
         context=etl_context,
-        worker_factory=lambda: FailingWorker(context=etl_context),
+        task=None,
         predecessor=pred,
+        worker_factory=lambda: FailingWorker(context=etl_context),
         max_workers=2,
         prefetch=1,
     )

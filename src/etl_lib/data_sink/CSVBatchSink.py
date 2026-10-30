@@ -14,7 +14,7 @@ class CSVBatchSink(BatchProcessor):
     BatchProcessor to write batches of data to a CSV file.
     """
 
-    def __init__(self, context: ETLContext, task: Task, predecessor: BatchProcessor, file_path: Path, **kwargs):
+    def __init__(self, context: ETLContext, task: Task | None, predecessor: BatchProcessor, file_path: Path, **kwargs):
         """
         Constructs a new CSVBatchSink.
 

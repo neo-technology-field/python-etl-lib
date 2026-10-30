@@ -18,7 +18,7 @@ Example usage:
 
     from pathlib import Path
 
-    csv_source = CSVBatchSource(Path("input.csv"), context, delimiter=';', quotechar='"')
+    csv_source = CSVBatchSource(context, task, Path("input.csv"), delimiter=';', quotechar='"')
 
 
 The :class:`~etl_lib.task.data_loading.CSVLoad2Neo4jTask.CSVLoad2Neo4jTask` provides an implementation that utilises the :class:`~etl_lib.data_source.CSVBatchSource.CSVBatchSource` to stream data from CSV to Neo4j, with optional Pydantic validation.
@@ -45,12 +45,41 @@ Example usage:
     from pathlib import Path
     from etl_lib.data_source.ParquetBatchSource import ParquetBatchSource
 
-    parquet_source = ParquetBatchSource(Path("input.parquet"), context)
+    parquet_source = ParquetBatchSource(context, task, Path("input.parquet"))
 
 The library provides two task implementations for loading Parquet data:
 
 * :class:`~etl_lib.task.data_loading.ParquetLoad2Neo4jTask.ParquetLoad2Neo4jTask`: For sequential loading.
 * :class:`~etl_lib.task.data_loading.ParallelParquetLoad2Neo4jTask.ParallelParquetLoad2Neo4jTask`: For parallel loading using the mix-and-batch strategy.
+
+
+JSON
+----
+
+The :class:`~etl_lib.data_source.JSONBatchSource.JSONBatchSource` implementation enables reading JSON files in batches.
+
+Two layouts are supported and detected from the file content: JSON Lines, with one object per line, and a single JSON array of objects.
+Compressed files are decompressed on the fly.
+Every record gains an additional ``_row`` field holding the source row number, starting at 0.
+Records must be JSON objects.
+
+JSON Lines uses nothing beyond the standard library.
+Reading an array streams the file with `ijson <https://pypi.org/project/ijson/>`_, which keeps memory flat at the cost of an optional dependency:
+
+.. code-block:: console
+
+    pip install "neo4j-etl-lib[json]"
+
+The array reader returns floats for JSON numbers. A number too large for a float raises a parse error, where the standard library would have returned a ``Decimal``.
+
+Example usage:
+
+.. code-block:: python
+
+    from pathlib import Path
+    from etl_lib.data_source.JSONBatchSource import JSONBatchSource
+
+    json_source = JSONBatchSource(context, task, Path("input.jsonl"))
 
 
 Neo4j / Cypher

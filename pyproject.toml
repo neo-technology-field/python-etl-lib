@@ -40,9 +40,11 @@ dev = [
     "testcontainers[neo4j]",
     "pytest-cov", "bumpver", "isort", "pip-tools",
     "sphinx", "sphinx-rtd-theme", "pydata-sphinx-theme", "sphinx-autodoc-typehints",
-    "sphinxcontrib-napoleon", "sphinx-autoapi", "sqlalchemy", "psycopg2-binary"
+    "sphinxcontrib-napoleon", "sphinx-autoapi", "sqlalchemy", "psycopg2-binary",
+    "ijson>=3.2"
 ]
 parquet = ["pyarrow>=14.0.0"]
+json = ["ijson>=3.2"]
 gds = ["graphdatascience>=2.2"]
 sql = ["sqlalchemy"]
 

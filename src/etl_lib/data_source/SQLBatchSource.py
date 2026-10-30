@@ -21,7 +21,7 @@ class SQLBatchSource(BatchProcessor):
     def __init__(
             self,
             context: ETLContext,
-            task: Task,
+            task: Task | None,
             query: str,
             record_transformer: Optional[Callable[[dict], dict]] = None,
             **kwargs

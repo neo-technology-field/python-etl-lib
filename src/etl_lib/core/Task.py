@@ -14,10 +14,10 @@ class TaskReturn:
     """Success or failure of the task."""
     summary: dict
     """dict holding statistics about the task performed, such as rows inserted, updated. The values must be int"""
-    error: str
+    error: str | None
     """Error message."""
 
-    def __init__(self, success: bool = True, summary: dict = None, error: str = None):
+    def __init__(self, success: bool = True, summary: dict | None = None, error: str | None = None):
         self.success = success
         self.summary = summary if summary else {}
         self.error = error

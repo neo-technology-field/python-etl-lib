@@ -17,7 +17,7 @@ class ValidationBatchProcessor(BatchProcessor):
 
     def __init__(self,
                  context: ETLContext,
-                 task: Task,
+                 task: Task | None,
                  predecessor,
                  model: Type[BaseModel] | None,
                  error_file: Path | None):

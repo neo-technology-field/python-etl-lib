@@ -11,7 +11,7 @@ class CypherBatchSink(BatchProcessor):
     BatchProcessor to write batches of data to a Neo4j database.
     """
 
-    def __init__(self, context: ETLContext, task: Task, predecessor: BatchProcessor | None, query: str, **kwargs):
+    def __init__(self, context: ETLContext, task: Task | None, predecessor: BatchProcessor | None, query: str, **kwargs):
         """
         Constructs a new CypherBatchSink.
 

@@ -50,7 +50,7 @@ For the CSV loading task mentioned above, see the figure below:
 An implementation of this can be found in :class:`~etl_lib.task.data_loading.CSVLoad2Neo4jTask.CSVLoad2Neo4jTask`::
 
     def run_internal(self, **kwargs) -> TaskReturn:
-        csv = CSVBatchSource(self.file, self.context, self)
+        csv = CSVBatchSource(self.context, self, self.file)
         predecessor = csv
 
         if self.model is not None:

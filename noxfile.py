@@ -32,7 +32,7 @@ def _python_version(session: nox.Session) -> tuple[int, int]:
 
 
 def _install_test_stack(session: nox.Session) -> None:
-    extras = ["dev", "parquet", "sql"]
+    extras = ["dev", "parquet", "sql", "json"]
     if _python_version(session) <= GDS_MAX_PYTHON:
         extras.append("gds")
     session.install(f".[{','.join(extras)}]")

@@ -6,6 +6,8 @@ from typing import Any, Callable, Dict, Generator, List, Tuple
 from tabulate import tabulate
 
 from etl_lib.core.BatchProcessor import BatchProcessor, BatchResults
+from etl_lib.core.ETLContext import ETLContext
+from etl_lib.core.Task import Task
 from etl_lib.core.utils import merge_summary
 
 
@@ -199,11 +201,11 @@ class SplittingBatchProcessor(BatchProcessor):
 
     def __init__(
             self,
-            context,
-            table_size: int,
+            context: ETLContext,
+            task: Task | None,
+            predecessor: BatchProcessor,
+            table_size: int | None,
             id_extractor: Callable[[Any], Tuple[int, int]],
-            task=None,
-            predecessor=None,
             near_full_ratio: float = 0.85,
             burst_multiplier: int = 25,
     ):

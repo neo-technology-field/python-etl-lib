@@ -127,7 +127,8 @@ def test_dict_id_extractor_missing_keys():
 def test_id_extractor_table_size_mismatch():
     class DummyMismatchProcessor(SplittingBatchProcessor):
         def __init__(self, predecessor):
-            super().__init__(context=None, table_size=5, id_extractor=tuple_id_extractor(), predecessor=predecessor)
+            super().__init__(context=None, task=None, predecessor=predecessor, table_size=5,
+                             id_extractor=tuple_id_extractor())
 
     with pytest.raises(ValueError):
         DummyMismatchProcessor(predecessor=DummyPredecessor([]))

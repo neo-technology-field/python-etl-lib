@@ -2,7 +2,7 @@ import abc
 import logging
 import sys
 from dataclasses import dataclass, field
-from typing import Any, Generator, List, Optional
+from typing import Any, Generator, List
 
 from etl_lib.core.Task import Task
 from etl_lib.core.utils import merge_summary
@@ -52,7 +52,7 @@ class BatchProcessor(abc.ABC):
     and returned in batches to the caller. Usage of `Generators` ensure that not all data must be loaded at once.
     """
 
-    def __init__(self, context, task: Optional[Task] = None, predecessor=None):
+    def __init__(self, context, task: Task | None = None, predecessor=None):
         """
         Constructs a new :py:class:`etl_lib.core.BatchProcessor` instance.
 

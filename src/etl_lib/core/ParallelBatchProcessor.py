@@ -5,6 +5,8 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from typing import Any, Callable, Generator, List, cast
 
 from etl_lib.core.BatchProcessor import BatchProcessor, BatchResults
+from etl_lib.core.ETLContext import ETLContext
+from etl_lib.core.Task import Task
 from etl_lib.core.utils import merge_summary
 
 
@@ -46,10 +48,10 @@ class ParallelBatchProcessor(BatchProcessor):
 
     def __init__(
             self,
-            context,
+            context: ETLContext,
+            task: Task | None,
+            predecessor: BatchProcessor,
             worker_factory: Callable[[], BatchProcessor],
-            task=None,
-            predecessor=None,
             max_workers: int = 4,
             prefetch: int = 4,
     ):
