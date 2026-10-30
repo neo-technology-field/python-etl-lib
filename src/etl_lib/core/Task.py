@@ -62,6 +62,8 @@ class Task:
 
     Provides reporting, time tracking and error handling.
     Implementations must provide the :func:`~run_internal` function.
+
+    See :doc:`/concepts` for how tasks are composed into pipelines.
     """
 
     def __init__(self, context):

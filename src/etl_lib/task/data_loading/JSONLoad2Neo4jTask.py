@@ -17,6 +17,8 @@ class JSONLoad2Neo4jTask(Task):
     """
     Loads the specified JSON file to Neo4j.
 
+    See :doc:`/concepts` for the conventions a load task follows.
+
     Accepts both layouts supported by
     :py:class:`~etl_lib.data_source.JSONBatchSource.JSONBatchSource`: JSON Lines and a
     single JSON array of objects. Array input requires the optional ``ijson`` dependency.

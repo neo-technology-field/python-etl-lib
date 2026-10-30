@@ -45,6 +45,8 @@ class BatchProcessor(abc.ABC):
     This way, functionally, such as reading from a CSV file, writing to a database or validation
     can be implemented and tested independently and re-used.
 
+    See :doc:`/concepts` for how processors are chained into a load task.
+
     BatchProcessors form, a linked list, where each processor only knows about its predecessor.
 
     BatchProcessors process data in batches. A batch of data is requested from the provided predecessors

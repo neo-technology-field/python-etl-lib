@@ -2,7 +2,7 @@
 
 A robust Python library of building blocks to assemble efficient, scalable ETL pipelines for Neo4j.
 
-It simplifies the process of moving data from SQL, CSV, and Parquet sources into Neo4j by handling common concerns like batching, parallelism, logging, and error handling.
+It simplifies the process of moving data from SQL, CSV, JSON and Parquet sources into Neo4j by handling common concerns like batching, parallelism, logging, and error handling.
 
 ## Key Features
 
@@ -10,7 +10,38 @@ It simplifies the process of moving data from SQL, CSV, and Parquet sources into
 *   **Parallel Loading**: Optimized strategies for high-performance loading without locking issues.
 *   **Data Validation**: Integrated Pydantic support for ensuring data quality before loading.
 *   **Detailed Reporting**: Built-in tracking of execution time and row counts.
-*   **Flexible Sources**: Support for SQL (via SQLAlchemy), CSV, Neo4j and Parquet (via PyArrow).
+*   **Flexible Sources**: Support for SQL (via SQLAlchemy), CSV, JSON, Neo4j and Parquet (via PyArrow).
+
+## A Minimal Pipeline
+
+A load task subclasses the task for its source format, provides the Cypher that writes a batch, and optionally a Pydantic model for validation. Tasks are grouped and executed as a tree:
+
+```python
+import os
+from pathlib import Path
+
+from etl_lib.core.ETLContext import ETLContext
+from etl_lib.core.Task import TaskGroup
+from etl_lib.task.data_loading.CSVLoad2Neo4jTask import CSVLoad2Neo4jTask
+
+class LoadStopsTask(CSVLoad2Neo4jTask):
+    def __init__(self, context: ETLContext, file: Path):
+        super().__init__(context, file, batch_size=1000)
+
+    def _query(self):
+        return """
+            UNWIND $batch AS row
+            MERGE (s:Stop {id: row.stop_id})
+            SET s.name = row.stop_name
+        """
+
+context = ETLContext(env_vars=dict(os.environ))
+pipeline = TaskGroup(context=context, name="load",
+                     tasks=[LoadStopsTask(context, Path("stops.txt"))])
+result = pipeline.execute()
+```
+
+See [Building pipelines](https://neo-technology-field.github.io/python-etl-lib/concepts.html) for how the pieces fit together.
 
 ## Parallel Loading Example
 
@@ -59,6 +90,9 @@ class LoadTripsParallelTask(ParallelCSVLoad2Neo4jTask):
 ## Documentation & Examples
 
 Complete documentation can be found on https://neo-technology-field.github.io/python-etl-lib/index.html
+
+New to the library? Start with [Building pipelines](https://neo-technology-field.github.io/python-etl-lib/concepts.html).
+For LLM agents, the documentation is also available as [llms.txt](https://neo-technology-field.github.io/python-etl-lib/llms.txt).
 
 See the examples directory for complete projects:
 *   [GTFS Example](https://github.com/neo-technology-field/python-etl-lib/tree/main/examples/gtfs)

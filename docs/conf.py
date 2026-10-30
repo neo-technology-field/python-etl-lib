@@ -1,6 +1,7 @@
 # Configuration file for the Sphinx documentation builder.
 
 import os
+import pathlib
 import sys
 
 sys.path.insert(0, os.path.abspath('../src'))  # Source code dir relative to this file
@@ -74,3 +75,31 @@ html_css_files = ["readthedocs-custom.css"]  # Override some CSS settings
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
 html_static_path = ['_static']
+
+# Files served from the site root for LLM consumption.
+# llms.txt is hand curated, llms-full.txt is written into the output directory by the hook below.
+html_extra_path = ['llms.txt']
+
+
+def _write_llms_full(app, exception):
+    """Concatenate the documentation pages into one file for LLM consumption.
+
+    The result is written to the build output, so the source directory stays
+    free of generated files. The page list is hand-maintained: a new top level
+    page must be added here, and to ``llms.txt`` when it belongs in the reading list.
+    """
+    if exception is not None:
+        return
+    pages = [
+        'index', 'concepts', 'batching', 'parallel', 'reporting', 'validation',
+        'data-sources', 'data-sinks', 'processing', 'configuration', 'testing', 'cli',
+    ]
+    parts = ['# neo4j-etl-lib documentation\n']
+    for page in pages:
+        parts.append((pathlib.Path(app.srcdir) / f'{page}.rst').read_text(encoding='utf-8'))
+    (pathlib.Path(app.outdir) / 'llms-full.txt').write_text('\n\n'.join(parts), encoding='utf-8')
+
+
+def setup(app):
+    app.connect('build-finished', _write_llms_full)
+    return {'version': '1.0', 'parallel_read_safe': True, 'parallel_write_safe': True}

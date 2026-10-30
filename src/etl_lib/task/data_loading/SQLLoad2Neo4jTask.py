@@ -17,6 +17,8 @@ class SQLLoad2Neo4jTask(Task):
     Uses BatchProcessors to read and write data.
     Subclasses must implement the methods returning the SQL and Cypher queries.
 
+    See :doc:`/concepts` for the conventions a load task follows.
+
     Example usage: (from the MusicBrainz example)
 
     .. code-block:: python

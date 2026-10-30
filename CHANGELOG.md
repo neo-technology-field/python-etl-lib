@@ -85,3 +85,6 @@
 
 ## [0.6.1]
 - added `JSONLoad2Neo4jTask` and `ParallelJSONLoad2Neo4jTask`
+
+## [0.6.2]
+- improved documentation

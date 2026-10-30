@@ -3,6 +3,7 @@
    :hidden:
 
    Documentation <self>
+   concepts
    batching
    parallel
    reporting

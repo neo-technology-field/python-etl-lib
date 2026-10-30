@@ -17,6 +17,8 @@ class ParquetLoad2Neo4jTask(Task):
     Load the output of a Parquet file to Neo4j sequentially.
 
     Uses BatchProcessors to read and write data.
+
+    See :doc:`/concepts` for the conventions a load task follows.
     """
 
     def __init__(self, 

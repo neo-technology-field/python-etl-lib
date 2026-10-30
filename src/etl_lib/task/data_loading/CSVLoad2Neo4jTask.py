@@ -18,6 +18,7 @@ class CSVLoad2Neo4jTask(Task):
     Loads the specified CSV file to Neo4j.
 
     Uses BatchProcessors to read, optionally validate, and write to Neo4j.
+    See :doc:`/concepts` for the conventions a load task follows.
     The validation step uses Pydantic and is only enabled when a model is provided.
     Rows with fail validation will be written to en error file. The location of the error file is determined as
     follows:
