@@ -1,0 +1,7 @@
+etl\_lib.data\_source.JSONBatchSource module
+============================================
+
+.. automodule:: etl_lib.data_source.JSONBatchSource
+   :members:
+   :show-inheritance:
+   :undoc-members:

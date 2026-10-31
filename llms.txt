@@ -1,0 +1,23 @@
+# neo4j-etl-lib
+
+> Python building blocks to assemble ETL pipelines into Neo4j: batching, Pydantic validation, parallel loading, reporting.
+
+## Start here
+
+- [Building pipelines](https://neo-technology-field.github.io/python-etl-lib/concepts.html): how tasks, task groups and processor chains are meant to be combined. Read this first.
+- [Batching and streaming](https://neo-technology-field.github.io/python-etl-lib/batching.html): how data flows from source to sink within one task.
+
+## Reference
+
+- [Data sources](https://neo-technology-field.github.io/python-etl-lib/data-sources.html): CSV, JSON, Parquet, Neo4j, SQL.
+- [Data sinks](https://neo-technology-field.github.io/python-etl-lib/data-sinks.html)
+- [Validation](https://neo-technology-field.github.io/python-etl-lib/validation.html): Pydantic row validation and error files.
+- [Parallel processing](https://neo-technology-field.github.io/python-etl-lib/parallel.html): mix-and-batch relationship loading.
+- [Testing](https://neo-technology-field.github.io/python-etl-lib/testing.html): test_utils fixtures and test databases.
+- [API reference](https://neo-technology-field.github.io/python-etl-lib/source/etl_lib.html)
+
+## Examples
+
+- [gtfs](https://github.com/neo-technology-field/python-etl-lib/tree/main/examples/gtfs): complete CSV pipeline with a click CLI.
+- [musicbrainz](https://github.com/neo-technology-field/python-etl-lib/tree/main/examples/musicbrainz): SQL source.
+- [nyc-taxi](https://github.com/neo-technology-field/python-etl-lib/tree/main/examples/nyc-taxi): parallel loading.

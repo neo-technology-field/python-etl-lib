@@ -1,0 +1,7 @@
+etl\_lib.data\_sink.CypherBatchSink module
+==========================================
+
+.. automodule:: etl_lib.data_sink.CypherBatchSink
+   :members:
+   :show-inheritance:
+   :undoc-members:

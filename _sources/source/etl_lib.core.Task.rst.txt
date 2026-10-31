@@ -1,0 +1,7 @@
+etl\_lib.core.Task module
+=========================
+
+.. automodule:: etl_lib.core.Task
+   :members:
+   :show-inheritance:
+   :undoc-members:

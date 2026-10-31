@@ -1,0 +1,209 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Building pipelines &mdash; neo4j-etl-lib 0.6.2 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="_static/graphviz.css?v=4ae1632d" />
+      <link rel="stylesheet" type="text/css" href="_static/sphinx_autodoc_typehints.css?v=057ac668" />
+      <link rel="stylesheet" type="text/css" href="_static/readthedocs-custom.css" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=1c28bd9a"></script>
+      <script src="_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Batching and Streaming" href="batching.html" />
+    <link rel="prev" title="Welcome to the neo4j-etl-lib documentation" href="index.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            neo4j-etl-lib
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="index.html">Documentation</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Building pipelines</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#what-a-pipeline-is-made-of">What a pipeline is made of</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#how-a-load-task-works">How a load task works</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#where-does-the-logic-live">Where does the logic live</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#loading-in-the-right-order">Loading in the right order</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#loading-relationships">Loading relationships</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#testing-a-pipeline">Testing a pipeline</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="batching.html">Batching and Streaming</a></li>
+<li class="toctree-l1"><a class="reference internal" href="parallel.html">Parallel Processing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="reporting.html">Reporting</a></li>
+<li class="toctree-l1"><a class="reference internal" href="validation.html">Validation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="data-sources.html">Data Sources</a></li>
+<li class="toctree-l1"><a class="reference internal" href="data-sinks.html">Data Sinks</a></li>
+<li class="toctree-l1"><a class="reference internal" href="processing.html">Data Processing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="configuration.html">Configuration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="testing.html">Testing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="cli.html">CLI</a></li>
+<li class="toctree-l1"><a class="reference internal" href="source/etl_lib.html">API Reference</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">neo4j-etl-lib</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Building pipelines</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/concepts.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="building-pipelines">
+<h1>Building pipelines<a class="headerlink" href="#building-pipelines" title="Link to this heading"></a></h1>
+<p>This page explains how the parts of the library are meant to be combined. The reference pages describe each class on its own. This page describes the whole.</p>
+<section id="what-a-pipeline-is-made-of">
+<h2>What a pipeline is made of<a class="headerlink" href="#what-a-pipeline-is-made-of" title="Link to this heading"></a></h2>
+<p>There are two axes of composition. One for the pipeline as a whole and one for each source to sink chain.</p>
+<p>A <a class="reference internal" href="source/etl_lib.core.Task.html#etl_lib.core.Task.TaskGroup" title="etl_lib.core.Task.TaskGroup"><code class="xref py py-class docutils literal notranslate"><span class="pre">TaskGroup</span></code></a> sequences work. Its tasks run in the order given, and a group can contain other groups.
+A pipeline is a tree of tasks with a group at the root, started by calling <a class="reference internal" href="source/etl_lib.core.Task.html#etl_lib.core.Task.Task.execute" title="etl_lib.core.Task.Task.execute"><code class="xref py py-func docutils literal notranslate"><span class="pre">execute()</span></code></a> on the root.
+Statistics from each <a class="reference internal" href="source/etl_lib.core.Task.html#etl_lib.core.Task.TaskReturn" title="etl_lib.core.Task.TaskReturn"><code class="xref py py-class docutils literal notranslate"><span class="pre">TaskReturn</span></code></a> are merged upwards, so grouping also decides how the reporting reads.</p>
+<p>A chain of <a class="reference internal" href="source/etl_lib.core.BatchProcessor.html#etl_lib.core.BatchProcessor.BatchProcessor" title="etl_lib.core.BatchProcessor.BatchProcessor"><code class="xref py py-class docutils literal notranslate"><span class="pre">BatchProcessor</span></code></a> instances moves data within one task.
+Each processor pulls batches from its predecessor: a source at the start, optional stages such as validation in the middle, a sink at the end.
+The chain is how data flows in batches from the source to the sink. A chain is implemented as a <cite>Task</cite>.</p>
+<p>Use a group to order tasks. Use a processor chain to stream one load. The load tasks described below already assemble the chain for you.</p>
+</section>
+<section id="how-a-load-task-works">
+<h2>How a load task works<a class="headerlink" href="#how-a-load-task-works" title="Link to this heading"></a></h2>
+<p>For each source format there is a ready made task, for example <a class="reference internal" href="source/etl_lib.task.data_loading.CSVLoad2Neo4jTask.html#etl_lib.task.data_loading.CSVLoad2Neo4jTask.CSVLoad2Neo4jTask" title="etl_lib.task.data_loading.CSVLoad2Neo4jTask.CSVLoad2Neo4jTask"><code class="xref py py-class docutils literal notranslate"><span class="pre">CSVLoad2Neo4jTask</span></code></a>. Building a load means subclassing it and filling in two things: the Cypher that writes a batch, and optionally a Pydantic model that validates each row. The SQL task is the exception: it implements <code class="docutils literal notranslate"><span class="pre">_sql_query()</span></code> and <code class="docutils literal notranslate"><span class="pre">_cypher_query()</span></code> instead of <code class="docutils literal notranslate"><span class="pre">_query()</span></code>, and takes no validation model.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">LoadStopsTask</span><span class="p">(</span><span class="n">CSVLoad2Neo4jTask</span><span class="p">):</span>  <span class="c1"># (1)</span>
+
+    <span class="k">class</span><span class="w"> </span><span class="nc">Stop</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>  <span class="c1"># (2)</span>
+        <span class="nb">id</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">alias</span><span class="o">=</span><span class="s2">"stop_id"</span><span class="p">)</span>
+        <span class="n">name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">alias</span><span class="o">=</span><span class="s2">"stop_name"</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">context</span><span class="p">:</span> <span class="n">ETLContext</span><span class="p">,</span> <span class="n">file</span><span class="p">:</span> <span class="n">Path</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">context</span><span class="p">,</span> <span class="n">file</span><span class="p">,</span> <span class="n">model</span><span class="o">=</span><span class="n">LoadStopsTask</span><span class="o">.</span><span class="n">Stop</span><span class="p">,</span> <span class="n">batch_size</span><span class="o">=</span><span class="mi">1000</span><span class="p">)</span>  <span class="c1"># (3)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_query</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>  <span class="c1"># (4)</span>
+        <span class="k">return</span> <span class="s2">"""</span>
+<span class="s2">        UNWIND $batch AS row</span>
+<span class="s2">        MERGE (s:Stop {id: row.id})</span>
+<span class="s2">        SET s.name = row.name</span>
+<span class="s2">        """</span>
+</pre></div>
+</div>
+<ol class="arabic simple">
+<li><p>Subclass the task matching the source format.</p></li>
+<li><p>The Pydantic model is optional. Rows that fail validation are written to the error file and do not reach the database. See <a class="reference internal" href="validation.html"><span class="doc">Validation</span></a>.</p></li>
+<li><p>File, Pydantic model and <code class="docutils literal notranslate"><span class="pre">batch_size</span></code>. The error file location comes from the <code class="docutils literal notranslate"><span class="pre">ETL_ERROR_PATH</span></code> context setting or the input file name, see <a class="reference internal" href="validation.html"><span class="doc">Validation</span></a>.</p></li>
+<li><p>The Cypher query is the mapping. It is written as a literal next to the task, and it operates on <code class="docutils literal notranslate"><span class="pre">$batch</span></code>, the list of rows for the current batch.</p></li>
+</ol>
+</section>
+<section id="where-does-the-logic-live">
+<h2>Where does the logic live<a class="headerlink" href="#where-does-the-logic-live" title="Link to this heading"></a></h2>
+<p>When a row is not in the shape the graph needs, there are three places to fix it. In order of preference:</p>
+<ol class="arabic simple">
+<li><p>In the Cypher query. Deduplication, lookups, defaults that depend on graph state.</p></li>
+<li><p>In the Pydantic model. Row shape, types, aliases, defaults.</p></li>
+<li><p>In a custom <a class="reference internal" href="source/etl_lib.core.BatchProcessor.html#etl_lib.core.BatchProcessor.BatchProcessor" title="etl_lib.core.BatchProcessor.BatchProcessor"><code class="xref py py-class docutils literal notranslate"><span class="pre">BatchProcessor</span></code></a> stage. Only when neither of the above can express it.</p></li>
+</ol>
+</section>
+<section id="loading-in-the-right-order">
+<h2>Loading in the right order<a class="headerlink" href="#loading-in-the-right-order" title="Link to this heading"></a></h2>
+<p>A relationship task that <code class="docutils literal notranslate"><span class="pre">MATCH``es</span> <span class="pre">nodes</span> <span class="pre">created</span> <span class="pre">by</span> <span class="pre">other</span> <span class="pre">tasks</span> <span class="pre">must</span> <span class="pre">run</span> <span class="pre">after</span> <span class="pre">them.</span>
+<span class="pre">Otherwise</span> <span class="pre">the</span> <span class="pre">``MATCH</span></code> finds nothing and the row writes nothing, without an error.
+A task that creates or merges the nodes in the same statement has no such constraint and can write nodes and relationships in one go.</p>
+<p>The gtfs example uses separate groups: one for the node files, one for the relationship files:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">context</span> <span class="o">=</span> <span class="n">ETLContext</span><span class="p">(</span><span class="n">env_vars</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">))</span>
+<span class="n">setup_logging</span><span class="p">()</span>
+<span class="n">nodes</span> <span class="o">=</span> <span class="n">TaskGroup</span><span class="p">(</span><span class="n">context</span><span class="o">=</span><span class="n">context</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">"nodes"</span><span class="p">,</span>
+                  <span class="n">tasks</span><span class="o">=</span><span class="p">[</span><span class="n">LoadStopsTask</span><span class="p">(</span><span class="n">context</span><span class="p">,</span> <span class="n">stops_file</span><span class="p">),</span>
+                         <span class="n">LoadRoutesTask</span><span class="p">(</span><span class="n">context</span><span class="p">,</span> <span class="n">routes_file</span><span class="p">)])</span>
+<span class="n">edges</span> <span class="o">=</span> <span class="n">TaskGroup</span><span class="p">(</span><span class="n">context</span><span class="o">=</span><span class="n">context</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">"relationships"</span><span class="p">,</span>
+                  <span class="n">tasks</span><span class="o">=</span><span class="p">[</span><span class="n">LoadStopTimesTask</span><span class="p">(</span><span class="n">context</span><span class="p">,</span> <span class="n">stop_times_file</span><span class="p">)])</span>
+<span class="n">pipeline</span> <span class="o">=</span> <span class="n">TaskGroup</span><span class="p">(</span><span class="n">context</span><span class="o">=</span><span class="n">context</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">"import"</span><span class="p">,</span> <span class="n">tasks</span><span class="o">=</span><span class="p">[</span><span class="n">nodes</span><span class="p">,</span> <span class="n">edges</span><span class="p">])</span>
+<span class="n">context</span><span class="o">.</span><span class="n">reporter</span><span class="o">.</span><span class="n">register_tasks</span><span class="p">(</span><span class="n">pipeline</span><span class="p">)</span>
+<span class="n">result</span> <span class="o">=</span> <span class="n">pipeline</span><span class="o">.</span><span class="n">execute</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>Two calls precede <code class="docutils literal notranslate"><span class="pre">execute()</span></code>. <a class="reference internal" href="source/etl_lib.core.utils.html#etl_lib.core.utils.setup_logging" title="etl_lib.core.utils.setup_logging"><code class="xref py py-func docutils literal notranslate"><span class="pre">setup_logging()</span></code></a> configures logging to the console and an optional file. <a class="reference internal" href="source/etl_lib.core.ProgressReporter.html#etl_lib.core.ProgressReporter.ProgressReporter.register_tasks" title="etl_lib.core.ProgressReporter.ProgressReporter.register_tasks"><code class="xref py py-func docutils literal notranslate"><span class="pre">register_tasks()</span></code></a> registers the task tree with the reporter. Without them the pipeline still runs, but there is no run record and no logging beyond the defaults, see <a class="reference internal" href="reporting.html"><span class="doc">Reporting</span></a>.</p>
+<p>Reporting goes to the log by default. When <code class="docutils literal notranslate"><span class="pre">REPORTER_DATABASE</span></code> is set, each run is additionally persisted in a Neo4j database, see <a class="reference internal" href="reporting.html"><span class="doc">Reporting</span></a>.</p>
+<p>A complete example of this shape, including the click based CLI around it, is the <a class="reference external" href="https://github.com/neo-technology-field/python-etl-lib/tree/main/examples/gtfs">gtfs example</a>.</p>
+</section>
+<section id="loading-relationships">
+<h2>Loading relationships<a class="headerlink" href="#loading-relationships" title="Link to this heading"></a></h2>
+<p>Relationships that share nodes can not be written in parallel. Concurrent transactions lock the same nodes and deadlock. <a class="reference internal" href="parallel.html"><span class="doc">Parallel Processing</span></a> describes the mix and batch strategy that works around this.</p>
+</section>
+<section id="testing-a-pipeline">
+<h2>Testing a pipeline<a class="headerlink" href="#testing-a-pipeline" title="Link to this heading"></a></h2>
+<p>The library ships its own test support. <code class="xref py py-mod docutils literal notranslate"><span class="pre">etl_lib.test_utils</span></code> provides the fixtures and mocks to stand up an <a class="reference internal" href="source/etl_lib.core.ETLContext.html#etl_lib.core.ETLContext.ETLContext" title="etl_lib.core.ETLContext.ETLContext"><code class="xref py py-class docutils literal notranslate"><span class="pre">ETLContext</span></code></a> against a test database, including a throwaway database per run via <code class="docutils literal notranslate"><span class="pre">NEO4J_TEST_DATABASE</span></code>. See <a class="reference internal" href="testing.html"><span class="doc">Testing</span></a>.</p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="index.html" class="btn btn-neutral float-left" title="Welcome to the neo4j-etl-lib documentation" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="batching.html" class="btn btn-neutral float-right" title="Batching and Streaming" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright .</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

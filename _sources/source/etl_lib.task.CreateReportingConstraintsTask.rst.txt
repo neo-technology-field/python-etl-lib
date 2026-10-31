@@ -1,0 +1,7 @@
+etl\_lib.task.CreateReportingConstraintsTask module
+===================================================
+
+.. automodule:: etl_lib.task.CreateReportingConstraintsTask
+   :members:
+   :show-inheritance:
+   :undoc-members:

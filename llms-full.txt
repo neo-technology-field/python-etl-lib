@@ -1,0 +1,1113 @@
+# neo4j-etl-lib documentation
+
+
+
+.. toctree::
+   :hidden:
+
+   Documentation <self>
+   concepts
+   batching
+   parallel
+   reporting
+   validation
+   data-sources
+   data-sinks
+   processing
+   configuration
+   testing
+   cli
+   API Reference <source/etl_lib>
+
+Welcome to the neo4j-etl-lib documentation
+==========================================
+
+I often found myself implementing pipelines for small to medium-sized project and repeating the same code.
+This library is an effort to collect building blocks in a way that simplify the process of assembling pipelines.
+
+When building ETL pipelines the following criteria should be considered as a bare minimum:
+
+* Logging (recording task execution, durations, errors, and statistics)
+* Error handling
+* Data validation (currently via Pydantic)
+* Batching and streaming
+* Optionally, tracking performed tasks and providing a way to review past ETL runs
+
+.. note::
+
+   This project is under active development, meaning that API changes may occur.
+
+Installation
+------------
+
+The library can be installed via pip (inside a virtual environment):
+
+.. code-block:: console
+
+    pip install neo4j-etl-lib
+
+
+..  _overview:
+
+Overview
+--------
+
+The core of the library is the :class:`~etl_lib.core.Task.Task` class and its implementations.
+This class represents an individual job to be executed.
+
+Each task receives an instance of :class:`~etl_lib.core.ETLContext.ETLContext` during construction,
+providing access to shared functionality such as database interactions.
+
+Subclasses only need to implement the  :func:`~etl_lib.core.Task.Task.run_internal()` method.
+The base task class handles other concerns, such as time tracking, reporting, and error handling.
+
+There are ready to use Task implementations for comon jobs, such as:
+
+* Loading from CSV: :class:`~etl_lib.task.data_loading.CSVLoad2Neo4jTask.CSVLoad2Neo4jTask`
+* Loading from CSV in parallel: :class:`~etl_lib.task.data_loading.ParallelCSVLoad2Neo4jTask.ParallelCSVLoad2Neo4jTask`
+* Loading from JSON: :class:`~etl_lib.task.data_loading.JSONLoad2Neo4jTask.JSONLoad2Neo4jTask`
+* Loading from JSON in parallel: :class:`~etl_lib.task.data_loading.ParallelJSONLoad2Neo4jTask.ParallelJSONLoad2Neo4jTask`
+* Loading from Parquet: :class:`~etl_lib.task.data_loading.ParquetLoad2Neo4jTask.ParquetLoad2Neo4jTask`
+* Loading from Parquet in parallel: :class:`~etl_lib.task.data_loading.ParallelParquetLoad2Neo4jTask.ParallelParquetLoad2Neo4jTask`
+* Loading from SQL: :class:`~etl_lib.task.data_loading.SQLLoad2Neo4jTask.SQLLoad2Neo4jTask`
+* Loading from SQL in parallel: :class:`~etl_lib.task.data_loading.SQLLoad2Neo4jTask.ParallelSQLLoad2Neo4jTask`
+* Executing Cypher: :class:`~etl_lib.task.ExecuteCypherTask.ExecuteCypherTask`
+* Running Graph Data Science jobs: :class:`~etl_lib.task.GDSTask.GDSTask`
+
+To build a CSV loading task, all you need to do is to sub class :class:`~etl_lib.task.data_loading.CSVLoad2Neo4jTask.CSVLoad2Neo4jTask`
+providing the Cypher query and optionally a Pydantic class if data validation is needed.
+
+Tasks can be grouped into :class:`~etl_lib.core.Task.TaskGroup` or :class:`~etl_lib.core.Task.ParallelTaskGroup`.
+These groups help organize the pipeline, for example, by grouping all loading tasks or post-processing tasks.
+This structure allows executing only specific parts of the pipeline when needed.
+
+:doc:`reporting` statistics are also aggregated on TaskGroup level, so grouping helps to get an overview.
+
+A pipeline (aka a job you want to run) is represented by a :class:`~etl_lib.core.Task.Task` or :class:`~etl_lib.core.Task.TaskGroup`,
+which serves as the root of a tree of tasks and task groups.
+To start the pipeline, simply call :func:`~etl_lib.core.Task.Task.execute` on the root task or task group.
+
+For an complete example on how to asemble the blocks into a cli to load a group of CVS files, see the `gtfs example <https://github.com/neo-technology-field/python-etl-lib/tree/main/examples/gtfs>`__
+
+
+
+
+
+Building pipelines
+==================
+
+This page explains how the parts of the library are meant to be combined. The reference pages describe each class on its own. This page describes the whole.
+
+What a pipeline is made of
+--------------------------
+
+There are two axes of composition. One for the pipeline as a whole and one for each source to sink chain.
+
+A :py:class:`~etl_lib.core.Task.TaskGroup` sequences work. Its tasks run in the order given, and a group can contain other groups.
+A pipeline is a tree of tasks with a group at the root, started by calling :py:func:`~etl_lib.core.Task.Task.execute` on the root.
+Statistics from each :py:class:`~etl_lib.core.Task.TaskReturn` are merged upwards, so grouping also decides how the reporting reads.
+
+A chain of :py:class:`~etl_lib.core.BatchProcessor.BatchProcessor` instances moves data within one task.
+Each processor pulls batches from its predecessor: a source at the start, optional stages such as validation in the middle, a sink at the end.
+The chain is how data flows in batches from the source to the sink. A chain is implemented as a `Task`.
+
+Use a group to order tasks. Use a processor chain to stream one load. The load tasks described below already assemble the chain for you.
+
+How a load task works
+---------------------
+
+For each source format there is a ready made task, for example :py:class:`~etl_lib.task.data_loading.CSVLoad2Neo4jTask.CSVLoad2Neo4jTask`. Building a load means subclassing it and filling in two things: the Cypher that writes a batch, and optionally a Pydantic model that validates each row. The SQL task is the exception: it implements ``_sql_query()`` and ``_cypher_query()`` instead of ``_query()``, and takes no validation model.
+
+.. code-block:: python
+
+    class LoadStopsTask(CSVLoad2Neo4jTask):  # (1)
+
+        class Stop(BaseModel):  # (2)
+            id: str = Field(alias="stop_id")
+            name: str = Field(alias="stop_name")
+
+        def __init__(self, context: ETLContext, file: Path):
+            super().__init__(context, file, model=LoadStopsTask.Stop, batch_size=1000)  # (3)
+
+        def _query(self):  # (4)
+            return """
+            UNWIND $batch AS row
+            MERGE (s:Stop {id: row.id})
+            SET s.name = row.name
+            """
+
+1. Subclass the task matching the source format.
+2. The Pydantic model is optional. Rows that fail validation are written to the error file and do not reach the database. See :doc:`validation`.
+3. File, Pydantic model and ``batch_size``. The error file location comes from the ``ETL_ERROR_PATH`` context setting or the input file name, see :doc:`validation`.
+4. The Cypher query is the mapping. It is written as a literal next to the task, and it operates on ``$batch``, the list of rows for the current batch.
+
+Where does the logic live
+-------------------------
+
+When a row is not in the shape the graph needs, there are three places to fix it. In order of preference:
+
+1. In the Cypher query. Deduplication, lookups, defaults that depend on graph state.
+2. In the Pydantic model. Row shape, types, aliases, defaults.
+3. In a custom :py:class:`~etl_lib.core.BatchProcessor.BatchProcessor` stage. Only when neither of the above can express it.
+
+Loading in the right order
+--------------------------
+
+A relationship task that ``MATCH``es nodes created by other tasks must run after them.
+Otherwise the ``MATCH`` finds nothing and the row writes nothing, without an error.
+A task that creates or merges the nodes in the same statement has no such constraint and can write nodes and relationships in one go.
+
+The gtfs example uses separate groups: one for the node files, one for the relationship files:
+
+.. code-block:: python
+
+    context = ETLContext(env_vars=dict(os.environ))
+    setup_logging()
+    nodes = TaskGroup(context=context, name="nodes",
+                      tasks=[LoadStopsTask(context, stops_file),
+                             LoadRoutesTask(context, routes_file)])
+    edges = TaskGroup(context=context, name="relationships",
+                      tasks=[LoadStopTimesTask(context, stop_times_file)])
+    pipeline = TaskGroup(context=context, name="import", tasks=[nodes, edges])
+    context.reporter.register_tasks(pipeline)
+    result = pipeline.execute()
+
+Two calls precede ``execute()``. :func:`~etl_lib.core.utils.setup_logging` configures logging to the console and an optional file. :func:`~etl_lib.core.ProgressReporter.ProgressReporter.register_tasks` registers the task tree with the reporter. Without them the pipeline still runs, but there is no run record and no logging beyond the defaults, see :doc:`reporting`.
+
+Reporting goes to the log by default. When ``REPORTER_DATABASE`` is set, each run is additionally persisted in a Neo4j database, see :doc:`reporting`.
+
+A complete example of this shape, including the click based CLI around it, is the `gtfs example <https://github.com/neo-technology-field/python-etl-lib/tree/main/examples/gtfs>`__.
+
+Loading relationships
+---------------------
+
+Relationships that share nodes can not be written in parallel. Concurrent transactions lock the same nodes and deadlock. :doc:`parallel` describes the mix and batch strategy that works around this.
+
+Testing a pipeline
+------------------
+
+The library ships its own test support. :mod:`etl_lib.test_utils` provides the fixtures and mocks to stand up an :py:class:`~etl_lib.core.ETLContext.ETLContext` against a test database, including a throwaway database per run via ``NEO4J_TEST_DATABASE``. See :doc:`testing`.
+
+
+Batching and Streaming
+======================
+
+As outlined in :ref:`overview`, :class:`~etl_lib.core.Task.Task` and :class:`~etl_lib.core.Task.TaskGroup` let you compose pipelines. A typical task would be 'load a CSV file into the database'.
+
+This is actually a series of steps, such as:
+
+* Read the CSV data
+* Validate each row
+* Import the rows into the database
+
+Ideally, this would be done in batches of rows to allow processing of large files without excessive memory usage.
+
+Splitting Tasks into steps allows to reuse steps in different tasks.
+
+To address this, tasks can be composed using :class:`~etl_lib.core.BatchProcessor.BatchProcessor`.
+
+The :func:`~etl_lib.core.BatchProcessor.BatchProcessor.__init__` constructor takes a predecessor instance. This predecessor serves as the data source during calls to :func:`~etl_lib.core.BatchProcessor.BatchProcessor.get_batch`. This function returns a ``Generator`` of :class:`~etl_lib.core.BatchProcessor.BatchResults`, enabling the creation of a chain of batch processors.
+The final component in the chain initiates the processing and sets the ``max_batch_size`` for the entire chain.
+
+The :class:`~etl_lib.core.ClosedLoopBatchProcessor.ClosedLoopBatchProcessor` is a convenient implementation for this final step, integrating batching with logging and reporting functionality.
+
+For the CSV loading task mentioned above, see the figure below:
+
+.. graphviz::
+
+   digraph example {
+        rankdir=RL;
+        node [ shape=record ];
+
+        csv [
+            label = "csv|<get_batch>get_batch";
+        ];
+
+        validator [
+            label = "validator|<get_batch>get_batch";
+        ];
+
+        cypher [
+            label = "cypher|<get_batch>get_batch";
+        ];
+
+        end [
+            label = "end|<get_batch>get_batch";
+        ];
+
+        end:get_batch -> cypher:get_batch -> validator:get_batch -> csv:get_batch;
+   }
+
+An implementation of this can be found in :class:`~etl_lib.task.data_loading.CSVLoad2Neo4jTask.CSVLoad2Neo4jTask`::
+
+    def run_internal(self, **kwargs) -> TaskReturn:
+        csv = CSVBatchSource(self.context, self, self.file)
+        predecessor = csv
+
+        if self.model is not None:
+            error_file = self.file.with_suffix(".error.json")
+            predecessor = ValidationBatchProcessor(self.context, self, csv, self.model, error_file)
+
+        cypher = CypherBatchSink(self.context, self, predecessor, self._query())
+        end = ClosedLoopBatchProcessor(self.context, self, cypher)
+        result = next(end.get_batch(self.batch_size))
+
+        return TaskReturn(True, result.statistics)
+
+If validation is not needed, ``self.model`` can be set to ``None`` and the pipeline bypasses ``ValidationBatchProcessor``.
+
+The library provides several ``BatchProcessor`` implementations to build tasks from.
+
+Splitting a task into sub-steps also simplifies testing, as each step (``BatchProcessor``) can be tested in isolation.
+
+A dictionary containing batch metadata is passed between steps via ``BatchResults``. The keys in this dictionary depend on the processors involved. For instance, the ``csv`` processor used above would add a ``csv_lines_read`` entry, while the ``validator`` would add ``valid_rows`` and ``invalid_rows`` entries.
+
+The :class:`~etl_lib.core.ClosedLoopBatchProcessor.ClosedLoopBatchProcessor`, at the end of the chain, aggregates this information and sends it to the reporter. If database reporting is enabled, each processed batch will trigger an update, allowing real-time monitoring.
+
+The classes :class:`~etl_lib.task.data_loading.SQLLoad2Neo4jTask.SQLLoad2Neo4jTask` and :class:`~etl_lib.task.data_loading.CSVLoad2Neo4jTask.CSVLoad2Neo4jTask` use ``BatchProcessors`` to stream data from either an SQL database or a CSV file respectively, allowing for implementation of ETL pipelines with minimal effort.
+
+
+Parallel Processing
+===================
+
+To speed up processing, certain tasks can be executed in parallel. Care must be taken when writing from multiple threads to a database to avoid locking issues. The speedup achieved by parallel processing depends on many factors, such as I/O on the database, number of available cores, network latency, and so on.
+
+Two options are available for parallel processing of data:
+
+ParallelTaskGroup
+-----------------
+
+Similar to :class:`~etl_lib.core.Task.TaskGroup`, the class :class:`~etl_lib.core.Task.ParallelTaskGroup` allows grouping :class:`~etl_lib.core.Task.Task` together.
+
+While :class:`~etl_lib.core.Task.TaskGroup` executes the assigned tasks sequentially and finishes when the last task in the chain is finished, the :class:`~etl_lib.core.Task.ParallelTaskGroup` runs them in parallel and waits for all contained tasks to finish before aggregating statistics and finishing itself.
+
+This is an easy way to parallelize when the tasks are not touching the same part of the graph.
+
+Mix and Batch
+-------------
+
+This approach especially helps when loading relationships. It follows the `Mix and batch technique <https://neo4j.com/blog/developer/mix-and-batch-relationship-load/>`__ by splitting the incoming data into non-overlapping batches and processing these batches in parallel.
+
+For this, the :class:`~etl_lib.core.SplittingBatchProcessor.SplittingBatchProcessor` splits incoming batches into non-overlapping groups using a provided ID extractor. The :class:`~etl_lib.core.ParallelBatchProcessor.ParallelBatchProcessor` then processes these batches in parallel.
+
+ID extractors
+^^^^^^^^^^^^^
+Two extractors are provided:
+
+* :func:`~etl_lib.core.SplittingBatchProcessor.tuple_id_extractor` extracts IDs from a tuple
+* :func:`~etl_lib.core.SplittingBatchProcessor.dict_id_extractor` extracts IDs from a dict / map
+
+Custom extractors can be supplied. Range validation (0 <= row,col < table_size) is performed by the splitter.
+
+Parameters that influence parallelism
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+* `table_size` — size of the bucketing grid and number of diagonal partitions. Also acts as an upper bound for parallelism (often set equal to max_workers).
+* `batch_size` — per-cell target size. A group is emitted during streaming only when all cells in that group have at least batch_size items. On source exhaustion, leftovers are flushed in waves that still respect batch_size per cell.
+* `burst_factor` — to avoid unbounded buffers, if any cell in a group grows beyond a backlog threshold (default 20 × batch_size), that group is flushed early, capped at batch_size per cell. The threshold is configurable via SplittingBatchProcessor.burst_factor.
+* `max_workers` — number of worker threads used by the parallel processor. One worker processes one partition.
+* `prefetch` — number of groups prefetched from the splitter to keep workers busy.
+
+Processor roles
+^^^^^^^^^^^^^^^
+
+* :class:`~etl_lib.core.SplittingBatchProcessor.SplittingBatchProcessor` — partitions items by (row, col) and emits diagonal groups that do not overlap.
+* :class:`~etl_lib.core.ParallelBatchProcessor.ParallelBatchProcessor` — runs one worker per partition and merges their results fail-fast.
+
+Statistics and progress
+^^^^^^^^^^^^^^^^^^^^^^^
+
+The splitter emits empty statistics for interim waves; only the final wave carries the accumulated upstream statistics to avoid double counting.
+
+The parallel processor can report progress after each partition with incremental stats and tick the batch count after each wave.
+
+Two tasks implement these processors:
+
+* :class:`~etl_lib.task.data_loading.ParallelCSVLoad2Neo4jTask.ParallelCSVLoad2Neo4jTask` to execute Cypher with data from a CSV source.
+* :class:`~etl_lib.task.data_loading.ParallelSQLLoad2Neo4jTask.ParallelSQLLoad2Neo4jTask` to execute Cypher with data from a SQL source.
+* :class:`~etl_lib.task.data_loading.ParallelParquetLoad2Neo4jTask.ParallelParquetLoad2Neo4jTask` to execute Cypher with data from a Parquet source.
+
+
+For an usage example for the mix and batch technique see https://github.com/neo-technology-field/python-etl-lib/tree/main/examples/nyc-taxi
+
+
+Reporting
+=========
+
+The library comes with two implementations for reporting.
+
+..  _basic_reporter:
+
+Basic Reporter
+--------------
+
+The :class:`~etl_lib.core.ProgressReporter.ProgressReporter` implements basic reporting using the Python logging package. Logging is done at the ``INFO`` level.
+
+The :func:`~etl_lib.core.utils.setup_logging` function is provided to configure logging to both the console and an optional file.
+
+The reporter is instantiated and configured inside the :class:`~etl_lib.core.ETLContext.ETLContext` constructor and can be retrieved from there.
+
+As part of the ETL pipeline setup, a call to :func:`~etl_lib.core.ProgressReporter.ProgressReporter.register_tasks()` must be made, passing in the root of the task tree:
+
+.. code-block:: python
+
+    context.reporter.register_tasks(all_group)
+
+This will log a tree representation of the tasks:
+
+.. code-block::
+
+    2025-02-09 13:33:42,696 - INFO -
+    └──main
+       ├──schema-init
+       │  └──SchemaTask
+       ├──csv-loading
+       │  ├──LoadAgenciesTask('mdb-2333-202412230030/agency.txt')
+       │  ├──LoadRoutesTask('mdb-2333-202412230030/routes.txt')
+       │  ├──LoadStopsTask('mdb-2333-202412230030/stops.txt')
+       │  ├──LoadTripsTask('mdb-2333-202412230030/trips.txt')
+       │  ├──LoadCalendarTask('mdb-2333-202412230030/calendar.txt')
+       │  └──LoadStopTimesTask('mdb-2333-202412230030/stop_times.txt')
+       └──post-processing
+          └──CreateSequenceTask
+
+The :class:`~etl_lib.core.Task.Task` is responsible for informing the reporter (from the context) about status changes, such as task start and completion. This occurs before and after calls to :func:`~etl_lib.core.Task.Task.run_internal()`, ensuring that task implementations do not need to handle this manually.
+
+At the end of each :class:`~etl_lib.core.Task.Task`, the reporter logs summary messages such as:
+
+.. code-block::
+
+    2025-02-09 13:43:41,535 - INFO -  finished LoadStopTimesTask('mdb-2333-202412230030/stop_times.txt') in 0:01:03.138719 with success: True
+    +--------------+------------------+------------------+----------------+-------------------------+-----------------+
+    |   valid_rows |   csv_lines_read |   properties_set |   labels_added |   relationships_created |   nodes_created |
+    |--------------+------------------+------------------+----------------+-------------------------+-----------------|
+    |      1898816 |          1898816 |          3394080 |         678816 |                 1357632 |          678816 |
+    +--------------+------------------+------------------+----------------+-------------------------+-----------------+
+
+To maintain readability, only summary information with non-zero values is reported.
+
+..  _neo4j_reporter:
+
+Neo4j Reporter
+--------------
+
+The :class:`~etl_lib.core.ProgressReporter.Neo4jProgressReporter` extends the basic :class:`~etl_lib.core.ProgressReporter.ProgressReporter`, allowing each ETL pipeline run to be persisted in a Neo4j database.
+
+Which implementation is used depends on the existence of the key ``REPORTER_DATABASE`` in ``context.env``. This ``env`` dictionary should be built from the process environment.
+
+If the ``REPORTER_DATABASE`` key exists, its value determines the database where ETL status information is stored, enabling separation between application data and ETL metadata.
+
+Each ETL run creates an independent subgraph. The following diagram illustrates the structure of such a subgraph for a GTFS example:
+
+.. image:: _static/images/schema.png
+
+Green nodes represent :class:`~etl_lib.core.Task.Task`, while blue nodes represent :class:`~etl_lib.core.Task.TaskGroup`.
+
+``ETLStats`` nodes are created upon task completion and store summary information. For tasks with child tasks, the ``ETLStats`` node aggregates data from all children. To view the overall summary for a pipeline run, refer to the ``ETLStats`` node attached to the ``ETLRun`` node.
+
+Unlike the :ref:`basic_reporter`, which only logs non-zero values, ``ETLStats`` nodes store all summary data, including zero values.
+
+The project's root directory includes a ``dashboard.json`` file for use with `Neodash Dashboard Builder <https://github.com/neo4j-labs/neodash>`_.
+
+.. ATTENTION::
+    The Neo4j reporter does not automatically create constraints for metadata. To manually create the constraint, execute the following Cypher query:
+
+    .. code-block:: cypher
+
+        CREATE CONSTRAINT IF NOT EXISTS FOR (n:ETLTask)
+            REQUIRE n.uuid IS UNIQUE
+
+    Alternatively, the :class:`~etl_lib.task.CreateReportingConstraintsTask.CreateReportingConstraintsTask` can be added at the start of a pipeline to ensure the constraint is created if it does not exist.
+
+Additionally, :doc:`cli` provides details on using the command-line interface to query and manage ETL run history.
+
+
+Instrumentation
+---------------
+
+The library provides optional runtime instrumentation focused on throughput and resource efficiency.
+Its purpose is to make tuning decisions measurable, for example when adjusting ``batch_size``, ``table_size``, ``max_workers`` or ``prefetch``.
+
+Instrumentation is disabled by default and only active when explicitly enabled.
+When disabled, no instrumentation rows are written.
+
+Current output mode is none and csv.
+The writer is configured by :class:`~etl_lib.core.ETLContext.ETLContext`.
+
+Each event writen includes the task name and ETL run uuid.
+
+Enable instrumentation via environment variables:
+
+.. code-block:: bash
+
+    ETL_LIB_INSTRUMENT=csv
+    ETL_LIB_INSTRUMENT_CSV_PATH=etl_instrumentation.csv
+    ETL_LIB_INSTRUMENT_SAMPLE=1
+
+Written fields include:
+
+* ``ts``: UTC timestamp when the event was recorded.
+* ``run_id``: ETL run UUID, allowing comparison between repeated imports.
+* ``task_uuid`` and ``task_name``: task identity for attribution.
+* ``event_type``: instrumentation event category.
+* ``dt_ms`` and ``rows``: primary latency and throughput indicators.
+* optional event-specific fields such as ``wave_size``, ``buckets``, ``max_workers``, ``prefetch``, ``table_size``, ``bucket_min``, ``bucket_p50``, ``bucket_max`` and ``buffered_before``.
+
+To keep the dataset focused, instrumentation is intended for processing and sink performance events rather than generic task lifecycle logging.
+
+Current event mapping:
+
+.. list-table:: Instrumentation Events
+    :header-rows: 1
+
+    * - Event Type
+      - Emitted By
+      - Key Fields
+    * - ``splitter_flush``
+      - :class:`~etl_lib.core.SplittingBatchProcessor.SplittingBatchProcessor`
+      - ``wave_size``, ``emitted_rows``, ``bucket_min``, ``bucket_p50``, ``bucket_max``, ``buffered_before``, ``table_size``, ``dt_ms``
+    * - ``parallel_wave_done``
+      - :class:`~etl_lib.core.ParallelBatchProcessor.ParallelBatchProcessor`
+      - ``buckets``, ``rows``, ``max_workers``, ``prefetch``, ``dt_ms``
+    * - ``bucket_done``
+      - :class:`~etl_lib.core.ParallelBatchProcessor.ParallelBatchProcessor`
+      - ``rows``, ``dt_ms``
+    * - ``cypher_tx_done``
+      - :class:`~etl_lib.data_sink.CypherBatchSink.CypherBatchSink`
+      - ``rows``, ``dt_ms``
+    * - ``csv_read_batch``
+      - :class:`~etl_lib.data_source.CSVBatchSource.CSVBatchSource`
+      - ``rows``, ``dt_ms``
+    * - ``parquet_read_batch``
+      - :class:`~etl_lib.data_source.ParquetBatchSource.ParquetBatchSource`
+      - ``rows``, ``dt_ms``
+    * - ``sql_read_batch``
+      - :class:`~etl_lib.data_source.SQLBatchSource.SQLBatchSource`
+      - ``rows``, ``dt_ms``
+    * - ``cypher_read_batch``
+      - :class:`~etl_lib.data_source.CypherBatchSource.CypherBatchSource`
+      - ``rows``, ``dt_ms``
+    * - ``csv_write_batch``
+      - :class:`~etl_lib.data_sink.CSVBatchSink.CSVBatchSink`
+      - ``rows``, ``dt_ms``
+    * - ``sql_write_batch``
+      - :class:`~etl_lib.data_sink.SQLBatchSink.SQLBatchSink`
+      - ``rows``, ``dt_ms``
+
+The ``ETL_LIB_INSTRUMENT_SAMPLE`` value controls down-sampling.
+For example, a value of ``10`` writes every 10th event.
+
+
+Validation
+==========
+
+Input data can optionally be validated using the excellent `Pydantic <https://docs.pydantic.dev/latest/>`_ package.
+
+The :class:`~etl_lib.core.ValidationBatchProcessor.ValidationBatchProcessor` class wraps a Pydantic model class so that it can be used inside a ``BatchProcessor`` chain.
+
+Each row in the incoming batch is validated against the defined model. Rows that fail validation are written to a JSON file. Each row in that file retains the original input data along with all errors generated by Pydantic for that row.
+
+The outgoing batch only contains the rows that successfully pass Pydantic validation.
+
+An example class from the GTFS example demonstrates the implementation of loading data from a CSV file into Neo4j:
+
+.. code-block:: python
+
+    class LoadAgenciesTask(CSVLoad2Neo4jTask):
+
+        class Agency(BaseModel):
+            id: str = Field(alias="agency_id", default="generic")
+            name: str = Field(alias="agency_name")
+            url: str = Field(alias="agency_url")
+            timezone: str = Field(alias="agency_timezone")
+            lang: str = Field(alias="agency_lang")
+
+        def __init__(self, context: ETLContext, file: Path):
+            super().__init__(context, file, model=LoadAgenciesTask.Agency)
+
+        def _query(self):
+            return """ UNWIND $batch AS row
+            MERGE (a:Agency {id: row.id})
+                SET a.name = row.name,
+                    a.url = row.url,
+                    a.timezone = row.timezone,
+                    a.lang = row.lang
+            """
+
+The ``class Agency(BaseModel)`` defines a simple Pydantic model for validation purposes.
+If no validation is needed, construct ``CSVLoad2Neo4jTask`` without a model (for example ``super().__init__(context, file)``).
+
+
+Data Sources
+============
+
+Data sources are implementations of :class:`~etl_lib.core.BatchProcessor.BatchProcessor` and serve as the starting point in a chain of processors from source to sink. See :doc:`batching` for more details.
+
+A source not listed here can be added by implementing :class:`~etl_lib.core.BatchProcessor.BatchProcessor`, see :doc:`batching` for how the chain works.
+
+CSV
+---
+
+The :class:`~etl_lib.data_source.CSVBatchSource.CSVBatchSource` implementation enables reading CSV files in batches.
+
+It utilizes Python's built-in `csv` module. The constructor forwards `kwargs` to `csv.DictReader`, allowing adaptation to different CSV formats.
+
+Additionally, it detects compressed files and decompresses them on the fly.
+
+Example usage:
+
+.. code-block:: python
+
+    from pathlib import Path
+
+    csv_source = CSVBatchSource(context, task, Path("input.csv"), delimiter=';', quotechar='"')
+
+
+The :class:`~etl_lib.task.data_loading.CSVLoad2Neo4jTask.CSVLoad2Neo4jTask` provides an implementation that utilises the :class:`~etl_lib.data_source.CSVBatchSource.CSVBatchSource` to stream data from CSV to Neo4j, with optional Pydantic validation.
+
+See the gtfs in examples for a demo.
+
+Parquet
+-------
+
+The :class:`~etl_lib.data_source.ParquetBatchSource.ParquetBatchSource` implementation enables reading Parquet files in batches.
+
+It utilizes the `pyarrow <https://arrow.apache.org/docs/python/>`_ library. The constructor forwards `kwargs` to `pyarrow.parquet.ParquetFile.iter_batches`, allowing customization of the reading process.
+
+This data source requires the optional `parquet` dependency:
+
+.. code-block:: console
+
+    pip install "neo4j-etl-lib[parquet]"
+
+Example usage:
+
+.. code-block:: python
+
+    from pathlib import Path
+    from etl_lib.data_source.ParquetBatchSource import ParquetBatchSource
+
+    parquet_source = ParquetBatchSource(context, task, Path("input.parquet"))
+
+The library provides two task implementations for loading Parquet data:
+
+* :class:`~etl_lib.task.data_loading.ParquetLoad2Neo4jTask.ParquetLoad2Neo4jTask`: For sequential loading.
+* :class:`~etl_lib.task.data_loading.ParallelParquetLoad2Neo4jTask.ParallelParquetLoad2Neo4jTask`: For parallel loading using the mix-and-batch strategy.
+
+
+JSON
+----
+
+The :class:`~etl_lib.data_source.JSONBatchSource.JSONBatchSource` implementation enables reading JSON files in batches.
+
+Two layouts are supported and detected from the file content: JSON Lines, with one object per line, and a single JSON array of objects.
+Compressed files are decompressed on the fly.
+Every record gains an additional ``_row`` field holding the source row number, starting at 0.
+Records must be JSON objects.
+
+JSON Lines uses nothing beyond the standard library.
+Reading an array streams the file with `ijson <https://pypi.org/project/ijson/>`_, which keeps memory flat at the cost of an optional dependency:
+
+.. code-block:: console
+
+    pip install "neo4j-etl-lib[json]"
+
+The array reader returns floats for JSON numbers. A number too large for a float raises a parse error, where the standard library would have returned a ``Decimal``.
+
+Example usage:
+
+.. code-block:: python
+
+    from pathlib import Path
+    from etl_lib.data_source.JSONBatchSource import JSONBatchSource
+
+    json_source = JSONBatchSource(context, task, Path("input.jsonl"))
+
+Two task implementations build on this source:
+
+* :class:`~etl_lib.task.data_loading.JSONLoad2Neo4jTask.JSONLoad2Neo4jTask`: For sequential loading.
+* :class:`~etl_lib.task.data_loading.ParallelJSONLoad2Neo4jTask.ParallelJSONLoad2Neo4jTask`: For parallel loading using the mix-and-batch strategy.
+
+Both accept a Pydantic model for validation, and both derive the error file the same way as the CSV task: under ``ETL_ERROR_PATH`` when set, otherwise next to the input file.
+
+
+Neo4j / Cypher
+--------------
+
+The :class:`~etl_lib.data_source.CypherBatchSource.CypherBatchSource` implementation streams query results in batches while keeping the transaction open until all data has been returned.
+
+Each row in the returned batch is a dictionary, as provided by the `Neo4j Python Driver <https://neo4j.com/docs/api/python-driver/current/api.html#neo4j.Record.data>`_.
+
+If an optional `record_transformer` is supplied in the constructor, this transformer is used to convert the `Record` into a dictionary, providing greater flexibility in handling different data types.
+
+Example usage:
+
+.. code-block:: python
+
+    query = "MATCH (n) RETURN n.id AS id, n.name AS name, n.type AS type"
+    cypher_source = CypherBatchSource(context, task, query)
+
+
+Relational Databases / SQL
+--------------------------
+
+The :class:`~etl_lib.data_source.SQLBatchSource.SQLBatchSource` implementation streams query results in batches while keeping the transaction open until all data has been returned.
+
+Each row in the returned batch is a dictionary.
+
+This datasource is only enabled if the module ``sqlalchemy`` is installed.
+The connection url is expected in the environment variable ``SQLALCHEMY_URI``.
+
+Using the below classes, the implementation of 2 functions is needed: one return the SQL query to retrieve the data and another to return the Cypher query to write the data into Neo4j.
+
+The library provides two task implementations for loading from SQL databases:
+
+* :class:`~etl_lib.task.data_loading.SQLLoad2Neo4jTask.SQLLoad2Neo4jTask` : For sequential loading.
+* :class:`~etl_lib.task.data_loading.SQLLoad2Neo4jTask.ParallelSQLLoad2Neo4jTask` :For parallel loading using the mix-and-batch strategy.
+
+See the Musikbrainz demo in examples the examples folder.
+
+
+Data Sinks
+==========
+
+Data sinks are implementations of :class:`~etl_lib.core.BatchProcessor.BatchProcessor` and serve as the endpoint in a chain of processors, writing data to a final destination. See :doc:`batching` for more details.
+
+Data to write is acquired from the provided predecessor in batches.
+
+CSV
+---
+
+The :class:`~etl_lib.data_sink.CSVBatchSink.CSVBatchSink` implementation enables writing batches of data to a CSV file.
+
+It uses Python's built-in `csv` module and allows customization via additional arguments passed to `csv.DictWriter`.
+
+**Behavior:**
+- If the specified CSV file exists, data will be appended.
+- It automatically detects and writes headers if the file is new.
+
+Example usage:
+
+.. code-block:: python
+
+    csv_sink = CSVBatchSink(context, task, predecessor, Path("output.csv"))
+
+JSON
+----
+
+The :class:`~etl_lib.data_sink.JSONBatchSink.JSONBatchSink` implementation writes batches of data to a JSON file.
+
+The ``format`` argument selects the output layout.
+
+* ``jsonl``, the default, writes one object per line and appends to an existing file, so repeated runs add to the same file.
+* ``array`` writes a single JSON array and always starts a new file, because an array cannot be extended record by record while staying valid JSON. The closing bracket is written when the batch stream ends or is closed, so an interrupted run still leaves a parsable file.
+
+Remaining arguments are passed to `json.dumps`, so ``indent`` and ``ensure_ascii=False`` behave as usual.
+``indent`` produces multi-line records and therefore no longer valid JSON Lines.
+
+Example usage:
+
+.. code-block:: python
+
+    json_sink = JSONBatchSink(context, task, predecessor, Path("output.jsonl"))
+
+Neo4j / Cypher
+--------------
+
+The :class:`~etl_lib.data_sink.CypherBatchSink.CypherBatchSink` implementation writes batch data to a Neo4j database using Cypher queries.
+
+**Behavior:**
+- Each batch is written in its own transaction.
+- Data is passed using the `batch` parameter, requiring Cypher queries to begin with `UNWIND $batch AS row`.
+
+Example usage:
+
+.. code-block:: python
+
+    cypher_sink = CypherBatchSink(context, task, predecessor, """
+        UNWIND $batch AS row
+        MERGE (n:Entity {id: row.id})
+        SET n += row
+    """)
+
+
+SQL
+---
+
+The :class:`~etl_lib.data_sink.CypherBatchSink.SQLBatchSink` writes batches of data to a SQL database using the provided SQL query.
+
+
+Data Processing
+===============
+
+Processing of data can is support through the following two tasks:
+
+Cypher Execution
+----------------
+
+The :class:`~etl_lib.task.ExecuteCypherTask.ExecuteCypherTask` supports in running a given Cypher statement while capturing the usual statistics like nodes created, deleted, properties set and so and sending the statistics to the :class:`~etl_lib.core.ProgressReporter.ProgressReporter`. This can be used for data aggregations, clean ups and so on.
+
+GDS Task
+--------
+
+The :class:`~etl_lib.task.GDSTask.GDSTask` uses the `GDS client <https://neo4j.com/docs/graph-data-science-client/current/>`_ to run Graph Data Science jobs. To use it, you need to provide a function to the constructor that implements the logic. This function gets the :class:`~etl_lib.core.ETLContext.ETLContext` passed in. From the context, an instance of the gds client can be obtained::
+
+
+        def gds_fun(etl_context):
+            gds =  etl_context.neo4j.gds
+            gds.graph.drop("neo4j-offices", failIfMissing=False)
+            g_office, project_result = gds.graph.project("neo4j-offices", "City", "FLY_TO")
+            mutate_result = gds.pageRank.write(g_office, tolerance=0.5, writeProperty="rank")
+            return TaskReturn(success=True, summary=transform_dict(mutate_result.to_dict()))
+
+
+.. DANGER::
+    Do *not* use the obtained gds context with a context manager, as this will close the gds client and the contained Neo4j connection on leaving the context.
+
+
+
+
+
+Configuration
+=============
+
+All parts of an ETL pipeline have access to the :class:`~etl_lib.core.ETLContext.ETLContext` class and can retrieve configuration parameters via :func:`~etl_lib.core.ETLContext.ETLContext.env`.
+
+This configuration is backed by a dictionary passed to the context's constructor. The following code demonstrates how to use environment variables to populate this dictionary:
+
+.. code-block:: python
+
+    context = ETLContext(env_vars=dict(os.environ))
+
+Using environment variables makes it easy to configure the ETL pipeline externally.
+
+The context reads only the dictionary it is given. Settings in a ``.env`` file are not picked up automatically and must be loaded first, for example with ``load_dotenv()`` from `python-dotenv <https://pypi.org/project/python-dotenv/>`__.
+
+The following parameters are currently recognized:
+
+.. list-table:: Configuration Parameters
+    :header-rows: 1
+
+    * - Name
+      - Domain
+      - Description
+    * - ``NEO4J_URI``
+      - Neo4j Connection
+      - Connection URL, such as ``neo4j://localhost:7687``
+    * - ``NEO4J_USERNAME``
+      - Neo4j Connection (basic auth)
+      - Database user. Required when ``NEO4J_CLIENT_ID`` is **not** set.
+    * - ``NEO4J_PASSWORD``
+      - Neo4j Connection (basic auth)
+      - Password for the specified database user. Required when ``NEO4J_CLIENT_ID`` is **not** set.
+    * - ``NEO4J_CLIENT_ID``
+      - Neo4j Connection (token auth)
+      - | OAuth2 client ID. When present, token-based auth is used instead of username/password.
+        | The driver will automatically fetch and refresh tokens before they expire.
+    * - ``NEO4J_CLIENT_SECRET``
+      - Neo4j Connection (token auth)
+      - OAuth2 client secret. Required when ``NEO4J_CLIENT_ID`` is set.
+    * - ``NEO4J_TOKEN_URL``
+      - Neo4j Connection (token auth)
+      - | Full OAuth2 token endpoint URL. Required when ``NEO4J_CLIENT_ID`` is set.
+        | Example (Azure AD): ``https://login.microsoftonline.com/{tenant_id}/oauth2/v2.0/token``
+        | Example (Keycloak): ``https://keycloak.example.com/realms/{realm}/protocol/openid-connect/token``
+    * - ``NEO4J_SCOPE``
+      - Neo4j Connection (token auth)
+      - | OAuth2 scope string. Optional; omitted from the token request when not set.
+        | Example (Azure AD): ``https://graph.microsoft.com/.default``
+    * - ``NEO4J_DATABASE``
+      - Neo4j Connection
+      - Name of the database to use during the ETL pipeline
+    * - ``REPORTER_DATABASE``
+      - Reporting
+      - | Name of the database to store ETL metadata.
+        | See :ref:`neo4j_reporter` for more details. If not provided,
+        | reporting will be done only to the console or a log file.
+    * - ``ETL_ERROR_PATH``
+      - Validation
+      - | Directory where error files should be created.
+        | See :doc:`validation` for more details. If not provided, error files will be placed into the same directory as the input files.
+    * - ``ETL_LIB_INSTRUMENT``
+      - Instrumentation
+      - | Instrumentation output mode.
+        | Supported values: ``none`` (default), ``csv``.
+    * - ``ETL_LIB_INSTRUMENT_CSV_PATH``
+      - Instrumentation
+      - | Output file path for CSV instrumentation.
+        | Default: ``etl_instrumentation.csv`` in the current working directory.
+    * - ``ETL_LIB_INSTRUMENT_SAMPLE``
+      - Instrumentation
+      - | Sampling factor for instrumentation rows.
+        | ``1`` writes every event, ``N`` writes every Nth event.
+    * - ``NEO4J_TEST_CONTAINER``
+      - Testing
+      - | Docker image name to use for testing, esp.: ``neo4j:5.26.1-enterprise``.
+        | See :doc:`testing` for more details. If provided, `TestContainers <https://testcontainers-python.readthedocs.io/en/latest/>`_
+        | will be used with the image name provided.
+    * - ``NEO4J_TEST_DATABASE``
+      - Testing
+      - | Name of the Neo4j database to use during integration testing.
+        | Only considered if ``NEO4J_TEST_CONTAINER`` is not given.
+        | Allows to run integration tests against an external Neo4j installation
+        | without impacting other DBs.
+
+
+Neo4j Driver Configuration
+--------------------------
+
+You can pass configuration options directly to the Neo4j Python Driver by using environment variables prefixed with ``NEO4J_DRIVER_``.
+The prefix is stripped, the name is lowercased, and the value is parsed to the appropriate type before being passed to the driver constructor.
+
+See the `Neo4j Python Driver API documentation <https://neo4j.com/docs/api/python-driver/current/api.html#graphdatabase>`_ for a complete list of valid options and their meanings.
+
+.. list-table:: Driver Configuration Options
+    :header-rows: 1
+    :widths: 40 10 50
+
+    * - Name
+      - Type
+      - Description
+    * - ``NEO4J_DRIVER_MAX_CONNECTION_POOL_SIZE``
+      - int
+      - The maximum total number of connections allowed, per host, to be managed by the connection pool.
+    * - ``NEO4J_DRIVER_CONNECTION_TIMEOUT``
+      - float
+      - The maximum amount of time in seconds to wait for a TCP connection to be established.
+    * - ``NEO4J_DRIVER_CONNECTION_ACQUISITION_TIMEOUT``
+      - float
+      - The maximum amount of time in seconds to wait for a connection to become available from the pool.
+    * - ``NEO4J_DRIVER_CONNECTION_WRITE_TIMEOUT``
+      - float
+      - The maximum amount of time in seconds to wait for a TCP write operation to complete.
+    * - ``NEO4J_DRIVER_MAX_CONNECTION_LIFETIME``
+      - float
+      - The maximum time in seconds a pooled connection can remain open before being closed.
+    * - ``NEO4J_DRIVER_MAX_TRANSACTION_RETRY_TIME``
+      - float
+      - The maximum amount of time in seconds that a managed transaction will retry before failing.
+    * - ``NEO4J_DRIVER_LIVENESS_CHECK_TIMEOUT``
+      - float
+      - The maximum amount of time in seconds to wait for a connection liveness check.
+    * - ``NEO4J_DRIVER_KEEP_ALIVE``
+      - bool
+      - Specify whether TCP keep-alive should be enabled.
+    * - ``NEO4J_DRIVER_ENCRYPTED``
+      - bool
+      - Specify whether to use an encrypted connection between the driver and server.
+    * - ``NEO4J_DRIVER_USER_AGENT``
+      - str
+      - Specify the client agent name.
+    * - ``NEO4J_DRIVER_NOTIFICATIONS_MIN_SEVERITY``
+      - str
+      - Set the minimum severity for notifications the server should send to the client (e.g., ``OFF``, ``WARNING``).
+    * - ``NEO4J_DRIVER_NOTIFICATIONS_DISABLED_CATEGORIES``
+      - list
+      - A comma-separated list of notification categories to disable (e.g., ``DEPRECATION``, ``PERFORMANCE``).
+    * - ``NEO4J_DRIVER_NOTIFICATIONS_DISABLED_CLASSIFICATIONS``
+      - list
+      - A comma-separated list of notification classifications to disable.
+    * - ``NEO4J_DRIVER_WARN_NOTIFICATION_SEVERITY``
+      - str
+      - The severity level at which notifications should be logged as warnings by the driver.
+    * - ``NEO4J_DRIVER_TELEMETRY_DISABLED``
+      - bool
+      - Specify whether to disable sending anonymous telemetry data to the server.
+
+
+Testing
+=======
+
+Tests for ETL pipelines are, by definition, integration tests. The library provides utilities to simplify setting up a connection to Neo4j.
+
+The utilities integrate with ``pytest``. See the provided examples for possible setup and usage.
+
+There are two ways to use Neo4j with tests: either with the excellent `TestContainers <https://testcontainers-python.readthedocs.io/en/latest/>`_ or by using an existing Neo4j installation.
+
+The module :mod:`~etl_lib.test_utils.utils` contains mock implementations of core components to set up an ETLContext and its dependencies. These utilities are designed to integrate seamlessly and use environment variables for configuration.
+
+Fixtures
+--------
+
+In addition to the above module, the following code is recommended to be placed in the root of the testing package as ``conftest.py``. The ``pytest`` fixtures defined within it will be available to all tests.
+
+.. literalinclude:: ../examples/gtfs/tests/conftest.py
+   :language: python
+   :linenos:
+   :start-after: # DOC_INCLUDE_START_HERE
+   :end-before: # DOC_INCLUDE_END_HERE
+
+The following fixtures are provided:
+
+* ``neo4j_driver_with_empty_db`` : Provides a Neo4j driver object connected to an empty database. Typically used in data setup steps.
+* ``neo4j_driver`` : Provides a Neo4j driver object connected to a running Neo4j installation.
+* ``etl_context`` : Provides a :class:`~etl_lib.core.ETLContext.ETLContext` for testing purposes. The simple reporter is used, and a ``pytest`` temporary directory is set up for error files (:doc:`validation`).
+
+Selecting a Neo4j Installation
+------------------------------
+
+Testcontainers
+--------------
+
+If the ``NEO4J_TEST_CONTAINER`` environment variable is set to the name of a Neo4j Docker image, TestContainers will be used to run Neo4j. This requires Docker to be available on the host running the tests.
+
+The provided installation will have apoc core and gds plugins installed.
+
+External Installation
+---------------------
+
+If the ``NEO4J_TEST_CONTAINER`` environment variable is not set, the ``NEO4J_URI``, ``NEO4J_USERNAME``, and ``NEO4J_PASSWORD`` variables must be set. These will be used to connect to an existing Neo4j instance.
+
+The functions in :mod:`~etl_lib.test_utils.utils` respect the ``NEO4J_TEST_DATABASE`` variable when running queries, allowing for separate databases per user.
+
+
+CLI
+===
+
+The module :mod:`etl_lib.cli.run_tools` defines functions to query details of past ETL runs. It utilizes the ``click`` package to define a ``click.group()`` named ``cli``, which can be easily integrated into a command-line utility.
+
+See the `GTFS example <https://github.com/neo-technology-field/python-etl-lib/tree/main/examples/gtfs>`_ for guidance on building a command-line tool.
+
+.. code-block:: python
+
+    from etl_lib.cli.run_tools import cli
+    @cli.command("<your own command>")
+    @click.argument(<your own arguments>)
+    @click.pass_context
+    def main(ctx, input_directory):
+        pass
+
+    if __name__ == '__main__':
+        cli()
+
+Commands
+--------
+
+The ``cli`` group provides the following commands:
+
+.. code-block:: console
+
+    $ python <your-cli>.py --help
+    Usage: <your-cli>.py [OPTIONS] COMMAND [ARGS]...
+
+      Environment variables can be configured via a .env file or overridden via
+      CLI options:
+
+      - NEO4J_URI: Neo4j database URI
+      - NEO4J_USERNAME: Neo4j username
+      - NEO4J_PASSWORD: Neo4j password
+      - LOG_FILE: Path to the log file
+      - DATABASE_NAME: Neo4j database name (default: neo4j)
+
+    Options:
+      --neo4j-uri TEXT       Neo4j database URI
+      --neo4j-user TEXT      Neo4j username
+      --neo4j-password TEXT  Neo4j password
+      --log-file TEXT        Path to the log file
+      --database-name TEXT   Neo4j database name (default: neo4j)
+      --help                 Show this message and exit.
+
+    Commands:
+      delete  Delete runs based on run ID, date, or age.
+      detail  Show a breakdown of the task for the specified run, including...
+      query   Retrieve the list of the last x ETL runs from the database and...
+
+Query
++++++
+
+.. code-block:: console
+
+    $ python <your-cli>.py query --help
+    Usage: <your-cli>.py query [OPTIONS]
+
+    Retrieve the list of the last x ETL runs from the database and display them.
+
+    Options:
+      --number-runs INTEGER  Number of rows to process, defaults to 10
+      --help                 Show this message and exit.
+
+Example output:
+
+.. code-block:: console
+
+    $ python <your-cli>.py query
+    Listing runs in database 'neo4j'
+    +--------+--------------------------------------+------------------+------------------+-----------+
+    | name   | ID                                   | startTime        | endTime          |   changes |
+    |--------+--------------------------------------+------------------+------------------+-----------|
+    | main   | 69260954-0b94-4043-be1b-f99ce5a64d3a | 2025-02-09 17:19 | 2025-02-09 17:20 |   4566469 |
+    +--------+--------------------------------------+------------------+------------------+-----------+
+
+The ``changes`` column represents the sum of all modifications in that run, including CSV rows read, constraints added, properties set, etc.
+
+Detail
+++++++
+
+.. code-block:: console
+
+    $ python <your-cli>.py detail --help
+    Usage: <your-cli>.py detail [OPTIONS] RUN_ID
+
+      Show a breakdown of the task for the specified run, including statistics.
+
+    Options:
+      --details  Show stats for each task
+      --help     Show this message and exit.
+
+Example output:
+
+.. code-block:: console
+
+    $ python <your-cli>.py detail 69260954-0b94-4043-be1b-f99ce5a64d3a
+    Showing details for run ID: 69260954-0b94-4043-be1b-f99ce5a64d3a
+    +-------------------------------------------------------------------------------+----------+-----------+------------+-----------+
+    | task                                                                          | status   | batches   | duration   |   changes |
+    |-------------------------------------------------------------------------------+----------+-----------+------------+-----------|
+    | TaskGroup(schema-init)                                                        | success  |           | 0:00:00    |         0 |
+    | Task(SchemaTask)                                                              | success  |           | 0:00:00    |         0 |
+    | TaskGroup(csv-loading)                                                        | success  |           | 0:00:57    |   4566469 |
+    | LoadAgenciesTask(/Users/bert/Downloads/mdb-2333-202412230030/agency.txt)      | success  | 1 / -     | 0:00:00    |         6 |
+    | LoadRoutesTask(/Users/bert/Downloads/mdb-2333-202412230030/routes.txt)        | success  | 1 / -     | 0:00:00    |      1495 |
+    | LoadStopsTask(/Users/bert/Downloads/mdb-2333-202412230030/stops.txt)          | success  | 1 / -     | 0:00:00    |     33360 |
+    | LoadTripsTask(/Users/bert/Downloads/mdb-2333-202412230030/trips.txt)          | success  | 19 / -    | 0:00:03    |    733552 |
+    | LoadCalendarTask(/Users/bert/Downloads/mdb-2333-202412230030/calendar.txt)    | success  | 1 / -     | 0:00:00    |       424 |
+    | LoadStopTimesTask(/Users/bert/Downloads/mdb-2333-202412230030/stop_times.txt) | success  | 380 / -   | 0:00:54    |   3797632 |
+    | TaskGroup(post-processing)                                                    | success  |           | 0:00:07    |         0 |
+    | Task(CreateSequenceTask)                                                      | success  |           | 0:00:07    |         0 |
+    +-------------------------------------------------------------------------------+----------+-----------+------------+-----------+
+
+In cases where the expected number of batches is unknown, the ``380 / -`` format is used.
+
+Adding the ``--details`` flag provides additional task-specific statistics:
+
+Example output:
+
+
+.. code-block:: console
+
+    $ python <your-cli>.py detail 69260954-0b94-4043-be1b-f99ce5a64d3a --details
+    Showing statistics for Task 'TaskGroup(csv-loading)' with status 'success'
+    +----------------+---------+
+    | Name           |   Value |
+    |----------------+---------|
+    | csv_lines_read | 1995192 |
+    | properties_set |  576085 |
+    | valid_rows     | 1995192 |
+    +----------------+---------+
+
+Delete
+++++++
+
+.. code-block:: console
+
+    $ python <your-cli>.py delete --help
+    Usage: <your-cli>.py delete [OPTIONS]
+
+      Delete runs based on run ID, date, or age. One and only one of --run-id,
+      --since, or --older must be provided.
+
+    Options:
+      --run-id TEXT        Run IDs to delete, works with comma separated list
+      --before [%Y-%m-%d]  Delete runs before a specific date in format YYYY-MM-DD
+      --older INTEGER      Delete runs older than x days
+      --help               Show this message and exit.
