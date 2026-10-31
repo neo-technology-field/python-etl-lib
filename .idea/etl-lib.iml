@@ -7,6 +7,13 @@
       <sourceFolder url="file://$MODULE_DIR$/tests" isTestSource="true" />
       <excludeFolder url="file://$MODULE_DIR$/.nox" />
       <excludeFolder url="file://$MODULE_DIR$/.venv" />
+      <excludeFolder url="file://$MODULE_DIR$/.claude" />
+      <excludeFolder url="file://$MODULE_DIR$/.idea/inspectionProfiles" />
+      <excludeFolder url="file://$MODULE_DIR$/.idea/libraries" />
+      <excludeFolder url="file://$MODULE_DIR$/.superpowers/sdd/2026-10-30-json-load2neo4j-tasks" />
+      <excludeFolder url="file://$MODULE_DIR$/.superpowers/sdd/2026-10-31-etl-lib-fixes" />
+      <excludeFolder url="file://$MODULE_DIR$/.superpowers/sdd/2026-10-31-etl-lib-ruff-intellij-plan" />
+      <excludeFolder url="file://$MODULE_DIR$/docs/_build" />
     </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />

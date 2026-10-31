@@ -88,3 +88,6 @@
 
 ## [0.6.2]
 - improved documentation
+
+## [0.6.3]
+- introduced ruff and reformatted sources with it
