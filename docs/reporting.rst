@@ -12,13 +12,26 @@ The :class:`~etl_lib.core.ProgressReporter.ProgressReporter` implements basic re
 
 The :func:`~etl_lib.core.utils.setup_logging` function is provided to configure logging to both the console and an optional file.
 
+Call the helper once at the application entry point if the library should own logging configuration:
+
+.. code-block:: python
+
+    from etl_lib.core.utils import setup_logging
+
+    setup_logging(log_file="etl.log")
+
+``ETL_LIB_LOG_LEVEL=DEBUG`` enables debug output from ``etl_lib`` loggers.
+The root logger remains at ``INFO``. The helper reads this setting from the process environment and replaces existing root handlers. Applications that already configure logging should keep that configuration rather than also calling this helper.
+
 The reporter is instantiated and configured inside the :class:`~etl_lib.core.ETLContext.ETLContext` constructor and can be retrieved from there.
 
 As part of the ETL pipeline setup, a call to :func:`~etl_lib.core.ProgressReporter.ProgressReporter.register_tasks()` must be made, passing in the root of the task tree:
 
 .. code-block:: python
 
-    context.reporter.register_tasks(all_group)
+    context.reporter.register_tasks(all_group, source="drata")
+
+Any keyword argument is accepted as run metadata, so the same call works against every reporter implementation. Only the :ref:`neo4j_reporter` stores the metadata, as properties on the ``ETLRun`` node. The logging reporter and the dummy reporter used in tests ignore it.
 
 This will log a tree representation of the tasks:
 

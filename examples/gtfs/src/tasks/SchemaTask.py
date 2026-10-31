@@ -1,9 +1,9 @@
-from etl_lib.task.ExecuteCypherTask import ExecuteCypherTask
+from etl_lib.task.SchemaTask import SchemaTask as BaseSchemaTask
 
 
-class SchemaTask(ExecuteCypherTask):
+class SchemaTask(BaseSchemaTask):
 
-    def _query(self) -> str | list[str]:
+    def _schema_statements(self) -> list[str]:
         return [
             "CREATE CONSTRAINT cons_agency_id IF NOT EXISTS FOR (a:Agency) REQUIRE a.id IS UNIQUE;",
             "CREATE CONSTRAINT cons_route_id IF NOT EXISTS FOR (r:Route) REQUIRE r.id IS UNIQUE;",

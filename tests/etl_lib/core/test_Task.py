@@ -183,5 +183,5 @@ def test_kwargs_passing():
 
     d2 = DummyTask(DummyContext())
     g = TaskGroup(DummyContext(), [d2], "test-group")
-    ret = g.execute(**expected)
+    g.execute(**expected)
     assert d2.test == expected

@@ -66,7 +66,7 @@ def neo4j_driver():
     neo4j_container = os.getenv("NEO4J_TEST_CONTAINER")
     if neo4j_container is not None:
         print(f"found NEO4J_TEST_CONTAINER with {neo4j_container}, using test containers")
-        from testcontainers.neo4j import Neo4jContainer
+        from testcontainers.community.neo4j import Neo4jContainer
         with (Neo4jContainer(
                 image=neo4j_container,
                 username="neo4j",

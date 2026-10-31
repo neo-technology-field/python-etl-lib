@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Optional
+from typing import Optional, Self
 
 from pydantic import BaseModel, Field, field_validator, model_validator
 
@@ -30,7 +30,7 @@ class LoadRoutesTask(CSVLoad2Neo4jTask):
             return value
 
         @model_validator(mode="after")
-        def check_name_fields(self) -> "Route":
+        def check_name_fields(self) -> Self:
             if not self.short_name and not self.long_name:
                 raise ValueError("At least one of 'short_name' or 'long_name' must be provided.")
             return self

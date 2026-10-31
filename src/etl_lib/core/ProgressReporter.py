@@ -21,14 +21,18 @@ class ProgressReporter:
         self.run_uuid = None
         self._instrumentation_writer = context.instrumentation_writer
 
-    def register_tasks(self, main: Task):
+    def register_tasks(self, main: Task, **kwargs) -> None:
         """
         Registers a :py:class:`etl_lib.core.Task` with this reporter.
 
         Needs to be called once with the root task. The function will walk the tree of tasks and register them in turn.
 
+        Additional keyword arguments are run metadata. They are accepted so that a pipeline can call every reporter
+        implementation the same way. This logger based reporter does not use them.
+
         Args:
             main: Root of the task tree.
+            **kwargs: Arbitrary run metadata, such as the source system or a batch identifier. Ignored here.
         """
         self.run_uuid = main.uuid
         self.logger.info("\n" + self.__print_tree(main))
@@ -163,7 +167,7 @@ class Neo4jProgressReporter(ProgressReporter):
         self.__create_constraints()
         self._register_shutdown_handler()
 
-    def register_tasks(self, main: Task, **kwargs):
+    def register_tasks(self, main: Task, **kwargs) -> None:
         super().register_tasks(main)
 
         with self.context.neo4j.session(self.database) as session:

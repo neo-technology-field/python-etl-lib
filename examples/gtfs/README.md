@@ -37,6 +37,14 @@ all_group.execute()
 
 An `all_group` is constructed from the `TaskGroup` `init_group, csv_group, post_group]` which again consists of other Task.
 
+The schema setup in `init_group` comes from the local `tasks.SchemaTask` module:
+
+```python
+from tasks.SchemaTask import SchemaTask
+```
+
+That class subclasses `etl_lib.task.SchemaTask.SchemaTask` and returns its statements from `_schema_statements`, so `gtfs.py` constructs it like any other task. Every statement uses `IF NOT EXISTS`, which avoids duplicate creation on repeat runs when the same schema already exists. That is not a general safety guarantee. A run that meets a conflicting constraint or index still fails, and a same-named object with a different definition silently suppresses creation, so the intended schema is not applied. Drop the conflicting object first if it differs.
+
 The `all_group.execute()` triggers the pipeline. The Tasks execution follows the order of the task in the arrays.
 
 Validating the input data is done via Pydantic. See `Load*Task.py` for examples. Lines not matching the Pydantic rules are written as `*.error.json` per input file and can be examined after execution.

@@ -70,6 +70,11 @@ The following parameters are currently recognized:
       - Instrumentation
       - | Sampling factor for instrumentation rows.
         | ``1`` writes every event, ``N`` writes every Nth event.
+    * - ``ETL_LIB_LOG_LEVEL``
+      - Logging
+      - | Level for ``etl_lib`` loggers when ``setup_logging()`` is called.
+        | Default: ``INFO``. Accepts logging level names or numeric levels.
+        | Read directly from the process environment, not the context dictionary.
     * - ``NEO4J_TEST_CONTAINER``
       - Testing
       - | Docker image name to use for testing, esp.: ``neo4j:5.26.1-enterprise``.

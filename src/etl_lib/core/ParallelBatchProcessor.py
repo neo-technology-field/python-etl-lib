@@ -82,7 +82,7 @@ class ParallelBatchProcessor(BatchProcessor):
                     merged_stats = merge_summary(merged_stats, out.statistics or {})
                     total += out.batch_size
                     merged_chunk.extend(out.chunk if isinstance(out.chunk, list) else [out.chunk])
-            except Exception as e:
+            except Exception:
                 self.logger.exception("bucket processing failed")
                 for g in futures:
                     g.cancel()

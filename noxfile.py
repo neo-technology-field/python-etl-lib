@@ -38,6 +38,14 @@ def _install_test_stack(session: nox.Session) -> None:
     session.install(f".[{','.join(extras)}]")
 
 
+@nox.session
+def base(session: nox.Session) -> None:
+    """Check the installed base distribution without optional dependencies."""
+    session.install(".")
+    session.env["PYTHONPATH"] = ""
+    session.run("python", "tests/smoke/test_base_install.py")
+
+
 # A) Use the *current* interpreter vs latest Neo4j
 @nox.session
 def py(session: nox.Session) -> None:

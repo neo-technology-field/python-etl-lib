@@ -60,7 +60,7 @@ class JSONLoad2Neo4jTask(Task):
             if error_path is None:
                 error_file = self.file.with_suffix(".error.json")
             else:
-                error_file = error_path / self.file.with_name(self.file.stem + ".error.json").name
+                error_file = Path(error_path) / self.file.with_name(self.file.stem + ".error.json").name
 
             predecessor = ValidationBatchProcessor(self.context, self, json_source, self.model, error_file)
 

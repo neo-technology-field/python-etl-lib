@@ -60,6 +60,8 @@ class ValidationBatchProcessor(BatchProcessor):
                 )
             return
 
+        self.error_file.unlink(missing_ok=True)
+
         for batch in self.predecessor.get_batch(max_batch_size):
             valid_rows = []
             invalid_rows = []
@@ -75,7 +77,7 @@ class ValidationBatchProcessor(BatchProcessor):
 
             # Write invalid rows to the error file
             if invalid_rows:
-                with open(self.error_file, "a") as f:
+                with open(self.error_file, "a", encoding="utf-8") as f:
                     for invalid in invalid_rows:
                         # the following is needed as ValueError (contained in 'ctx') is not json serializable
                         serializable = {"row": invalid["row"],

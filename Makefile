@@ -55,6 +55,7 @@ help:
 	"Testing" \
 	"  test              Run pytest" \
 	"  test-cov          Run pytest with coverage (pytest-cov must be installed)" \
+	"  lint              Run Ruff correctness checks" \
 	"" \
 	"Docs (Sphinx)" \
 	"  docs              Build HTML docs into $(DOCS_BUILDDIR)/html" \
@@ -86,6 +87,10 @@ test:
 .PHONY: test-cov
 test-cov:
 	@$(PYTHON) -m pytest --cov --cov-report=term-missing $(PYTESTOPTS)
+
+.PHONY: lint
+lint:
+	@$(PYTHON) -m ruff check .
 
 # ----- Docs ------------------------------------------------------------------
 

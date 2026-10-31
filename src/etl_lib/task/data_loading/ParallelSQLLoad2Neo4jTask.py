@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Callable, Union, Optional, Any, cast
+from typing import Callable, Union, Optional
 
 from etl_lib.core.ClosedLoopBatchProcessor import ClosedLoopBatchProcessor
 from etl_lib.core.ETLContext import ETLContext

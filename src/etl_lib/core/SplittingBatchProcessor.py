@@ -33,7 +33,7 @@ def tuple_id_extractor(table_size: int = 10) -> Callable[[Tuple[str | int, str |
             row = int(str(a)[-1])
             col = int(str(b)[-1])
         except Exception as e:
-            raise ValueError(f"Failed to extract ID from item {item}: {e}")
+            raise ValueError(f"Failed to extract ID from item {item}: {e}") from e
         return row, col
 
     extractor.table_size = table_size
@@ -66,7 +66,7 @@ def dict_id_extractor(
             row = int(str(item[start_key])[-1])
             col = int(str(item[end_key])[-1])
         except Exception as e:
-            raise ValueError(f"Failed to extract ID from item {item}: {e}")
+            raise ValueError(f"Failed to extract ID from item {item}: {e}") from e
         return row, col
 
     extractor.table_size = table_size
@@ -102,10 +102,10 @@ def canonical_integer_id_extractor(
             col = e_hash % table_size
 
             return row, col
-        except KeyError:
-            raise KeyError(f"Item missing keys: {start_key} or {end_key}")
+        except KeyError as e:
+            raise KeyError(f"Item missing keys: {start_key} or {end_key}") from e
         except Exception as e:
-            raise ValueError(f"Failed to extract ID: {e}")
+            raise ValueError(f"Failed to extract ID: {e}") from e
 
     extractor.table_size = table_size
     extractor.monopartite = monopartite

@@ -36,3 +36,18 @@ An example class from the GTFS example demonstrates the implementation of loadin
 
 The ``class Agency(BaseModel)`` defines a simple Pydantic model for validation purposes.
 If no validation is needed, construct ``CSVLoad2Neo4jTask`` without a model (for example ``super().__init__(context, file)``).
+
+What happens to the error file
+------------------------------
+
+The error file is JSON Lines, one JSON object per line, even though its name ends in ``.error.json``. Each line holds the original row under ``row`` and the Pydantic errors under ``errors``.
+
+Errors accumulate across every batch in a validation pass. A pass starts when a caller consumes a new generator returned by :py:meth:`~etl_lib.core.BatchProcessor.BatchProcessor.get_batch`. The pass discards the old error file after its predecessor and model checks, immediately before it reads the first batch, and then appends to a fresh file.
+
+The next validating run replaces that output. A validating run that reads only valid rows, or no rows at all, finishes with no error file.
+
+Constructing the processor changes no files. Calling ``get_batch`` without consuming the generator changes no files either. With ``model=None`` the processor never touches the error file. Tasks construct a processor and consume one generator per run, so each run is one pass.
+
+Only a completed validating run can be treated as clean. A failed or aborted run may leave a partial error file, or none at all if nothing failed before it stopped, so the absence of the file does not prove the run succeeded.
+
+Concurrent validators must use distinct error-file paths. Two processors that share a path delete each other's output.

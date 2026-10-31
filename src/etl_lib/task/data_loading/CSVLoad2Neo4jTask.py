@@ -24,7 +24,8 @@ class CSVLoad2Neo4jTask(Task):
     follows:
 
     If the context env vars hold an entry `ETL_ERROR_PATH` the file will be placed there, with the name set to name
-    of the provided filename appended with `.error.json`
+    of the provided filename appended with `.error.json`. The entry may be a string or a :py:class:`pathlib.Path`.
+    A real process provides it as a string. The directory must already exist and be writable, it will not be created.
 
     If `ETL_ERROR_PATH` is not set, the file will be placed in the same directory as the CSV file.
 
@@ -84,7 +85,7 @@ class CSVLoad2Neo4jTask(Task):
             if error_path is None:
                 error_file = self.file.with_suffix(".error.json")
             else:
-                error_file = error_path / self.file.with_name(self.file.stem + ".error.json").name
+                error_file = Path(error_path) / self.file.with_name(self.file.stem + ".error.json").name
 
             predecessor = ValidationBatchProcessor(self.context, self, csv, self.model, error_file)
 

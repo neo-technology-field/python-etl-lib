@@ -1,13 +1,14 @@
 import logging
+from types import SimpleNamespace
 
 import pytest
 from neo4j import Driver
 
 from etl_lib.core.ETLContext import ETLContext
 from etl_lib.core.InstrumentationWriter import NoopInstrumentationWriter
-from etl_lib.core.ProgressReporter import Neo4jProgressReporter
+from etl_lib.core.ProgressReporter import Neo4jProgressReporter, ProgressReporter, get_reporter
 from etl_lib.core.Task import Task, TaskReturn, TaskGroup
-from etl_lib.test_utils.utils import MockNeo4jContext, get_database_name
+from etl_lib.test_utils.utils import MockNeo4jContext, get_database_name, DummyReporter
 
 
 class MockETLContext(ETLContext):
@@ -38,6 +39,25 @@ class Task2(Task):
 class Task3(Task):
     def run_internal(self, **kwargs) -> TaskReturn:
         pass
+
+
+def test_default_reporter_accepts_metadata_without_reporter_database() -> None:
+    context = SimpleNamespace(
+        env=lambda key: None,
+        instrumentation_writer=NoopInstrumentationWriter(),
+    )
+    reporter = get_reporter(context)
+    task = Task(context)
+    assert type(reporter) is ProgressReporter
+    reporter.register_tasks(task, source="drata", batch_id="2026-10-31")
+    assert reporter.run_uuid == task.uuid
+
+
+def test_dummy_reporter_accepts_metadata() -> None:
+    task = Task(None)
+    reporter = DummyReporter()
+    reporter.register_tasks(task, source="drata")
+    assert reporter.run_id == task.uuid
 
 
 def test_etl_db_structure(context, neo4j_driver):

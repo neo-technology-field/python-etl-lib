@@ -20,8 +20,8 @@ from neo4j import GraphDatabase, Session, WRITE_ACCESS, SummaryCounters, bearer_
 from neo4j.auth_management import AuthManagers, AuthManager, ExpiringAuth
 
 try:
-    from sqlalchemy import create_engine
-    from sqlalchemy.engine import Engine
+    from sqlalchemy import create_engine as create_engine
+    from sqlalchemy.engine import Engine as Engine
 
     sqlalchemy_available = True
 except ImportError:
@@ -324,23 +324,33 @@ def gds(neo4j_context) -> GraphDataScience:
     return GraphDataScience(endpoint=neo4j_context.driver, database=neo4j_context.database)
 
 
-if sqlalchemy_available:
-    class SQLContext:
-        def __init__(self, database_url: str, pool_size: int = 10, max_overflow: int = 20):
-            """
-            Initializes the SQL context with an SQLAlchemy engine.
+class SQLContext:
+    """Provide a SQLAlchemy engine only when SQL access is requested."""
 
-            Args:
-                database_url (str): SQLAlchemy connection URL.
-                pool_size (int): Number of connections to maintain in the pool.
-                max_overflow (int): Additional connections allowed beyond pool_size.
-            """
-            self.engine: Engine = create_engine(
-                database_url,
-                pool_pre_ping=True,
-                pool_size=pool_size,
-                max_overflow=max_overflow
-            )
+    def __init__(self, database_url: str, pool_size: int = 10, max_overflow: int = 20) -> None:
+        """Create the SQL engine without making SQL a dependency of other helpers.
+
+        Args:
+            database_url: SQLAlchemy connection URL.
+            pool_size: Connections maintained in the pool.
+            max_overflow: Additional connections allowed beyond the pool.
+
+        Raises:
+            ImportError: SQLAlchemy is not installed.
+        """
+        try:
+            from sqlalchemy import create_engine
+        except ImportError as exc:
+            raise ImportError(
+                "SQLContext requires the 'sql' extra: pip install 'neo4j-etl-lib[sql]'"
+            ) from exc
+
+        self.engine = create_engine(
+            database_url,
+            pool_pre_ping=True,
+            pool_size=pool_size,
+            max_overflow=max_overflow,
+        )
 
 
 class ETLContext:

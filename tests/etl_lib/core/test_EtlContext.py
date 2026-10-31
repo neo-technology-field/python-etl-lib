@@ -1,7 +1,6 @@
 import json
-import time
 import urllib.parse
-from unittest.mock import MagicMock, call, patch
+from unittest.mock import MagicMock, patch
 
 import pytest
 from etl_lib.core.ETLContext import QueryResult, append_results, _fetch_oauth2_token, Neo4jContext

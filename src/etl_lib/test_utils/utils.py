@@ -3,7 +3,6 @@ import os
 from pathlib import Path
 from typing import Any
 
-from _pytest.tmpdir import tmp_path
 from neo4j import Driver
 from neo4j.time import Date
 
@@ -112,7 +111,7 @@ class MockETLContext(ETLContext):
 
     def __init__(self, driver: Driver, tmp_path):
         self.logger = logging.getLogger(self.__class__.__name__)
-        self.__env_vars = {"ETL_ERROR_PATH": tmp_path}
+        self.__env_vars = {"ETL_ERROR_PATH": str(tmp_path)}
         self.neo4j = MockNeo4jContext(driver)
         self.instrumentation_writer = NoopInstrumentationWriter()
         self.reporter = DummyReporter()
@@ -141,7 +140,8 @@ class DummyReporter:
     def __init__(self):
         self.run_id = None
 
-    def register_tasks(self, main: Task):
+    def register_tasks(self, main: Task, **kwargs) -> None:
+        """Records the root task uuid. Run metadata in `kwargs` is ignored."""
         self.run_id = main.uuid
 
     def started_task(self, task: Task) -> Task:

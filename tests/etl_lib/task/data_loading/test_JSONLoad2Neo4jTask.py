@@ -5,6 +5,7 @@ from pathlib import Path
 import pytest
 from pydantic import BaseModel
 
+from etl_lib.core.ETLContext import ETLContext
 from etl_lib.task.data_loading.JSONLoad2Neo4jTask import JSONLoad2Neo4jTask
 
 
@@ -72,6 +73,22 @@ def test_load_without_validation_model(etl_context, tmp_path):
     assert result.summary.get("invalid_rows") is None
     with etl_context.neo4j.session() as sess:
         assert sess.run("MATCH (p:Person) RETURN count(p) AS c").single()["c"] == 2
+
+
+def test_second_validating_task_run_clears_previous_errors(etl_context: ETLContext, tmp_path: Path) -> None:
+    input_file = tmp_path / "people.json"
+    error_file = Path(etl_context.env("ETL_ERROR_PATH")) / "people.error.json"
+    _write_jsonl(input_file, [{"personId": "BAD", "name": "Corrected later"}])
+    task = _PersonLoadTask(etl_context, input_file, model=_Person)
+    etl_context.reporter.register_tasks(task)
+    first = task.execute()
+    assert first.success and first.summary["invalid_rows"] == 1
+    assert error_file.exists()
+
+    _write_jsonl(input_file, [{"personId": 1, "name": "Corrected"}])
+    second = task.execute()
+    assert second.success and second.summary["invalid_rows"] == 0
+    assert not error_file.exists()
 
 
 def test_load_gzipped_error_file_naming(etl_context, tmp_path):

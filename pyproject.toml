@@ -37,8 +37,8 @@ dependencies = [
 [project.optional-dependencies]
 dev = [
     "pytest>=8.3.0",
-    "testcontainers[neo4j]",
-    "pytest-cov", "bumpver", "isort", "pip-tools",
+    "testcontainers[neo4j]>=4.15.0",
+    "pytest-cov", "bumpver", "isort", "ruff", "pip-tools",
     "sphinx", "sphinx-rtd-theme", "pydata-sphinx-theme", "sphinx-autodoc-typehints",
     "sphinxcontrib-napoleon", "sphinx-autoapi", "sqlalchemy", "psycopg2-binary",
     "ijson>=3.2"
@@ -62,3 +62,16 @@ exclude = ["documentation/", "examples/", "tests/", ".idea/", ".github/"]
 
 [tool.flit.module]
 name = "etl_lib"
+
+[tool.ruff]
+line-length = 120
+target-version = "py311"
+extend-exclude = [
+    "docs/_build",
+    "docs/autoapi",
+    "examples/**/venv",
+    "examples/**/.venv",
+]
+
+[tool.ruff.lint]
+select = ["F", "B"]

@@ -1,6 +1,6 @@
 import abc
 from pathlib import Path
-from typing import Optional, Type, Any, cast
+from typing import Optional, Type
 
 from pydantic import BaseModel
 
