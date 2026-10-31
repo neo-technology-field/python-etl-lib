@@ -1,5 +1,6 @@
 from etl_lib.core.Task import Task, TaskReturn
 
+
 def transform_dict(input_dict):
     """
     Recursively transforms the input dictionary by converting any dictionary or list values to string representations.
@@ -10,6 +11,7 @@ def transform_dict(input_dict):
     Returns:
         dict: A new dictionary with transformed values.
     """
+
     def transform_value(value):
         if isinstance(value, dict):
             return {k: transform_value(v) for k, v in value.items()}
@@ -22,7 +24,6 @@ def transform_dict(input_dict):
 
 
 class GDSTask(Task):
-
     def __init__(self, context, func):
         """
         Function that uses the gds client to perform tasks. See the following example:
@@ -44,4 +45,4 @@ class GDSTask(Task):
         self.func = func
 
     def run_internal(self, **kwargs) -> TaskReturn:
-        return self.func(etl_context= self.context, **kwargs)
+        return self.func(etl_context=self.context, **kwargs)

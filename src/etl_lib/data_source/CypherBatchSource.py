@@ -1,23 +1,24 @@
 import time
-from typing import Generator, Callable, Optional
+from typing import Callable, Generator, Optional
 
 from neo4j import Record
 
-from etl_lib.core.BatchProcessor import BatchResults, BatchProcessor
+from etl_lib.core.BatchProcessor import BatchProcessor, BatchResults
 from etl_lib.core.ETLContext import ETLContext
 from etl_lib.core.Task import Task
 
 
 class CypherBatchSource(BatchProcessor):
-
     def __init__(
-            self,
-            context: ETLContext,
-            task: Task | None,
-            query: str,
-            record_transformer: Optional[Callable[[Record], dict]] = None,
-            **kwargs
+        self,
+        context: ETLContext,
+        task: Task | None,
+        query: str,
+        record_transformer: Optional[Callable[[Record], dict]] = None,
+        **kwargs,
     ):
+        # Keep the authored docstring indentation; the formatter would change the docstring value.
+        # fmt: off
         """
        Constructs a new CypherBatchSource.
 
@@ -28,6 +29,7 @@ class CypherBatchSource(BatchProcessor):
            record_transformer: Optional function to transform each record. See Neo4j API documentation on `result_transformer_`
            kwargs: Arguments passed as parameters with the query.
        """
+        # fmt: on
         super().__init__(context, task)
         self.query = query
         self.record_transformer = record_transformer
@@ -57,13 +59,12 @@ class CypherBatchSource(BatchProcessor):
             with session.begin_transaction() as tx:
                 t0 = time.perf_counter()
                 for chunk in self.__read_records(tx, max_batch_size):
-                    self._instrument("cypher_read_batch", {
-                        "rows": len(chunk),
-                        "dt_ms": round((time.perf_counter() - t0) * 1000.0, 3),
-                    })
-                    t0 = time.perf_counter()
-                    yield BatchResults(
-                        chunk=chunk,
-                        statistics={"cypher_rows_read": len(chunk)},
-                        batch_size=len(chunk)
+                    self._instrument(
+                        "cypher_read_batch",
+                        {
+                            "rows": len(chunk),
+                            "dt_ms": round((time.perf_counter() - t0) * 1000.0, 3),
+                        },
                     )
+                    t0 = time.perf_counter()
+                    yield BatchResults(chunk=chunk, statistics={"cypher_rows_read": len(chunk)}, batch_size=len(chunk))

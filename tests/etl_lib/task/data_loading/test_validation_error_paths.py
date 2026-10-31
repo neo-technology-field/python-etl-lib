@@ -42,15 +42,21 @@ def test_validation_error_directory(monkeypatch, tmp_path, format_name, path_kin
 
     input_file = tmp_path / f"rows.{format_name}"
     if format_name == "csv":
-        input_file.write_text("""value
+        input_file.write_text(
+            """value
 1
 bad
-""", encoding="utf-8")
+""",
+            encoding="utf-8",
+        )
         task_type = _CSVRows
     else:
-        input_file.write_text("""{"value": 1}
+        input_file.write_text(
+            """{"value": 1}
 {"value": "bad"}
-""", encoding="utf-8")
+""",
+            encoding="utf-8",
+        )
         task_type = _JSONRows
 
     result = task_type(context, input_file, model=_Row, batch_size=1).run_internal()

@@ -10,8 +10,7 @@ def merge_summary(summary_1: dict, summary_2: dict) -> dict:
     Helper function to merge dicts. Assuming that values are numbers.
     If a key exists in both dicts, then the result will contain a key with the added values.
     """
-    return {i: summary_1.get(i, 0) + summary_2.get(i, 0)
-            for i in set(summary_1).union(summary_2)}
+    return {i: summary_1.get(i, 0) + summary_2.get(i, 0) for i in set(summary_1).union(summary_2)}
 
 
 def setup_logging(log_file=None):
@@ -20,7 +19,7 @@ def setup_logging(log_file=None):
     Via ETL_LIB_LOG_LEVEL environment variable, the log level of the library itself can be set to another level.
     It also defaults to INFO.
     """
-    fmt = '%(asctime)s - %(levelname)s - %(name)s - [%(threadName)s] - %(message)s'
+    fmt = "%(asctime)s - %(levelname)s - %(name)s - [%(threadName)s] - %(message)s"
     formatter = logging.Formatter(fmt)
 
     def _safe_console_stream(stream):
@@ -53,7 +52,7 @@ def setup_logging(log_file=None):
     except Exception:
         etl_level = logging.DEBUG
 
-    etl_logger = logging.getLogger('etl_lib')
+    etl_logger = logging.getLogger("etl_lib")
     etl_logger.setLevel(etl_level)
     etl_logger.propagate = False
     etl_logger.handlers.clear()

@@ -40,11 +40,7 @@ class JSONLoad2Neo4jTask(Task):
     yields ``null`` for it rather than raising.
     """
 
-    def __init__(self,
-                 context: ETLContext,
-                 file: Path,
-                 model: Type[BaseModel] | None = None,
-                 batch_size: int = 5000):
+    def __init__(self, context: ETLContext, file: Path, model: Type[BaseModel] | None = None, batch_size: int = 5000):
         super().__init__(context)
         self.batch_size = batch_size
         self.model = model

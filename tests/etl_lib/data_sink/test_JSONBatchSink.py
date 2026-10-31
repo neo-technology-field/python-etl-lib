@@ -18,7 +18,6 @@ RECORDS = [
 
 
 class DummyBatchProcessor(BatchProcessor):
-
     def __init__(self, context, task: Task, batches: list[list[dict]]):
         super().__init__(context, task, None)
         self.batches = batches

@@ -10,7 +10,8 @@ from etl_lib.test_utils.utils import DummyPredecessor
 def setup_database(sql_context):
     engine = sql_context.sql.engine
     with engine.connect() as conn:
-        conn.execute(text("""
+        conn.execute(
+            text("""
             CREATE TABLE IF NOT EXISTS test_table (
                 i INTEGER PRIMARY KEY,
                 string TEXT,
@@ -18,7 +19,8 @@ def setup_database(sql_context):
                 param1 TEXT,
                 param2 TEXT
             )
-        """))
+        """)
+        )
         conn.commit()
     yield
     with engine.connect() as conn:
@@ -31,18 +33,21 @@ def test_sql_batch_sink(sql_context, setup_database):
     INSERT INTO test_table (i, string, float) VALUES (:i, :string, :float)
     """
 
-    predecessor = DummyPredecessor([
-        BatchResults(chunk=[
-            {"i": 1, "string": "1", "float": 1.0},
-            {"i": 2, "string": "2", "float": 2.0}
-        ], statistics={}, batch_size=2)
-    ])
+    predecessor = DummyPredecessor(
+        [
+            BatchResults(
+                chunk=[{"i": 1, "string": "1", "float": 1.0}, {"i": 2, "string": "2", "float": 2.0}],
+                statistics={},
+                batch_size=2,
+            )
+        ]
+    )
 
     sut = SQLBatchSink(context=sql_context, task=None, predecessor=predecessor, query=query)
     result_gen = sut.get_batch(max_batch_size=2)
     statistics = [result.statistics for result in result_gen]
 
-    assert statistics == [{'sql_rows_written': 2}]
+    assert statistics == [{"sql_rows_written": 2}]
 
 
 def test_sql_batch_sink_with_empty_batch(sql_context, setup_database):

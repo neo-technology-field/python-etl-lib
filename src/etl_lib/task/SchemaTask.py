@@ -97,7 +97,7 @@ def _split_statements(text: str) -> list[str]:
 
     while position < len(text):
         character = text[position]
-        pair = text[position:position + 2]
+        pair = text[position : position + 2]
 
         if comment == "//":
             if character == "\n":

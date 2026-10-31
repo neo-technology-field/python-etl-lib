@@ -6,8 +6,7 @@ from typing import Any
 from neo4j import Driver
 from neo4j.time import Date
 
-from etl_lib.core.ETLContext import (ETLContext, Neo4jContext, QueryResult,
-                                     SQLContext, gds, gds_available)
+from etl_lib.core.ETLContext import ETLContext, Neo4jContext, QueryResult, SQLContext, gds, gds_available
 from etl_lib.core.InstrumentationWriter import NoopInstrumentationWriter
 from etl_lib.core.Task import Task
 
@@ -40,8 +39,7 @@ def check_property_exists(driver, label: str, property_name: str) -> bool:
     :return:
     """
     with driver.session(database=get_database_name()) as session:
-        result = session.run(f"MATCH (n:{label}) WHERE n.{property_name} IS NULL"
-                             f" RETURN COUNT(n) = 0 AS exists")
+        result = session.run(f"MATCH (n:{label}) WHERE n.{property_name} IS NULL RETURN COUNT(n) = 0 AS exists")
         return result.single()["exists"]
 
 
@@ -56,7 +54,7 @@ def get_graph(driver):
         WITH {labels:labels(s), props:properties(s)} AS start, {type:type(r), props:properties(r)} AS rel, {labels:labels(e), props:properties(e)} AS end
         RETURN {start:start, rel:rel, end:end}
     """
-    with  driver.session(database=get_database_name()) as session:
+    with driver.session(database=get_database_name()) as session:
         records = session.run(
             """
             MATCH (s)-[r]->(e)
@@ -98,7 +96,6 @@ def get_database_name():
 
 
 class MockNeo4jContext(Neo4jContext):
-
     def __init__(self, driver: Driver):
         self.logger = logging.getLogger(self.__class__.__name__)
         self.driver = driver
@@ -108,7 +105,6 @@ class MockNeo4jContext(Neo4jContext):
 
 
 class MockETLContext(ETLContext):
-
     def __init__(self, driver: Driver, tmp_path):
         self.logger = logging.getLogger(self.__class__.__name__)
         self.__env_vars = {"ETL_ERROR_PATH": str(tmp_path)}
@@ -122,7 +118,6 @@ class MockETLContext(ETLContext):
 
 
 class MockSQLETLContext(ETLContext):
-
     def __init__(self, sql_uri):
         self.logger = logging.getLogger(self.__class__.__name__)
         self.instrumentation_writer = NoopInstrumentationWriter()
@@ -136,7 +131,6 @@ class MockSQLETLContext(ETLContext):
 
 
 class DummyReporter:
-
     def __init__(self):
         self.run_id = None
 
@@ -161,7 +155,6 @@ class DummyReporter:
 
 
 class DummyNeo4jContext:
-
     def query_database(self, session, query, **kwargs) -> QueryResult:
         return QueryResult([], {})
 

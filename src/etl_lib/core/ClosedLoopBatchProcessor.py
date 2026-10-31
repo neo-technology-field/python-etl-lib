@@ -13,12 +13,14 @@ class ClosedLoopBatchProcessor(BatchProcessor):
     reporting updates of the processed batches using the :py:class:`etl_lib.core.ProgressReporter` from the context.
     """
 
-    def __init__(self,
-                 context: ETLContext,
-                 task: Task | None,
-                 predecessor: BatchProcessor,
-                 expected_rows: int | None = None,
-                 expected_batches: int | None = None):
+    def __init__(
+        self,
+        context: ETLContext,
+        task: Task | None,
+        predecessor: BatchProcessor,
+        expected_rows: int | None = None,
+        expected_batches: int | None = None,
+    ):
         super().__init__(context, task, predecessor)
         self.expected_rows = expected_rows
         self.expected_batches = expected_batches
@@ -31,8 +33,9 @@ class ClosedLoopBatchProcessor(BatchProcessor):
         for batch in self.predecessor.get_batch(max_batch_size):
             result = append_result(result, batch.statistics)
             batch_cnt += 1
-            self.context.reporter.report_progress(self.task, batch_cnt, self._safe_calculate_count(max_batch_size),
-                                                  result.statistics)
+            self.context.reporter.report_progress(
+                self.task, batch_cnt, self._safe_calculate_count(max_batch_size), result.statistics
+            )
 
         self.logger.debug(result.statistics)
         yield result

@@ -11,7 +11,6 @@ from etl_lib.data_sink.CSVBatchSink import CSVBatchSink
 
 
 class DummyBatchProcessor(BatchProcessor):
-
     def __init__(self, context: ETLContext, task: Task, batches: list[list[dict]]):
         super().__init__(context, task, None)
         self.batches = batches
@@ -23,11 +22,7 @@ class DummyBatchProcessor(BatchProcessor):
 
 @pytest.fixture
 def sample_data():
-    return [
-        {"id": 1, "name": "Alice"},
-        {"id": 2, "name": "Bob"},
-        {"id": 3, "name": "Charlie"}
-    ]
+    return [{"id": 1, "name": "Alice"}, {"id": 2, "name": "Bob"}, {"id": 3, "name": "Charlie"}]
 
 
 @pytest.fixture
@@ -44,7 +39,7 @@ def test_csv_batch_sink(tmp_path: Path, etl_context, dummy_predecessor, sample_d
     for batch_result in sink.get_batch(10):
         assert batch_result.statistics["rows_written"] == len(batch_result.chunk)
 
-    with file_path.open(mode='r') as csvfile:
+    with file_path.open(mode="r") as csvfile:
         reader = csv.reader(csvfile, **csv_kwargs)
         rows = list(reader)
 

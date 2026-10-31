@@ -1,10 +1,10 @@
+import json
 import logging
 import time
 import urllib.parse
 import urllib.request
 from typing import Any, Dict, List, NamedTuple, Optional
 
-import json
 from neo4j.exceptions import Neo4jError
 
 try:
@@ -16,8 +16,8 @@ except ImportError:
     logging.info("Graph Data Science not installed, skipping")
     GraphDataScience = None
 
-from neo4j import GraphDatabase, Session, WRITE_ACCESS, SummaryCounters, bearer_auth
-from neo4j.auth_management import AuthManagers, AuthManager, ExpiringAuth
+from neo4j import WRITE_ACCESS, GraphDatabase, Session, SummaryCounters, bearer_auth
+from neo4j.auth_management import AuthManager, AuthManagers, ExpiringAuth
 
 try:
     from sqlalchemy import create_engine as create_engine
@@ -34,8 +34,7 @@ from etl_lib.core.InstrumentationWriter import create_instrumentation_writer
 from etl_lib.core.ProgressReporter import get_reporter
 
 
-def _fetch_oauth2_token(token_url: str, client_id: str, client_secret: str,
-                        scope: Optional[str]) -> tuple[int, str]:
+def _fetch_oauth2_token(token_url: str, client_id: str, client_secret: str, scope: Optional[str]) -> tuple[int, str]:
     """
     Fetch a bearer token via the OAuth2 client credentials flow.
 
@@ -68,6 +67,7 @@ def _fetch_oauth2_token(token_url: str, client_id: str, client_secret: str,
 
 class QueryResult(NamedTuple):
     """Result of a query against the neo4j database."""
+
     data: List[Any]
     """Data as returned from the query."""
     summary: Dict[str, int]
@@ -134,9 +134,7 @@ class Neo4jContext:
             client_secret = env_vars["NEO4J_CLIENT_SECRET"]
             scope = env_vars.get("NEO4J_SCOPE")
             self.auth = None
-            self._auth_manager = self.__make_token_auth_manager(
-                token_url, client_id, client_secret, scope
-            )
+            self._auth_manager = self.__make_token_auth_manager(token_url, client_id, client_secret, scope)
         else:
             self.auth = (env_vars["NEO4J_USERNAME"], env_vars["NEO4J_PASSWORD"])
             self._auth_manager = None
@@ -203,8 +201,9 @@ class Neo4jContext:
             return self.driver.session(database=database, default_access_mode=WRITE_ACCESS)
 
     @staticmethod
-    def __make_token_auth_manager(token_url: str, client_id: str, client_secret: str,
-                                  scope: Optional[str]) -> AuthManager:
+    def __make_token_auth_manager(
+        token_url: str, client_id: str, client_secret: str, scope: Optional[str]
+    ) -> AuthManager:
         """Build an AuthManagers.bearer that fetches and auto-refreshes tokens."""
 
         def provider() -> ExpiringAuth:
@@ -219,11 +218,13 @@ class Neo4jContext:
         if self._auth_manager is not None:
             self.driver = GraphDatabase.driver(uri=self.uri, auth_manager=self._auth_manager, **options)
             self.logger.info(
-                f"driver connected to instance at {self.uri} using token auth and database {self.database}")
+                f"driver connected to instance at {self.uri} using token auth and database {self.database}"
+            )
         else:
             self.driver = GraphDatabase.driver(uri=self.uri, auth=self.auth, **options)
             self.logger.info(
-                f"driver connected to instance at {self.uri} with username {self.auth[0]} and database {self.database}")
+                f"driver connected to instance at {self.uri} with username {self.auth[0]} and database {self.database}"
+            )
 
         self.driver.verify_connectivity()
 
@@ -254,7 +255,7 @@ class Neo4jContext:
             if not isinstance(k, str) or not k.startswith(prefix):
                 continue
 
-            key = k[len(prefix):].lower()
+            key = k[len(prefix) :].lower()
             parser = parsers.get(key)
             if parser is None:
                 continue
@@ -341,9 +342,7 @@ class SQLContext:
         try:
             from sqlalchemy import create_engine
         except ImportError as exc:
-            raise ImportError(
-                "SQLContext requires the 'sql' extra: pip install 'neo4j-etl-lib[sql]'"
-            ) from exc
+            raise ImportError("SQLContext requires the 'sql' extra: pip install 'neo4j-etl-lib[sql]'") from exc
 
         self.engine = create_engine(
             database_url,

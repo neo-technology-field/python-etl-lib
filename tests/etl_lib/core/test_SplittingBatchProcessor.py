@@ -50,7 +50,7 @@ class DummyPredecessor:
 
     def get_batch(self, batch_size: int):
         for i in range(0, len(self._items), batch_size):
-            chunk = self._items[i:i + batch_size]
+            chunk = self._items[i : i + batch_size]
             yield BatchResults(
                 chunk=chunk,
                 statistics={},
@@ -127,8 +127,9 @@ def test_dict_id_extractor_missing_keys():
 def test_id_extractor_table_size_mismatch():
     class DummyMismatchProcessor(SplittingBatchProcessor):
         def __init__(self, predecessor):
-            super().__init__(context=None, task=None, predecessor=predecessor, table_size=5,
-                             id_extractor=tuple_id_extractor())
+            super().__init__(
+                context=None, task=None, predecessor=predecessor, table_size=5, id_extractor=tuple_id_extractor()
+            )
 
     with pytest.raises(ValueError):
         DummyMismatchProcessor(predecessor=DummyPredecessor([]))
@@ -158,8 +159,9 @@ def test_out_of_range_id_raises():
 def test_select_wave_picks_non_overlapping_buckets_and_is_deterministic_for_equal_sizes():
     class Proc(SplittingBatchProcessor):
         def __init__(self):
-            super().__init__(context=None, task=None, predecessor=DummyPredecessor([]), table_size=3,
-                             id_extractor=lambda x: x)
+            super().__init__(
+                context=None, task=None, predecessor=DummyPredecessor([]), table_size=3, id_extractor=lambda x: x
+            )
 
     proc = Proc()
 
@@ -176,18 +178,27 @@ def test_get_batch_with_batch_size_2_and_shuffled_input_non_overlap_per_wave():
     table_size = 3
 
     items_group0 = [
-        ("120", "210"), ("130", "230"),
-        ("130", "410"), ("230", "330"),
+        ("120", "210"),
+        ("130", "230"),
+        ("130", "410"),
+        ("230", "330"),
         ("ex10", "ex20"),
-        ("431", "871"), ("511", "981"),
-        ("441", "971"), ("111", "381"),
-        ("542", "592"), ("342", "122"),
-        ("642", "692"), ("442", "322"),
+        ("431", "871"),
+        ("511", "981"),
+        ("441", "971"),
+        ("111", "381"),
+        ("542", "592"),
+        ("342", "122"),
+        ("642", "692"),
+        ("442", "322"),
     ]
     items_group1 = [
-        ("110", "111"), ("030", "031"),
-        ("111", "112"), ("411", "412"),
-        ("222", "220"), ("522", "520"),
+        ("110", "111"),
+        ("030", "031"),
+        ("111", "112"),
+        ("411", "412"),
+        ("222", "220"),
+        ("522", "520"),
     ]
     items_group2_partial = [
         ("222", "221"),

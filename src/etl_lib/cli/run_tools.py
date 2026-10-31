@@ -35,18 +35,22 @@ def __duration_from_start_end(start_time: DateTime | None, end_time: DateTime | 
 
 
 def __print_details(driver, run_id):
-    records, _, _ = driver.execute_query("""
+    records, _, _ = driver.execute_query(
+        """
     MATCH (:ETLRun {uuid : $id})-[:HAS_SUB_TASK*]->(task)-[:HAS_STATS]->(stats)
     WITH task, stats ORDER BY task.order ASC
     RETURN task.task AS task, task.status AS status, properties(stats) AS stats
-    """, id=run_id, routing_=neo4j.RoutingControl.READ)
+    """,
+        id=run_id,
+        routing_=neo4j.RoutingControl.READ,
+    )
 
     print("Showing detailed stats for each task. Task without non-zero stats are omitted.")
     for record in records:
         rows = [(key, value) for key, value in record["stats"].items() if value != 0]
         if rows:
             print(f"Showing statistics for Task '{record['task']}' with status '{record['status']}'")
-            print(tabulate(rows, headers=["Name", "Value"], tablefmt='psql'))
+            print(tabulate(rows, headers=["Name", "Value"], tablefmt="psql"))
 
 
 def __driver(ctx):
@@ -54,18 +58,25 @@ def __driver(ctx):
     neo4j_user = ctx.obj["neo4j_user"]
     database_name = ctx.obj["database_name"]
     neo4j_password = ctx.obj["neo4j_password"]
-    return GraphDatabase.driver(neo4j_uri, auth=(neo4j_user, neo4j_password), database=database_name,
-                                notifications_min_severity="OFF", user_agent="ETL CLI")
+    return GraphDatabase.driver(
+        neo4j_uri,
+        auth=(neo4j_user, neo4j_password),
+        database=database_name,
+        notifications_min_severity="OFF",
+        user_agent="ETL CLI",
+    )
 
 
 @click.group()
-@click.option('--neo4j-uri', envvar='NEO4J_URI', help='Neo4j database URI')
-@click.option('--neo4j-user', envvar='NEO4J_USERNAME', help='Neo4j username')
-@click.option('--neo4j-password', envvar='NEO4J_PASSWORD', help='Neo4j password')
-@click.option('--log-file', envvar='LOG_FILE', help='Path to the log file', default=None)
-@click.option('--database-name', envvar='DATABASE_NAME', default='neo4j', help='Neo4j database name (default: neo4j)')
+@click.option("--neo4j-uri", envvar="NEO4J_URI", help="Neo4j database URI")
+@click.option("--neo4j-user", envvar="NEO4J_USERNAME", help="Neo4j username")
+@click.option("--neo4j-password", envvar="NEO4J_PASSWORD", help="Neo4j password")
+@click.option("--log-file", envvar="LOG_FILE", help="Path to the log file", default=None)
+@click.option("--database-name", envvar="DATABASE_NAME", default="neo4j", help="Neo4j database name (default: neo4j)")
 @click.pass_context
 def cli(ctx, neo4j_uri, neo4j_user, neo4j_password, log_file, database_name):
+    # Keep the authored help indentation and \b escape; the formatter would change the docstring value.
+    # fmt: off
     """
         Command-line tool for ETL pipelines.
 
@@ -78,19 +89,19 @@ def cli(ctx, neo4j_uri, neo4j_user, neo4j_password, log_file, database_name):
         - LOG_FILE: Path to the log file
         - DATABASE_NAME: Neo4j database name (default: neo4j)
         """
+    # fmt: on
 
     # Validate Neo4j connection details
     if not neo4j_uri or not neo4j_user or not neo4j_password:
-        print(
-            "Neo4j connection details are incomplete. Please provide NEO4J_URL, NEO4J_USER, and NEO4J_PASSWORD.")
+        print("Neo4j connection details are incomplete. Please provide NEO4J_URL, NEO4J_USER, and NEO4J_PASSWORD.")
         return
 
     ctx.ensure_object(dict)
-    ctx.obj['neo4j_uri'] = neo4j_uri
-    ctx.obj['neo4j_user'] = neo4j_user
-    ctx.obj['neo4j_password'] = neo4j_password
-    ctx.obj['database_name'] = database_name
-    ctx.obj['log_file'] = log_file
+    ctx.obj["neo4j_uri"] = neo4j_uri
+    ctx.obj["neo4j_user"] = neo4j_user
+    ctx.obj["neo4j_password"] = neo4j_password
+    ctx.obj["database_name"] = database_name
+    ctx.obj["log_file"] = log_file
 
 
 @cli.command()
@@ -102,7 +113,8 @@ def query(ctx, number_runs):
     """
     print(f"Listing runs in database '{ctx.obj['database_name']}'")
     with __driver(ctx) as driver:
-        records, _, _ = driver.execute_query("""
+        records, _, _ = driver.execute_query(
+            """
             MATCH (r:ETLRun:ETLTask) 
             WITH r, r.name AS name, r.uuid AS id, r.startTime AS startTime, r.endTime AS endTime
             CALL (r) {
@@ -113,20 +125,26 @@ def query(ctx, number_runs):
               }
             ORDER BY startTime DESC LIMIT $number_runs
             RETURN name, id, startTime, endTime, changes
-        """, number_runs=number_runs, routing_=neo4j.RoutingControl.READ)
+        """,
+            number_runs=number_runs,
+            routing_=neo4j.RoutingControl.READ,
+        )
         data = [
             {
-                "name": record["name"], "ID": record["id"],
+                "name": record["name"],
+                "ID": record["id"],
                 "startTime": __convert_date_time(record["startTime"]),
                 "endTime": __convert_date_time(record["endTime"]),
-                "changes": record["changes"]
-            } for record in records]
+                "changes": record["changes"],
+            }
+            for record in records
+        ]
 
-        print(tabulate(data, headers='keys', tablefmt='psql'))
+        print(tabulate(data, headers="keys", tablefmt="psql"))
 
 
 @cli.command()
-@click.argument('run-id', required=True)
+@click.argument("run-id", required=True)
 @click.option("--details", default=False, is_flag=True, help="Show stats for each task", type=bool)
 @click.pass_context
 def detail(ctx, run_id, details):
@@ -135,7 +153,8 @@ def detail(ctx, run_id, details):
     """
     print(f"Showing details for run ID: {run_id}")
     with __driver(ctx) as driver:
-        records, _, _ = driver.execute_query("""
+        records, _, _ = driver.execute_query(
+            """
         MATCH (r:ETLRun {uuid : $id})-[:HAS_SUB_TASK*]->(task) 
         WITH task ORDER BY task.order ASC
         CALL (task) {
@@ -148,28 +167,35 @@ def detail(ctx, run_id, details):
           task.task AS task, task.status AS status,
           task.batches + ' / ' + coalesce(task.expected_batches, '-') AS batches, 
           task.startTime AS startTime,  task.endTime AS endTime, changes
-        """, id=run_id, routing_=neo4j.RoutingControl.READ)
+        """,
+            id=run_id,
+            routing_=neo4j.RoutingControl.READ,
+        )
         data = [
             {
                 "task": record["task"],
                 "status": record["status"],
                 "batches": record["batches"],
                 "duration": __duration_from_start_end(record["startTime"], record["endTime"]),
-                "changes": record.get("changes", 0)
+                "changes": record.get("changes", 0),
             }
             for record in records
         ]
 
-        print(tabulate(data, headers='keys', tablefmt='psql'))
+        print(tabulate(data, headers="keys", tablefmt="psql"))
         if details:
             __print_details(driver, run_id)
 
 
 # noinspection PyTypeChecker
 @cli.command()
-@click.option('--run-id', required=False, type=str, help='Run IDs to delete, works with comma separated list')
-@click.option('--before', type=click.DateTime(formats=["%Y-%m-%d"]), help='Delete runs before a specific date in format YYYY-MM-DD')
-@click.option('--older', help='Delete runs older than x days', type=int)
+@click.option("--run-id", required=False, type=str, help="Run IDs to delete, works with comma separated list")
+@click.option(
+    "--before",
+    type=click.DateTime(formats=["%Y-%m-%d"]),
+    help="Delete runs before a specific date in format YYYY-MM-DD",
+)
+@click.option("--older", help="Delete runs older than x days", type=int)
 @click.pass_context
 def delete(ctx, run_id, before, older):
     """
@@ -182,17 +208,18 @@ def delete(ctx, run_id, before, older):
         return
 
     if run_id:
-        ids = run_id.split(',')
+        ids = run_id.split(",")
         delete_runs(ctx, ids)
     elif before:
         print(f"Deleting runs before: {before}")
         with __driver(ctx) as driver:
-            record= driver.execute_query(
+            record = driver.execute_query(
                 """MATCH (r:ETLRun) WHERE date(r.startTime) < date($before) 
                 RETURN collect(r.uuid) AS ids
                 """,
                 result_transformer_=neo4j.Result.single,
-                before=before)
+                before=before,
+            )
             if record:
                 ids = record[0]
                 delete_runs(ctx, ids)
@@ -205,7 +232,8 @@ def delete(ctx, run_id, before, older):
                 RETURN collect(r.uuid) AS ids
                 """,
                 result_transformer_=neo4j.Result.single,
-                days=older)
+                days=older,
+            )
             if record:
                 ids = record[0]
                 delete_runs(ctx, ids)
@@ -219,5 +247,8 @@ def delete_runs(ctx, ids):
             MATCH (r:ETLRun)-[*]->(n) WHERE r.uuid IN $ids
             DETACH DELETE n
             DETACH DELETE r
-            """, ids=ids, routing_=neo4j.RoutingControl.WRITE)
+            """,
+            ids=ids,
+            routing_=neo4j.RoutingControl.WRITE,
+        )
     print(f"Deleted run IDs: {ids}  successfully")

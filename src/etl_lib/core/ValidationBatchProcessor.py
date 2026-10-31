@@ -1,6 +1,6 @@
 import json
 from pathlib import Path
-from typing import Type, Generator
+from typing import Generator, Type
 
 from pydantic import BaseModel, ValidationError
 
@@ -15,12 +15,14 @@ class ValidationBatchProcessor(BatchProcessor):
     Batch processor for validation, using Pydantic.
     """
 
-    def __init__(self,
-                 context: ETLContext,
-                 task: Task | None,
-                 predecessor,
-                 model: Type[BaseModel] | None,
-                 error_file: Path | None):
+    def __init__(
+        self,
+        context: ETLContext,
+        task: Task | None,
+        predecessor,
+        model: Type[BaseModel] | None,
+        error_file: Path | None,
+    ):
         """
         Constructs a new ValidationBatchProcessor.
 
@@ -40,7 +42,7 @@ class ValidationBatchProcessor(BatchProcessor):
         """
         super().__init__(context, task, predecessor)
         if model is not None and error_file is None:
-            raise ValueError('you must provide error file if the model is specified')
+            raise ValueError("you must provide error file if the model is specified")
         self.error_file = error_file
         self.model = model
 
@@ -52,11 +54,8 @@ class ValidationBatchProcessor(BatchProcessor):
             for batch in self.predecessor.get_batch(max_batch_size):
                 yield BatchResults(
                     chunk=batch.chunk,
-                    statistics=merge_summary(batch.statistics, {
-                        "valid_rows": len(batch.chunk),
-                        "invalid_rows": 0
-                    }),
-                    batch_size=len(batch.chunk)
+                    statistics=merge_summary(batch.statistics, {"valid_rows": len(batch.chunk), "invalid_rows": 0}),
+                    batch_size=len(batch.chunk),
                 )
             return
 
@@ -80,17 +79,17 @@ class ValidationBatchProcessor(BatchProcessor):
                 with open(self.error_file, "a", encoding="utf-8") as f:
                     for invalid in invalid_rows:
                         # the following is needed as ValueError (contained in 'ctx') is not json serializable
-                        serializable = {"row": invalid["row"],
-                                        "errors": [{k: v for k, v in e.items() if k != "ctx"} for e in
-                                                   invalid["errors"]]}
+                        serializable = {
+                            "row": invalid["row"],
+                            "errors": [{k: v for k, v in e.items() if k != "ctx"} for e in invalid["errors"]],
+                        }
                         f.write(f"{json.dumps(serializable)}\n")
 
             # Yield BatchResults with statistics
             yield BatchResults(
                 chunk=valid_rows,
-                statistics=merge_summary(batch.statistics, {
-                    "valid_rows": len(valid_rows),
-                    "invalid_rows": len(invalid_rows)
-                }),
-                batch_size=len(batch.chunk)
+                statistics=merge_summary(
+                    batch.statistics, {"valid_rows": len(valid_rows), "invalid_rows": len(invalid_rows)}
+                ),
+                batch_size=len(batch.chunk),
             )

@@ -25,10 +25,20 @@ def test_load_routes_task(etl_context, neo4j_driver):
     assert result.success
 
     expected_summary = {
-        'constraints_added': 0, 'constraints_removed': 0, 'csv_lines_read': 8, 'indexes_added': 0,
-        'indexes_removed': 0, 'invalid_rows': 3, 'labels_added': 4, 'labels_removed': 0,
-        'nodes_created': 4, 'nodes_deleted': 0, 'properties_set': 16, 'relationships_created':4,
-        'relationships_deleted': 0, 'valid_rows': 5
+        "constraints_added": 0,
+        "constraints_removed": 0,
+        "csv_lines_read": 8,
+        "indexes_added": 0,
+        "indexes_removed": 0,
+        "invalid_rows": 3,
+        "labels_added": 4,
+        "labels_removed": 0,
+        "nodes_created": 4,
+        "nodes_deleted": 0,
+        "properties_set": 16,
+        "relationships_created": 4,
+        "relationships_deleted": 0,
+        "valid_rows": 5,
     }
     assert result.summary == expected_summary
 
@@ -47,34 +57,10 @@ def test_load_routes_task(etl_context, neo4j_driver):
     routes_from_db = query_result[0]["routes"]
 
     expected_routes = [
-        {
-            "id": "1",
-            "shortName": "10",
-            "longName": "Downtown Express",
-            "type": 3,
-            "agency_id": "1"
-        },
-        {
-            "id": "5",
-            "shortName": "75",
-            "longName": "City Loop",
-            "type": 1,
-            "agency_id": "1"
-        },
-        {
-            "id": "6",
-            "shortName": "100",
-            "longName": "Mountain Express",
-            "type": 3,
-            "agency_id": "1"
-        },
-        {
-            "id": "7",
-            "shortName": "200",
-            "longName": "University Connector",
-            "type": 2,
-            "agency_id": "1"
-        }
+        {"id": "1", "shortName": "10", "longName": "Downtown Express", "type": 3, "agency_id": "1"},
+        {"id": "5", "shortName": "75", "longName": "City Loop", "type": 1, "agency_id": "1"},
+        {"id": "6", "shortName": "100", "longName": "Mountain Express", "type": 3, "agency_id": "1"},
+        {"id": "7", "shortName": "200", "longName": "University Connector", "type": 2, "agency_id": "1"},
     ]
 
     assert routes_from_db == expected_routes

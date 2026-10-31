@@ -16,10 +16,22 @@ def test_load_agencies_task(etl_context, neo4j_driver):
 
     assert result.success
 
-    expected_summary = {'constraints_added': 0, 'constraints_removed': 0, 'csv_lines_read': 10, 'indexes_added': 0,
-                        'indexes_removed': 0, 'invalid_rows': 3, 'labels_added': 7, 'labels_removed': 0,
-                        'nodes_created': 7, 'nodes_deleted': 0, 'properties_set': 56, 'relationships_created': 0,
-                        'relationships_deleted': 0, 'valid_rows': 7}
+    expected_summary = {
+        "constraints_added": 0,
+        "constraints_removed": 0,
+        "csv_lines_read": 10,
+        "indexes_added": 0,
+        "indexes_removed": 0,
+        "invalid_rows": 3,
+        "labels_added": 7,
+        "labels_removed": 0,
+        "nodes_created": 7,
+        "nodes_deleted": 0,
+        "properties_set": 56,
+        "relationships_created": 0,
+        "relationships_deleted": 0,
+        "valid_rows": 7,
+    }
     assert expected_summary == result.summary
 
     cypher_query = """
@@ -48,7 +60,7 @@ def test_load_agencies_task(etl_context, neo4j_driver):
             "lang": "en",
             "phone": "123-456-7890",
             "fareUrl": "http://www.transita.com/fares",
-            "email": "contact@transita.com"
+            "email": "contact@transita.com",
         },
         {
             "id": "2",
@@ -58,16 +70,18 @@ def test_load_agencies_task(etl_context, neo4j_driver):
             "lang": None,
             "phone": None,
             "fareUrl": None,
-            "email": None
+            "email": None,
         },
-        {'email': None,
-         'fareUrl': None,
-         'id': 'generic',
-         'lang': None,
-         'name': 'Transit Agency E',
-         'phone': None,
-         'timezone': 'Asia/Tokyo',
-         'url': 'http://www.transite.com/'},
+        {
+            "email": None,
+            "fareUrl": None,
+            "id": "generic",
+            "lang": None,
+            "name": "Transit Agency E",
+            "phone": None,
+            "timezone": "Asia/Tokyo",
+            "url": "http://www.transite.com/",
+        },
         {
             "id": "6",
             "name": "Transit Agency F",
@@ -76,7 +90,7 @@ def test_load_agencies_task(etl_context, neo4j_driver):
             "lang": "en-AU",
             "phone": "987-654-3210",
             "fareUrl": None,
-            "email": None
+            "email": None,
         },
         {
             "id": "8",
@@ -86,7 +100,7 @@ def test_load_agencies_task(etl_context, neo4j_driver):
             "lang": None,
             "phone": None,
             "fareUrl": None,
-            "email": "info@transith.com"
+            "email": "info@transith.com",
         },
         {
             "id": "9",
@@ -96,7 +110,7 @@ def test_load_agencies_task(etl_context, neo4j_driver):
             "lang": None,
             "phone": None,
             "fareUrl": "https://www.transiti.com/fares",
-            "email": None
+            "email": None,
         },
         {
             "id": "10",
@@ -106,8 +120,8 @@ def test_load_agencies_task(etl_context, neo4j_driver):
             "lang": "de",
             "phone": "+49 123 4567",
             "fareUrl": None,
-            "email": "support@transitj.com"
-        }
+            "email": "support@transitj.com",
+        },
     ]
 
     assert agencies_from_db == expected_agencies

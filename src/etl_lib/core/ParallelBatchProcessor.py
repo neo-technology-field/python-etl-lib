@@ -16,6 +16,7 @@ class ParallelBatchResult(BatchResults):
 
     `chunk` is a list of bucket-batches. Each sub-list is processed by one worker instance.
     """
+
     pass
 
 
@@ -47,13 +48,13 @@ class ParallelBatchProcessor(BatchProcessor):
     """
 
     def __init__(
-            self,
-            context: ETLContext,
-            task: Task | None,
-            predecessor: BatchProcessor,
-            worker_factory: Callable[[], BatchProcessor],
-            max_workers: int = 4,
-            prefetch: int = 4,
+        self,
+        context: ETLContext,
+        task: Task | None,
+        predecessor: BatchProcessor,
+        worker_factory: Callable[[], BatchProcessor],
+        max_workers: int = 4,
+        prefetch: int = 4,
     ):
         super().__init__(context, task, predecessor)
         self.worker_factory = worker_factory
@@ -91,13 +92,16 @@ class ParallelBatchProcessor(BatchProcessor):
 
         self.logger.debug(f"Finished wave with stats={merged_stats}")
         dt_ms = (time.perf_counter() - t0) * 1000.0
-        self._instrument("parallel_wave_done", {
-            "buckets": len(wave.chunk),
-            "rows": total,
-            "max_workers": self.max_workers,
-            "prefetch": self.prefetch,
-            "dt_ms": round(dt_ms, 3),
-        })
+        self._instrument(
+            "parallel_wave_done",
+            {
+                "buckets": len(wave.chunk),
+                "rows": total,
+                "max_workers": self.max_workers,
+                "prefetch": self.prefetch,
+                "dt_ms": round(dt_ms, 3),
+            },
+        )
         return BatchResults(chunk=merged_chunk, statistics=merged_stats, batch_size=total)
 
     def get_batch(self, max_batch_size: int) -> Generator[BatchResults, None, None]:
@@ -161,9 +165,12 @@ class ParallelBatchProcessor(BatchProcessor):
         start = time.perf_counter()
         result = next(worker.get_batch(len(bucket_batch)))
         elapsed_ms = (time.perf_counter() - start) * 1000.0
-        self._instrument("bucket_done", {
-            "rows": result.batch_size,
-            "dt_ms": round(elapsed_ms, 3),
-        })
+        self._instrument(
+            "bucket_done",
+            {
+                "rows": result.batch_size,
+                "dt_ms": round(elapsed_ms, 3),
+            },
+        )
         self.logger.debug(f"Finished bucket batch stats={result.statistics}")
         return result

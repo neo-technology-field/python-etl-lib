@@ -10,7 +10,7 @@ def test_GDSTask(etl_context):
         pytest.skip("graphdatascience not available on this Python version")
 
     def gds_fun(etl_context):
-        gds =  etl_context.neo4j.gds
+        gds = etl_context.neo4j.gds
         gds.graph.drop("neo4j-offices", fail_if_missing=False)
         g_office, project_result = gds.graph.project.native("neo4j-offices", "City", "FLY_TO")
         write_result = gds.page_rank.write(g_office, tolerance=0.5, write_property="rank")

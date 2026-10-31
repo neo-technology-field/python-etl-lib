@@ -4,7 +4,6 @@ from etl_lib.task.ExecuteCypherTask import ExecuteCypherTask
 def test_execute_cypher_task(etl_context):
 
     class TestExecuteCypherTask(ExecuteCypherTask):
-
         def __init__(self):
             super().__init__(etl_context)
 
@@ -14,7 +13,7 @@ def test_execute_cypher_task(etl_context):
             """
 
     task = TestExecuteCypherTask()
-    res = task.execute(testParam='testParamValue')
+    res = task.execute(testParam="testParamValue")
     assert res is not None
     assert res.success is True
     assert res.error is None
@@ -24,7 +23,6 @@ def test_execute_cypher_task(etl_context):
 
 def test_execute_cypher_task_with_error(etl_context):
     class TestExecuteCypherTask(ExecuteCypherTask):
-
         def __init__(self):
             super().__init__(etl_context)
 

@@ -1,7 +1,7 @@
 import time
 from typing import Generator
 
-from etl_lib.core.BatchProcessor import (BatchProcessor, BatchResults, append_result)
+from etl_lib.core.BatchProcessor import BatchProcessor, BatchResults, append_result
 from etl_lib.core.ETLContext import ETLContext
 from etl_lib.core.Task import Task
 
@@ -11,7 +11,9 @@ class CypherBatchSink(BatchProcessor):
     BatchProcessor to write batches of data to a Neo4j database.
     """
 
-    def __init__(self, context: ETLContext, task: Task | None, predecessor: BatchProcessor | None, query: str, **kwargs):
+    def __init__(
+        self, context: ETLContext, task: Task | None, predecessor: BatchProcessor | None, query: str, **kwargs
+    ):
         """
         Constructs a new CypherBatchSink.
 
@@ -42,12 +44,16 @@ class CypherBatchSink(BatchProcessor):
             for batch_result in self.predecessor.get_batch(max_batch_size):
                 start = time.perf_counter()
 
-                result = self.neo4j.query_database(session=session, query=self.query, batch=batch_result.chunk,
-                                                   **self.kwargs)
+                result = self.neo4j.query_database(
+                    session=session, query=self.query, batch=batch_result.chunk, **self.kwargs
+                )
 
                 elapsed_ms = (time.perf_counter() - start) * 1000.0
-                self._instrument("cypher_tx_done", {
-                    "rows": len(batch_result.chunk),
-                    "dt_ms": round(elapsed_ms, 3),
-                })
+                self._instrument(
+                    "cypher_tx_done",
+                    {
+                        "rows": len(batch_result.chunk),
+                        "dt_ms": round(elapsed_ms, 3),
+                    },
+                )
                 yield append_result(batch_result, result.summary)

@@ -127,7 +127,7 @@ class ListSource(BatchProcessor):
     def get_batch(self, max_batch_size: int) -> Generator[BatchResults, None, None]:
         idx = 0
         while idx < len(self._items):
-            chunk = self._items[idx: idx + self._chunk_size]
+            chunk = self._items[idx : idx + self._chunk_size]
             idx += self._chunk_size
             yield BatchResults(chunk=chunk, statistics={}, batch_size=len(chunk))
 
@@ -149,7 +149,9 @@ def test_splitter_and_parallel_processor_end_to_end_without_neo4j():
     ]
 
     source = ListSource(items, chunk_size=4)
-    splitter = SplittingBatchProcessor(context=None, task=None, predecessor=source, table_size=4, id_extractor=extractor)
+    splitter = SplittingBatchProcessor(
+        context=None, task=None, predecessor=source, table_size=4, id_extractor=extractor
+    )
 
     tracker = ConcurrencyTracker()
     lock = threading.Lock()

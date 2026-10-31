@@ -1,18 +1,19 @@
 from pathlib import Path
 
+from model.trip import Trip
+
 from etl_lib.core.ETLContext import ETLContext
 from etl_lib.core.SplittingBatchProcessor import dict_id_extractor
 from etl_lib.task.data_loading.ParallelCSVLoad2Neo4jTask import ParallelCSVLoad2Neo4jTask
-
-from model.trip import Trip
 
 
 class LoadTripsParallelTask(ParallelCSVLoad2Neo4jTask):
     """Parallel loader for NYC Yellow Taxi CSV data."""
 
     def __init__(self, context: ETLContext, csv_path: Path):
-        super().__init__(context, file=csv_path, model=Trip, error_file=Path('errors_parallel.json'), batch_size=5000,
-                         max_workers=10)
+        super().__init__(
+            context, file=csv_path, model=Trip, error_file=Path("errors_parallel.json"), batch_size=5000, max_workers=10
+        )
         self.csv_path = csv_path
 
     def _query(self):
@@ -40,4 +41,4 @@ class LoadTripsParallelTask(ParallelCSVLoad2Neo4jTask):
         """
 
     def _id_extractor(self):
-        return dict_id_extractor(table_size=10, start_key='pu_location', end_key='do_location')
+        return dict_id_extractor(table_size=10, start_key="pu_location", end_key="do_location")

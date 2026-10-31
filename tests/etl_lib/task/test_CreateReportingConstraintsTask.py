@@ -51,6 +51,9 @@ else:
     environment["PYTHONPATH"] = str(Path(__file__).resolve().parents[3] / "src")
     result = subprocess.run(
         [sys.executable, "-O", "-B", "-c", program],
-        env=environment, capture_output=True, text=True, check=False,
+        env=environment,
+        capture_output=True,
+        text=True,
+        check=False,
     )
     assert result.returncode == 0, result.stdout + result.stderr

@@ -4,26 +4,26 @@ from pathlib import Path
 
 import click
 from dotenv import load_dotenv
+from tasks.CreateSequenceTask import CreateSequenceTask
+from tasks.LoadAgenciesTask import LoadAgenciesTask
+from tasks.LoadCalendarTask import LoadCalendarTask
+from tasks.LoadRoutesTask import LoadRoutesTask
+from tasks.LoadStopsTask import LoadStopsTask
+from tasks.LoadStopTimesTask import LoadStopTimesTask
+from tasks.LoadTripsTask import LoadTripsTask
+from tasks.SchemaTask import SchemaTask
 
 from etl_lib.cli.run_tools import cli
 from etl_lib.core.ETLContext import ETLContext
 from etl_lib.core.Task import TaskGroup
 from etl_lib.core.utils import setup_logging
-from tasks.CreateSequenceTask import CreateSequenceTask
-from tasks.LoadAgenciesTask import LoadAgenciesTask
-from tasks.LoadCalendarTask import LoadCalendarTask
-from tasks.LoadRoutesTask import LoadRoutesTask
-from tasks.LoadStopTimesTask import LoadStopTimesTask
-from tasks.LoadStopsTask import LoadStopsTask
-from tasks.LoadTripsTask import LoadTripsTask
-from tasks.SchemaTask import SchemaTask
 
 # Load environment variables from .env file
 load_dotenv()
 
 
 @cli.command("import")
-@click.argument('input_directory', type=click.Path(exists=True, file_okay=False, dir_okay=True, path_type=Path))
+@click.argument("input_directory", type=click.Path(exists=True, file_okay=False, dir_okay=True, path_type=Path))
 @click.pass_context
 def main(ctx, input_directory):
     """
@@ -74,5 +74,5 @@ def main(ctx, input_directory):
     logging.info("Processing complete.")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     cli()

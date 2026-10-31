@@ -18,10 +18,13 @@ def test_schema_subclass_supplies_statement_list() -> None:
 def test_schema_file_is_read_when_execution_requests_statements(tmp_path: Path) -> None:
     path = tmp_path / "schema.cypher"
     task = SchemaTask.from_file(None, path)
-    path.write_text("""// Schema setup
+    path.write_text(
+        """// Schema setup
 RETURN 1 AS first;
 RETURN 2 AS second;
-""", encoding="utf-8")
+""",
+        encoding="utf-8",
+    )
     assert task._query() == ["RETURN 1 AS first", "RETURN 2 AS second"]
 
 

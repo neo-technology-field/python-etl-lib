@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from etl_lib.core.Task import Task, TaskReturn, TaskGroup, ParallelTaskGroup
+from etl_lib.core.Task import ParallelTaskGroup, Task, TaskGroup, TaskReturn
 from etl_lib.core.utils import merge_summary
 from etl_lib.task.ExecuteCypherTask import ExecuteCypherTask
 from etl_lib.test_utils.utils import DummyContext, DummyReporter
@@ -20,7 +20,7 @@ def test_simple_task():
     task = DummyTask(DummyContext())
     ret = task.execute()
     assert ret.success == False
-    assert ret.summary == {'labels created': 2, 'rows inserted': 21}
+    assert ret.summary == {"labels created": 2, "rows inserted": 21}
 
 
 def test_task_group():
@@ -44,7 +44,6 @@ def test_task_group():
 
 def test_parallel_task_group(etl_context):
     class StartRecordingReporter(DummyReporter):
-
         def started_task(self, task: Task) -> Task:
             task.start_time = datetime.now()
             return task
@@ -65,7 +64,6 @@ def test_parallel_task_group(etl_context):
             """
 
     class DummyTask1(ExecuteCypherTask):
-
         def __init__(self, context):
             super().__init__(context)
 
@@ -73,7 +71,6 @@ def test_parallel_task_group(etl_context):
             return query.format(label="DummyTask1")
 
     class DummyTask2(ExecuteCypherTask):
-
         def __init__(self, context):
             super().__init__(context)
 
@@ -110,11 +107,7 @@ def test_task_group_aborts_on_failure():
             executed.append("should_not_run")
             return TaskReturn(success=True, summary={})
 
-    group = TaskGroup(
-        DummyContext(),
-        [FailingTask(DummyContext()), ShouldNotRunTask(DummyContext())],
-        "abort-test"
-    )
+    group = TaskGroup(DummyContext(), [FailingTask(DummyContext()), ShouldNotRunTask(DummyContext())], "abort-test")
     ret = group.execute()
 
     assert ret.success is False
@@ -139,11 +132,7 @@ def test_task_group_continues_when_abort_on_fail_false():
             executed.append("follow_up")
             return TaskReturn(success=True, summary={})
 
-    group = TaskGroup(
-        DummyContext(),
-        [FailingTask(DummyContext()), FollowUpTask(DummyContext())],
-        "continue-test"
-    )
+    group = TaskGroup(DummyContext(), [FailingTask(DummyContext()), FollowUpTask(DummyContext())], "continue-test")
     ret = group.execute()
 
     assert ret.success is False

@@ -10,7 +10,7 @@ from etl_lib.test_utils.utils import get_node_count
 
 
 def convert_geo(geo_string) -> WGS84Point:
-    a = geo_string.split('_')
+    a = geo_string.split("_")
     WGS84Point((a[0], a[1]))
     return WGS84Point((a[0], a[1]))
 
@@ -28,12 +28,12 @@ class Customer(BaseModel):
     turnover: float = Field(alias="turnover")
     coordinates: WGS84Point = Field(alias="gpsCoordinates")
 
-    @field_validator('coordinates', mode='plain')
+    @field_validator("coordinates", mode="plain")
     @classmethod
     def to_coordinate(cls, value: str) -> WGS84Point | None:
         if value in ["-73.853500_147.217685", "-27.013984_138.844468"]:
             return None
-        splits = value.split('_')
+        splits = value.split("_")
         if len(splits) != 2:
             raise ValueError(f"Invalid coordinates format: {value}")
         WGS84Point((float(splits[0]), float(splits[1])))
@@ -113,25 +113,26 @@ def test_load(etl_context, neo4j_driver):
     assert result is not None
     assert result.success is True
     assert result.error is None
-    assert result.summary == {'constraints_added': 0,
-                              'constraints_removed': 0,
-                              'indexes_added': 0,
-                              'indexes_removed': 0,
-                              'csv_lines_read': 60,
-                              'valid_rows': 59,
-                              'invalid_rows': 1,
-                              'labels_added': 343,
-                              'labels_removed': 0,
-                              'nodes_created': 343,
-                              'nodes_deleted': 0,
-                              'properties_set': 579,
-                              'relationships_created': 293,
-                              'relationships_deleted': 0
-                              }
+    assert result.summary == {
+        "constraints_added": 0,
+        "constraints_removed": 0,
+        "indexes_added": 0,
+        "indexes_removed": 0,
+        "csv_lines_read": 60,
+        "valid_rows": 59,
+        "invalid_rows": 1,
+        "labels_added": 343,
+        "labels_removed": 0,
+        "nodes_created": 343,
+        "nodes_deleted": 0,
+        "properties_set": 579,
+        "relationships_created": 293,
+        "relationships_deleted": 0,
+    }
 
     # one of the 60 customers is not valid
-    assert 59 == get_node_count(neo4j_driver, 'Customer')
-    assert 58 == get_node_count(neo4j_driver, 'City')
+    assert 59 == get_node_count(neo4j_driver, "Customer")
+    assert 58 == get_node_count(neo4j_driver, "City")
 
 
 def test_load_without_validation_model(etl_context):

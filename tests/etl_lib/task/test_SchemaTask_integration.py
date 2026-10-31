@@ -10,13 +10,16 @@ from etl_lib.test_utils.utils import MockETLContext
 
 class _ExampleSchema(SchemaTask):
     def _schema_statements(self) -> list[str]:
-        return ["""
+        return [
+            """
 CREATE CONSTRAINT etl_plan_schema_id IF NOT EXISTS
 FOR (n:EtlPlanSchemaRow) REQUIRE n.id IS UNIQUE
-""", """
+""",
+            """
 CREATE RANGE INDEX etl_plan_schema_name IF NOT EXISTS
 FOR (n:EtlPlanSchemaRow) ON (n.name)
-"""]
+""",
+        ]
 
 
 @pytest.fixture
@@ -41,8 +44,7 @@ def schema_context(request: pytest.FixtureRequest, tmp_path: Path) -> Iterator[M
 
 
 @pytest.mark.parametrize("entry_point", ["subclass", "file"])
-def test_schema_setup_is_idempotent(schema_context: MockETLContext, tmp_path: Path,
-                                    entry_point: str) -> None:
+def test_schema_setup_is_idempotent(schema_context: MockETLContext, tmp_path: Path, entry_point: str) -> None:
     task = _ExampleSchema(schema_context)
     if entry_point == "file":
         path = tmp_path / "schema.cypher"

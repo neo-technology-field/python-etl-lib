@@ -4,14 +4,14 @@ from pathlib import Path
 
 import click
 from dotenv import load_dotenv
+from tasks.LoadTripsParallelTask import LoadTripsParallelTask
+from tasks.LoadTripsSequentialTask import LoadTripsSequentialTask
+from tasks.SchemaTask import SchemaTask
+
 from etl_lib.cli.run_tools import cli
 from etl_lib.core.ETLContext import ETLContext
 from etl_lib.core.Task import TaskGroup
 from etl_lib.core.utils import setup_logging
-
-from tasks.LoadTripsParallelTask import LoadTripsParallelTask
-from tasks.LoadTripsSequentialTask import LoadTripsSequentialTask
-from tasks.SchemaTask import SchemaTask
 
 # Load environment variables from .env file
 load_dotenv()
@@ -25,12 +25,9 @@ def run_sequential(ctx, csv_file):
 
     context = comon_setup(ctx, csv_file)
 
-    pipeline = TaskGroup(context,
-                         [
-                             SchemaTask(context),
-                             LoadTripsSequentialTask(context, csv_file)
-                         ],
-                         "NYC Taxi ETL (Sequential)")
+    pipeline = TaskGroup(
+        context, [SchemaTask(context), LoadTripsSequentialTask(context, csv_file)], "NYC Taxi ETL (Sequential)"
+    )
 
     context.reporter.register_tasks(pipeline)
 
@@ -46,12 +43,9 @@ def run_parallel(ctx, csv_file):
 
     context = comon_setup(ctx, csv_file)
 
-    pipeline = TaskGroup(context,
-                         [
-                             SchemaTask(context),
-                             LoadTripsParallelTask(context, Path(csv_file))
-                         ],
-                         "NYC Taxi ETL (Parallel)")
+    pipeline = TaskGroup(
+        context, [SchemaTask(context), LoadTripsParallelTask(context, Path(csv_file))], "NYC Taxi ETL (Parallel)"
+    )
 
     context.reporter.register_tasks(pipeline)
 

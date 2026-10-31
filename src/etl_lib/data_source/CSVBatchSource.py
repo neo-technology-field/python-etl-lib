@@ -36,19 +36,22 @@ class CSVBatchSource(BatchProcessor):
     def get_batch(self, max_batch_size: int) -> Generator[BatchResults, None, None]:
         t0 = time.perf_counter()
         for batch_size, chunks_ in self.__read_csv(self.csv_file, batch_size=max_batch_size, **self.kwargs):
-            self._instrument("csv_read_batch", {
-                "rows": batch_size,
-                "dt_ms": round((time.perf_counter() - t0) * 1000.0, 3),
-            })
+            self._instrument(
+                "csv_read_batch",
+                {
+                    "rows": batch_size,
+                    "dt_ms": round((time.perf_counter() - t0) * 1000.0, 3),
+                },
+            )
             t0 = time.perf_counter()
             yield BatchResults(chunk=chunks_, statistics={"csv_lines_read": batch_size}, batch_size=batch_size)
 
     def __read_csv(self, file: Path, batch_size: int, **kwargs):
         if file.suffix == ".gz":
-            with gzip.open(file, "rt", encoding='utf-8-sig') as f:
+            with gzip.open(file, "rt", encoding="utf-8-sig") as f:
                 yield from self.__parse_csv(batch_size, file=f, **kwargs)
         else:
-            with open(file, "rt", encoding='utf-8-sig') as f:
+            with open(file, "rt", encoding="utf-8-sig") as f:
                 yield from self.__parse_csv(batch_size, file=f, **kwargs)
 
     def __parse_csv(self, batch_size, file, **kwargs):
@@ -85,7 +88,5 @@ class CSVBatchSource(BatchProcessor):
             dict: A cleaned dictionary.
         """
         return {
-            k: (None if isinstance(v, str) and v.strip() == "" else v)
-            for k, v in input_dict.items()
-            if k is not None
+            k: (None if isinstance(v, str) and v.strip() == "" else v) for k, v in input_dict.items() if k is not None
         }

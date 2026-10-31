@@ -4,8 +4,7 @@ from pathlib import Path
 from pydantic import BaseModel
 
 from etl_lib.core.SplittingBatchProcessor import dict_id_extractor
-from etl_lib.task.data_loading.ParallelJSONLoad2Neo4jTask import \
-    ParallelJSONLoad2Neo4jTask
+from etl_lib.task.data_loading.ParallelJSONLoad2Neo4jTask import ParallelJSONLoad2Neo4jTask
 
 
 class _RelRow(BaseModel):
@@ -36,14 +35,16 @@ def _write_jsonl(path: Path, rows: list[dict[str, int]]):
 def _run_task(etl_context, tmp_path, rows, model, error_file):
     json_file = tmp_path / "rels.json"
     _write_jsonl(json_file, rows)
-    task = _JSONRelTask(etl_context,
-                        file=json_file,
-                        model=model,
-                        error_file=error_file,
-                        table_size=10,
-                        batch_size=2,
-                        max_workers=4,
-                        prefetch=2)
+    task = _JSONRelTask(
+        etl_context,
+        file=json_file,
+        model=model,
+        error_file=error_file,
+        table_size=10,
+        batch_size=2,
+        max_workers=4,
+        prefetch=2,
+    )
     etl_context.reporter.register_tasks(task)
     return task.execute(), rows
 
@@ -67,8 +68,7 @@ def test_parallel_json_with_validation(etl_context, tmp_path):
         {"start": "BAD", "end": 106},
         {"start": 205, "end": 106},
     ]
-    result, _ = _run_task(etl_context, tmp_path, rows, model=_RelRow,
-                          error_file=tmp_path / "invalid.ndjson")
+    result, _ = _run_task(etl_context, tmp_path, rows, model=_RelRow, error_file=tmp_path / "invalid.ndjson")
 
     assert result.success is True
     assert result.summary["valid_rows"] == 2

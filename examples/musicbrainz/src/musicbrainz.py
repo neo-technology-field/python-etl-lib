@@ -1,31 +1,52 @@
 import logging
 import os
-from dotenv import load_dotenv
 
 import click
+from dotenv import load_dotenv
+from tasks.CreateRelationshipTasks import (
+    CreateArtistAliasRelTask,
+    CreateArtistCreditRelTask,
+    CreateArtistToAreaRelTask,
+    CreateCreditOnTrackRelTask,
+    CreateMediumToReleaseRelTask,
+    CreateRecordingToWorkRelTask,
+    CreateReleaseToLabelRelTask,
+    CreateTrackToMediumRelTask,
+    CreateTrackToRecordingRelTask,
+)
+from tasks.LoadNodesTasks import (
+    LoadAreaTask,
+    LoadAreaTypeTask,
+    LoadArtistAliasTask,
+    LoadArtistCreditTask,
+    LoadArtistTask,
+    LoadArtistTypeTask,
+    LoadLabelTask,
+    LoadMediumFormatTask,
+    LoadMediumTask,
+    LoadRecordingTask,
+    LoadReleaseTask,
+    LoadTrackTask,
+    LoadWorkTask,
+    LoadWorkTypeTask,
+)
+from tasks.SchemaTask import MusicBrainzSchemaTask
+
 from etl_lib.cli.run_tools import cli
 from etl_lib.core.ETLContext import ETLContext
-from etl_lib.core.Task import TaskGroup, ParallelTaskGroup
+from etl_lib.core.Task import ParallelTaskGroup, TaskGroup
 from etl_lib.core.utils import setup_logging
-from tasks.CreateRelationshipTasks import CreateArtistAliasRelTask, CreateArtistCreditRelTask, \
-    CreateArtistToAreaRelTask, CreateCreditOnTrackRelTask, CreateMediumToReleaseRelTask, CreateRecordingToWorkRelTask, \
-    CreateReleaseToLabelRelTask, CreateTrackToMediumRelTask, CreateTrackToRecordingRelTask
-from tasks.LoadNodesTasks import LoadAreaTask, LoadWorkTask, LoadRecordingTask, LoadLabelTask, \
-    LoadReleaseTask, LoadMediumTask, LoadTrackTask, LoadArtistCreditTask, LoadArtistAliasTask, LoadArtistTask, \
-    LoadArtistTypeTask, LoadAreaTypeTask, LoadWorkTypeTask, LoadMediumFormatTask
-
-from tasks.SchemaTask import MusicBrainzSchemaTask
 
 # Load .env variables if needed
 load_dotenv()
 
 
 @cli.command("import")
-@click.option('--pg-host', envvar='PG_HOST', type=str, help='PostgreSQL host')
-@click.option('--pg-port', envvar='PG_PORT', default=5432, type=int, help='PostgreSQL port')
-@click.option('--pg-database', envvar='PG_DB', type=str, help='PostgreSQL database name')
-@click.option('--pg-user', envvar='PG_USER', type=str, help='PostgreSQL username')
-@click.option('--pg-password', envvar='PG_PASSWORD', type=str, help='PostgreSQL password')
+@click.option("--pg-host", envvar="PG_HOST", type=str, help="PostgreSQL host")
+@click.option("--pg-port", envvar="PG_PORT", default=5432, type=int, help="PostgreSQL port")
+@click.option("--pg-database", envvar="PG_DB", type=str, help="PostgreSQL database name")
+@click.option("--pg-user", envvar="PG_USER", type=str, help="PostgreSQL username")
+@click.option("--pg-password", envvar="PG_PASSWORD", type=str, help="PostgreSQL password")
 @click.pass_context
 def main(ctx, pg_host, pg_port, pg_database, pg_user, pg_password):
     """
@@ -83,8 +104,9 @@ def main(ctx, pg_host, pg_port, pg_database, pg_user, pg_password):
 
     relationship_group = TaskGroup(context=context, tasks=relationship_tasks, name="relationship-loading")
 
-
-    all_group = TaskGroup(context=context, tasks=[schema_group, table_group, relationship_group], name="musicbrainz-etl")
+    all_group = TaskGroup(
+        context=context, tasks=[schema_group, table_group, relationship_group], name="musicbrainz-etl"
+    )
 
     context.reporter.register_tasks(all_group)
 
@@ -92,5 +114,6 @@ def main(ctx, pg_host, pg_port, pg_database, pg_user, pg_password):
 
     logging.info("MusicBrainz import completed.")
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     cli()

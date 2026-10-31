@@ -1,5 +1,7 @@
-from pydantic import BaseModel, Field
 from datetime import datetime
+
+from pydantic import BaseModel, Field
+
 
 class Trip(BaseModel):
     vendor_id: int = Field(alias="VendorID")

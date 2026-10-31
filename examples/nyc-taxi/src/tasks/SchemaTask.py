@@ -12,5 +12,5 @@ class SchemaTask(ExecuteCypherTask):
         return [
             "CREATE CONSTRAINT IF NOT EXISTS FOR (l:Location) REQUIRE l.id IS NODE KEY",
             "CREATE CONSTRAINT IF NOT EXISTS FOR (t:Trip) REQUIRE t.id IS NODE KEY",
-            "CREATE INDEX IF NOT EXISTS FOR (t:Trip) ON (t.vendor)"
+            "CREATE INDEX IF NOT EXISTS FOR (t:Trip) ON (t.vendor)",
         ]

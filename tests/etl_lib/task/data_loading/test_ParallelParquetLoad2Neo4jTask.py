@@ -52,15 +52,15 @@ def test_parallel_parquet_load(etl_context, tmp_path):
         table_size=10,
         batch_size=2,
         max_workers=4,
-        prefetch=2
+        prefetch=2,
     )
 
     etl_context.reporter.register_tasks(task)
     result = task.execute()
 
     assert result.success is True
-    assert result.summary['relationships_created'] == 3
-    assert result.summary['nodes_created'] == 6
+    assert result.summary["relationships_created"] == 3
+    assert result.summary["nodes_created"] == 6
 
     # Sanity check
     with etl_context.neo4j.session() as sess:

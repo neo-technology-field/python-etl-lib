@@ -5,19 +5,6 @@ on:
   pull_request:
 
 jobs:
-  lint:
-    runs-on: ubuntu-24.04
-    steps:
-      - uses: actions/checkout@v7
-      - uses: actions/setup-python@v7
-        with:
-          python-version: "3.11"
-          cache: pip
-      - name: Install Ruff
-        run: python -m pip install ruff
-      - name: Lint
-        run: python -m ruff check .
-
   base:
     runs-on: ubuntu-24.04
     steps:

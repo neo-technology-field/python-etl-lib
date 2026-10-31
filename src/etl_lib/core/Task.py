@@ -48,12 +48,11 @@ class TaskReturn:
 
         # Combine success values and errors
         combined_success = self.success and other.success
-        combined_error = None if not (self.error or other.error) \
-            else f"{self.error or ''} | {other.error or ''}".strip(" |")
-
-        return TaskReturn(
-            success=combined_success, summary=merged_summary, error=combined_error
+        combined_error = (
+            None if not (self.error or other.error) else f"{self.error or ''} | {other.error or ''}".strip(" |")
         )
+
+        return TaskReturn(success=combined_success, summary=merged_summary, error=combined_error)
 
 
 class Task:
@@ -183,9 +182,7 @@ class TaskGroup(Task):
         for task in self.tasks:
             task_ret = task.execute(**kwargs)
             if not task_ret.success and task.abort_on_fail():
-                self.logger.warning(
-                    f"Task {self.task_name()} failed. Aborting execution."
-                )
+                self.logger.warning(f"Task {self.task_name()} failed. Aborting execution.")
                 return task_ret
             ret = ret + task_ret
         return ret
@@ -228,9 +225,7 @@ class ParallelTaskGroup(TaskGroup):
         combined_result = TaskReturn()
 
         with ThreadPoolExecutor() as executor:
-            future_to_task = {
-                executor.submit(task.execute, **kwargs): task for task in self.tasks
-            }
+            future_to_task = {executor.submit(task.execute, **kwargs): task for task in self.tasks}
 
             for future in as_completed(future_to_task):
                 task = future_to_task[future]
@@ -250,9 +245,7 @@ class ParallelTaskGroup(TaskGroup):
                         return combined_result
 
                 except Exception as e:
-                    self.logger.error(
-                        f"Task {task.task_name()} encountered an error: {str(e)}"
-                    )
+                    self.logger.error(f"Task {task.task_name()} encountered an error: {str(e)}")
                     error_result = TaskReturn(success=False, summary={}, error=str(e))
                     combined_result += error_result
 

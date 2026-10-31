@@ -2,16 +2,15 @@ import csv
 from pathlib import Path
 
 import pytest
-from etl_lib.test_utils.utils import get_test_file, DummyContext
 
 from etl_lib.core.BatchProcessor import BatchResults
 from etl_lib.data_source.CSVBatchSource import CSVBatchSource
-
+from etl_lib.test_utils.utils import DummyContext, get_test_file
 
 TEST_FILES = [
     (get_test_file("coma-double-quotes.csv"), {"delimiter": ",", "quotechar": '"', "escapechar": "\\"}),
     (get_test_file("semi-single-quotes.csv"), {"delimiter": ";", "quotechar": "'", "escapechar": "\\"}),
-    (get_test_file("tab-no-quotes.csv"), {"delimiter": "\t", "quotechar": '"', "escapechar": "\\"})
+    (get_test_file("tab-no-quotes.csv"), {"delimiter": "\t", "quotechar": '"', "escapechar": "\\"}),
 ]
 
 EXPECTED_DATA = [
@@ -34,9 +33,7 @@ def test_csv_batch_processor(csv_file, csv_reader_options):
 
     batch: BatchResults = batches[0]
 
-    expected_with_row = [
-        {**row, "_row": idx} for idx, row in enumerate(EXPECTED_DATA)
-    ]
+    expected_with_row = [{**row, "_row": idx} for idx, row in enumerate(EXPECTED_DATA)]
 
     assert batch.chunk == expected_with_row, f"Mismatch in batch chunk: {batch.chunk}"
 
@@ -44,7 +41,7 @@ def test_csv_batch_processor(csv_file, csv_reader_options):
         assert isinstance(row["_row"], int), f"_row should be int, got {type(row['_row'])} in {row}"
 
     # Validate statistics field (should be a dictionary)
-    assert batch.statistics == {'csv_lines_read': 3}, "Expected statistics to be a dictionary"
+    assert batch.statistics == {"csv_lines_read": 3}, "Expected statistics to be a dictionary"
 
     assert batch.batch_size == batch_size, f"Expected batch_size to be {batch_size}, got {batch.batch_size}"
 
@@ -61,11 +58,7 @@ def test_csv_batch_processor_batching(tmp_path: Path, batch_size):
         writer = csv.DictWriter(csvfile, fieldnames=fieldnames, **csv_reader_options)
         writer.writeheader()
         for i in range(total_rows):
-            writer.writerow({
-                "string": f"Row {i}",
-                "integer": str(i),
-                "float": str(float(i) * 1.1)
-            })
+            writer.writerow({"string": f"Row {i}", "integer": str(i), "float": str(float(i) * 1.1)})
 
     processor = CSVBatchSource(csv_file=csv_path, context=DummyContext(), task=None, **csv_reader_options)
 

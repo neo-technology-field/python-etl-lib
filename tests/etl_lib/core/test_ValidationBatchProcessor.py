@@ -1,10 +1,9 @@
+import json
 from pathlib import Path
 from typing import Generator
 
-import json
-
 import pytest
-from pydantic import BaseModel, field_validator, Field
+from pydantic import BaseModel, Field, field_validator
 
 from etl_lib.core.BatchProcessor import BatchProcessor, BatchResults
 from etl_lib.core.ValidationBatchProcessor import ValidationBatchProcessor
@@ -12,7 +11,6 @@ from etl_lib.test_utils.utils import DummyContext
 
 
 class DataGenerator(BatchProcessor):
-
     def __init__(self, data: [{}]):
         super().__init__(None, None)
         self.data = data
@@ -29,7 +27,7 @@ class RowModel(BaseModel):
     alias_test: bool = Field(alias="alias test", default=None)
     validation_alias: str = Field(alias="validation alias", default=None)
 
-    @field_validator('field3')
+    @field_validator("field3")
     def validate_field3(cls, value):
         if not value.isalpha():
             raise ValueError("field3 must contain only alphabetic characters")
@@ -37,14 +35,22 @@ class RowModel(BaseModel):
 
 
 class WrapperValidationBatchProcessor(ValidationBatchProcessor):
-
     def __init__(self, predecessor, tmp_path: Path):
-        super().__init__(DummyContext(), None,predecessor, RowModel, tmp_path / "invalid_rows.log")
+        super().__init__(DummyContext(), None, predecessor, RowModel, tmp_path / "invalid_rows.log")
 
 
 def test_valid_batch(tmp_path):
-    test_data = DataGenerator(data=[
-        {"field1": "123", "field2": "45.6", "field3": "ValidString", "alias test": "True", "validation alias": "bar"}])
+    test_data = DataGenerator(
+        data=[
+            {
+                "field1": "123",
+                "field2": "45.6",
+                "field3": "ValidString",
+                "alias test": "True",
+                "validation alias": "bar",
+            }
+        ]
+    )
     processor = WrapperValidationBatchProcessor(test_data, tmp_path)
 
     result = next(processor.get_batch(1))
@@ -57,12 +63,26 @@ def test_valid_batch(tmp_path):
     assert result.chunk[0]["field1"] == 123
     assert result.chunk[0]["field2"] == 45.6
 
+
 def test_invalid_batch(tmp_path):
-    test_data = DataGenerator(data=
-    [
-        {"field1": "123", "field2": "45.6", "field3": "ValidString", "alias test": "True", "validation alias": "bar"},
-        {"field1": "3.14", "field2": "45.6", "field3": "ValidString", "alias test": "True", "validation alias": "bar"}
-    ])
+    test_data = DataGenerator(
+        data=[
+            {
+                "field1": "123",
+                "field2": "45.6",
+                "field3": "ValidString",
+                "alias test": "True",
+                "validation alias": "bar",
+            },
+            {
+                "field1": "3.14",
+                "field2": "45.6",
+                "field3": "ValidString",
+                "alias test": "True",
+                "validation alias": "bar",
+            },
+        ]
+    )
     processor = WrapperValidationBatchProcessor(test_data, tmp_path)
 
     result = next(processor.get_batch(1))
@@ -103,8 +123,11 @@ def test_error_rows_accumulate_within_one_pass(tmp_path: Path) -> None:
     error_file = tmp_path / "rows.error.json"
     error_file.write_text("stale error\n", encoding="utf-8")
     processor = ValidationBatchProcessor(
-        None, None, _Batches([[{"value": "bad-one"}], [{"value": "bad-two"}]]),
-        _IntegerRow, error_file,
+        None,
+        None,
+        _Batches([[{"value": "bad-one"}], [{"value": "bad-two"}]]),
+        _IntegerRow,
+        error_file,
     )
     list(processor.get_batch(1))
     records = [json.loads(line) for line in error_file.read_text().splitlines()]

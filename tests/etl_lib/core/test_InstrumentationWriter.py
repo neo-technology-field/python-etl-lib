@@ -71,10 +71,12 @@ def test_csv_instrumentation_contains_task_name_and_run_id(tmp_path):
     Verifies CSV instrumentation rows contain required task and run metadata.
     """
     path = tmp_path / "instrumentation.csv"
-    context = EnvOnlyContext({
-        "ETL_LIB_INSTRUMENT": "csv",
-        "ETL_LIB_INSTRUMENT_CSV_PATH": str(path),
-    })
+    context = EnvOnlyContext(
+        {
+            "ETL_LIB_INSTRUMENT": "csv",
+            "ETL_LIB_INSTRUMENT_CSV_PATH": str(path),
+        }
+    )
     reporter = ProgressReporter(context)
     task = DummyTask(context)
 
@@ -95,10 +97,12 @@ def test_csv_instrumentation_sets_run_id_without_register_tasks(tmp_path):
     Verifies run id is populated even when task registration is skipped.
     """
     path = tmp_path / "instrumentation.csv"
-    context = EnvOnlyContext({
-        "ETL_LIB_INSTRUMENT": "csv",
-        "ETL_LIB_INSTRUMENT_CSV_PATH": str(path),
-    })
+    context = EnvOnlyContext(
+        {
+            "ETL_LIB_INSTRUMENT": "csv",
+            "ETL_LIB_INSTRUMENT_CSV_PATH": str(path),
+        }
+    )
     reporter = ProgressReporter(context)
     task = DummyTask(context)
 

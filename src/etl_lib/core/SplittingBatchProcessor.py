@@ -41,9 +41,9 @@ def tuple_id_extractor(table_size: int = 10) -> Callable[[Tuple[str | int, str |
 
 
 def dict_id_extractor(
-        table_size: int = 10,
-        start_key: str = "start",
-        end_key: str = "end",
+    table_size: int = 10,
+    start_key: str = "start",
+    end_key: str = "end",
 ) -> Callable[[Dict[str, Any]], Tuple[int, int]]:
     """
     Build an ID extractor for dict rows. The extractor reads two fields (configurable via
@@ -74,10 +74,10 @@ def dict_id_extractor(
 
 
 def canonical_integer_id_extractor(
-        table_size: int = 10,
-        start_key: str = "start",
-        end_key: str = "end",
-        monopartite: bool = True,
+    table_size: int = 10,
+    start_key: str = "start",
+    end_key: str = "end",
+    monopartite: bool = True,
 ) -> Callable[[Dict[str, Any]], Tuple[int, int]]:
     """
     ID extractor for integer IDs with optional canonical folding.
@@ -95,8 +95,8 @@ def canonical_integer_id_extractor(
             s_val = item[start_key]
             e_val = item[end_key]
 
-            s_hash = (s_val * MAGIC) & 0xffffffff
-            e_hash = (e_val * MAGIC) & 0xffffffff
+            s_hash = (s_val * MAGIC) & 0xFFFFFFFF
+            e_hash = (e_val * MAGIC) & 0xFFFFFFFF
 
             row = s_hash % table_size
             col = e_hash % table_size
@@ -113,10 +113,10 @@ def canonical_integer_id_extractor(
 
 
 def canonical_int_or_str_id_extractor(
-        table_size: int = 10,
-        start_key: str = "start",
-        end_key: str = "end",
-        monopartite: bool = True,
+    table_size: int = 10,
+    start_key: str = "start",
+    end_key: str = "end",
+    monopartite: bool = True,
 ) -> Callable[[Dict[str, Any]], Tuple[int, int]]:
     """
     ID extractor for integer IDs and string IDs with optional canonical folding (row <= col).
@@ -200,14 +200,14 @@ class SplittingBatchProcessor(BatchProcessor):
     """
 
     def __init__(
-            self,
-            context: ETLContext,
-            task: Task | None,
-            predecessor: BatchProcessor,
-            table_size: int | None,
-            id_extractor: Callable[[Any], Tuple[int, int]],
-            near_full_ratio: float = 0.85,
-            burst_multiplier: int = 25,
+        self,
+        context: ETLContext,
+        task: Task | None,
+        predecessor: BatchProcessor,
+        table_size: int | None,
+        id_extractor: Callable[[Any], Tuple[int, int]],
+        near_full_ratio: float = 0.85,
+        burst_multiplier: int = 25,
     ):
         super().__init__(context, task, predecessor)
 
@@ -235,8 +235,7 @@ class SplittingBatchProcessor(BatchProcessor):
         self.burst_multiplier = int(burst_multiplier)
 
         self.buffer: Dict[int, Dict[int, List[Any]]] = {
-            r: {c: [] for c in range(self.table_size)}
-            for r in range(self.table_size)
+            r: {c: [] for c in range(self.table_size)} for r in range(self.table_size)
         }
         self.logger = logging.getLogger(f"{self.__class__.__module__}.{self.__class__.__name__}")
 
@@ -319,10 +318,10 @@ class SplittingBatchProcessor(BatchProcessor):
         return best
 
     def _flush_wave(
-            self,
-            wave: List[Tuple[int, int]],
-            max_batch_size: int,
-            statistics: Dict[str, Any] | None = None,
+        self,
+        wave: List[Tuple[int, int]],
+        max_batch_size: int,
+        statistics: Dict[str, Any] | None = None,
     ) -> BatchResults:
         """
         Extract up to `max_batch_size` items from each bucket in `wave`, remove them from the buffer,
@@ -342,16 +341,19 @@ class SplittingBatchProcessor(BatchProcessor):
             sizes.append(take)
 
         dt_ms = (time.perf_counter() - t0) * 1000.0
-        self._instrument("splitter_flush", {
-            "wave_size": len(wave),
-            "emitted_rows": sum(sizes),
-            "bucket_min": min(sizes) if sizes else 0,
-            "bucket_p50": sorted(sizes)[len(sizes) // 2] if sizes else 0,
-            "bucket_max": max(sizes) if sizes else 0,
-            "buffered_before": buffered_before,
-            "table_size": self.table_size,
-            "dt_ms": round(dt_ms, 3),
-        })
+        self._instrument(
+            "splitter_flush",
+            {
+                "wave_size": len(wave),
+                "emitted_rows": sum(sizes),
+                "bucket_min": min(sizes) if sizes else 0,
+                "bucket_p50": sorted(sizes)[len(sizes) // 2] if sizes else 0,
+                "bucket_max": max(sizes) if sizes else 0,
+                "buffered_before": buffered_before,
+                "table_size": self.table_size,
+                "dt_ms": round(dt_ms, 3),
+            },
+        )
         return BatchResults(
             chunk=bucket_batches,
             statistics=statistics or {},
@@ -365,10 +367,7 @@ class SplittingBatchProcessor(BatchProcessor):
         if not self.logger.isEnabledFor(logging.DEBUG):
             return
 
-        counts = [
-            [len(self.buffer[r][c]) for c in range(self.table_size)]
-            for r in range(self.table_size)
-        ]
+        counts = [[len(self.buffer[r][c]) for c in range(self.table_size)] for r in range(self.table_size)]
         marks = set(wave)
 
         pad = max(2, len(str(self.table_size - 1)))
@@ -445,7 +444,12 @@ class SplittingBatchProcessor(BatchProcessor):
                 wave = self._select_wave(min_bucket_len=near_full_threshold, seed=[(hot_r, hot_c)])
                 self.logger.debug(
                     "burst flush: hottest_bucket=(%d,%d len=%d) threshold=%d near_full_threshold=%d wave_size=%d",
-                    hot_r, hot_c, hot_n, burst_threshold, near_full_threshold, len(wave)
+                    hot_r,
+                    hot_c,
+                    hot_n,
+                    burst_threshold,
+                    near_full_threshold,
+                    len(wave),
                 )
                 br = self._flush_wave(wave, max_batch_size, statistics={})
                 if pending is not None:

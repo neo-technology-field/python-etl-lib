@@ -11,7 +11,7 @@ class LoadTransfersTask(CSVLoad2Neo4jTask):
         from_stop_id: str
         minTransferTime: int = Field(gt=0, alias="min_transfer_time", default=0)
 
-    def __init__(self, context: ETLContext, file:Path):
+    def __init__(self, context: ETLContext, file: Path):
         super().__init__(context, file, model=LoadTransfersTask.Transfer)
 
     def _query(self):

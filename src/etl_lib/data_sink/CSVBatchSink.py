@@ -3,8 +3,7 @@ import time
 from pathlib import Path
 from typing import Generator
 
-from etl_lib.core.BatchProcessor import (BatchProcessor, BatchResults,
-                                         append_result)
+from etl_lib.core.BatchProcessor import BatchProcessor, BatchResults, append_result
 from etl_lib.core.ETLContext import ETLContext
 from etl_lib.core.Task import Task
 
@@ -37,10 +36,13 @@ class CSVBatchSink(BatchProcessor):
         for batch_result in self.predecessor.get_batch(max_batch_size):
             t0 = time.perf_counter()
             self._write_to_csv(batch_result.chunk)
-            self._instrument("csv_write_batch", {
-                "rows": len(batch_result.chunk),
-                "dt_ms": round((time.perf_counter() - t0) * 1000.0, 3),
-            })
+            self._instrument(
+                "csv_write_batch",
+                {
+                    "rows": len(batch_result.chunk),
+                    "dt_ms": round((time.perf_counter() - t0) * 1000.0, 3),
+                },
+            )
             yield append_result(batch_result, {"rows_written": len(batch_result.chunk)})
 
     def _write_to_csv(self, data: list[dict]):

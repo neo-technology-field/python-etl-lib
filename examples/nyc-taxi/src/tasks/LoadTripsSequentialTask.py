@@ -1,10 +1,9 @@
-
 from pathlib import Path
+
+from model.trip import Trip
 
 from etl_lib.core.ETLContext import ETLContext
 from etl_lib.task.data_loading.CSVLoad2Neo4jTask import CSVLoad2Neo4jTask
-
-from model.trip import Trip
 
 
 class LoadTripsSequentialTask(CSVLoad2Neo4jTask):

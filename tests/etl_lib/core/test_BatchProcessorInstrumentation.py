@@ -34,11 +34,13 @@ class RecordingReporter:
             event_type: Event type.
             payload: Event payload.
         """
-        self.events.append({
-            "task": task,
-            "event_type": event_type,
-            "payload": payload,
-        })
+        self.events.append(
+            {
+                "task": task,
+                "event_type": event_type,
+                "payload": payload,
+            }
+        )
 
 
 class TaskStub:
@@ -121,7 +123,9 @@ class PassthroughWorker(BatchProcessor):
             max_batch_size: Unused.
         """
         upstream = next(self.predecessor.get_batch(max_batch_size))
-        yield BatchResults(chunk=upstream.chunk, statistics={"processed": len(upstream.chunk)}, batch_size=len(upstream.chunk))
+        yield BatchResults(
+            chunk=upstream.chunk, statistics={"processed": len(upstream.chunk)}, batch_size=len(upstream.chunk)
+        )
 
 
 def _event_payloads(events: list[dict], event_type: str) -> list[dict]:
@@ -146,9 +150,7 @@ def test_splitting_batch_processor_emits_splitter_instrumentation():
     context = ContextStub(reporter)
     task = TaskStub("splitter-task")
 
-    predecessor = StaticPredecessor([
-        BatchResults(chunk=[(0, 0), (1, 1), (0, 0), (1, 1)], statistics={}, batch_size=4)
-    ])
+    predecessor = StaticPredecessor([BatchResults(chunk=[(0, 0), (1, 1), (0, 0), (1, 1)], statistics={}, batch_size=4)])
     splitter = SplittingBatchProcessor(
         context=context,
         task=task,
@@ -253,10 +255,12 @@ def test_cypher_batch_sink_emits_transaction_instrumentation():
     context = ContextStub(reporter)
     context.neo4j = FakeNeo4jContext()
 
-    predecessor = StaticPredecessor([
-        BatchResults(chunk=[{"i": 1}, {"i": 2}], statistics={}, batch_size=2),
-        BatchResults(chunk=[{"i": 3}], statistics={}, batch_size=1),
-    ])
+    predecessor = StaticPredecessor(
+        [
+            BatchResults(chunk=[{"i": 1}, {"i": 2}], statistics={}, batch_size=2),
+            BatchResults(chunk=[{"i": 3}], statistics={}, batch_size=1),
+        ]
+    )
 
     sink = CypherBatchSink(context=context, task=task, predecessor=predecessor, query="RETURN 1")
     list(sink.get_batch(10))
@@ -414,10 +418,12 @@ def test_sql_sink_emits_instrumentation():
     context.sql = type("Sql", (), {"engine": FakeSqlEngine([])})()
     task = TaskStub("sql-sink-task")
 
-    predecessor = StaticPredecessor([
-        BatchResults(chunk=[{"id": 1}, {"id": 2}], statistics={}, batch_size=2),
-        BatchResults(chunk=[{"id": 3}], statistics={}, batch_size=1),
-    ])
+    predecessor = StaticPredecessor(
+        [
+            BatchResults(chunk=[{"id": 1}, {"id": 2}], statistics={}, batch_size=2),
+            BatchResults(chunk=[{"id": 3}], statistics={}, batch_size=1),
+        ]
+    )
 
     sink = SQLBatchSink(context=context, task=task, predecessor=predecessor, query="INSERT INTO t VALUES (:id)")
     list(sink.get_batch(2))

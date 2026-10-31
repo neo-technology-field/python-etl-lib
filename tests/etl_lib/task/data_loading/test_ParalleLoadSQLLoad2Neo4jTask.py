@@ -24,8 +24,9 @@ def setup_rel_pairs_table(sql_context):
     """
     engine = sql_context.sql.engine
     with engine.connect() as conn:
-        conn.execute(text(
-            """
+        conn.execute(
+            text(
+                """
             CREATE TABLE IF NOT EXISTS rel_pairs
             (
                 start_id
@@ -34,12 +35,14 @@ def setup_rel_pairs_table(sql_context):
                 INT
             );
             """
-        ))
+            )
+        )
         # clear any existing
         conn.execute(text("DELETE FROM rel_pairs"))
         # insert overlapping test rows
-        conn.execute(text(
-            """
+        conn.execute(
+            text(
+                """
             INSERT INTO rel_pairs (start_id, end_id)
             SELECT i, i + 1
             FROM generate_series(1, 1000) AS g(i);
@@ -47,7 +50,8 @@ def setup_rel_pairs_table(sql_context):
             SELECT i, i + 2
             FROM generate_series(1, 998) AS g(i);
             """
-        ))
+            )
+        )
         conn.commit()
     yield
     # teardown
@@ -64,37 +68,32 @@ def setup_test_nodes(combined_context, setup_rel_pairs_table):
     # IDs from 1 through 1001 inclusive
     ids = list(range(1, 1002))
     with combined_context.neo4j.session() as sess:
-        sess.run(
-            "UNWIND $ids AS id MERGE (:TestNode {id: id})",
-            ids=ids
-        )
+        sess.run("UNWIND $ids AS id MERGE (:TestNode {id: id})", ids=ids)
     return ids
 
 
 class TestRelationLoad(ParallelSQLLoad2Neo4jTask):
-    __test__ = False # prevent pytest from picking this up
+    __test__ = False  # prevent pytest from picking this up
+
     def __init__(self, context):
         super().__init__(context, batch_size=2, table_size=10, max_workers=3, prefetch=2)
 
     def _sql_query(self) -> str:
-        return 'SELECT start_id AS start, end_id AS end FROM rel_pairs;'
+        return "SELECT start_id AS start, end_id AS end FROM rel_pairs;"
 
     def _cypher_query(self) -> str:
-        return '''
+        return """
             UNWIND $batch AS r
             MATCH (a:TestNode {id: r.start})
             MATCH (b:TestNode {id: r.end})
             MERGE (a)-[:RELATED_TO]->(b)
-        '''
+        """
 
     def _id_extractor(self) -> Callable:
         return dict_id_extractor(table_size=10)
 
 
-def test_parallel_load_creates_relationships(
-        combined_context,
-        setup_test_nodes
-):
+def test_parallel_load_creates_relationships(combined_context, setup_test_nodes):
     # Compute expected relationships set
     expected = {(i, i + 1) for i in range(1, 1001)} | {(i, i + 2) for i in range(1, 999)}
 
@@ -106,10 +105,7 @@ def test_parallel_load_creates_relationships(
 
     # Verify relationships in Neo4j
     with combined_context.neo4j.session() as sess:
-        records = sess.run(
-            "MATCH (a:TestNode)-[r:RELATED_TO]->(b:TestNode)"
-            " RETURN a.id AS a, b.id AS b"
-        )
-        rels = {(rec['a'], rec['b']) for rec in records}
+        records = sess.run("MATCH (a:TestNode)-[r:RELATED_TO]->(b:TestNode) RETURN a.id AS a, b.id AS b")
+        rels = {(rec["a"], rec["b"]) for rec in records}
 
     assert rels == expected

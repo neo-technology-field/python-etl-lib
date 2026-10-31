@@ -42,7 +42,9 @@ def test_single_query_preserves_parameter_and_summary_handling() -> None:
     result = Query(SimpleNamespace(neo4j=neo4j)).run_internal(value=7)
     session = neo4j.session.return_value.__enter__.return_value
     neo4j.query_database.assert_called_once_with(
-        session=session, query="RETURN $value AS value", value=7,
+        session=session,
+        query="RETURN $value AS value",
+        value=7,
     )
     assert result.success
     assert result.summary == {"nodes_created": 1}

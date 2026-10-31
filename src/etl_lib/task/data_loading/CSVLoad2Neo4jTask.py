@@ -5,8 +5,8 @@ from typing import Type
 
 from pydantic import BaseModel
 
-from etl_lib.core.ETLContext import ETLContext
 from etl_lib.core.ClosedLoopBatchProcessor import ClosedLoopBatchProcessor
+from etl_lib.core.ETLContext import ETLContext
 from etl_lib.core.Task import Task, TaskReturn
 from etl_lib.core.ValidationBatchProcessor import ValidationBatchProcessor
 from etl_lib.data_sink.CypherBatchSink import CypherBatchSink
@@ -65,11 +65,8 @@ class CSVLoad2Neo4jTask(Task):
                       """
 
     '''
-    def __init__(self,
-                 context: ETLContext,
-                 file: Path,
-                 model: Type[BaseModel] | None = None,
-                 batch_size: int = 5000):
+
+    def __init__(self, context: ETLContext, file: Path, model: Type[BaseModel] | None = None, batch_size: int = 5000):
         super().__init__(context)
         self.batch_size = batch_size
         self.model = model

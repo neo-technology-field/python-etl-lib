@@ -1,5 +1,7 @@
 from abc import ABC, abstractmethod
-from typing import Callable, Union, Optional
+from typing import Callable, Optional, Union
+
+from sqlalchemy import text
 
 from etl_lib.core.ClosedLoopBatchProcessor import ClosedLoopBatchProcessor
 from etl_lib.core.ETLContext import ETLContext
@@ -8,7 +10,6 @@ from etl_lib.core.SplittingBatchProcessor import SplittingBatchProcessor, dict_i
 from etl_lib.core.Task import Task, TaskReturn
 from etl_lib.data_sink.CypherBatchSink import CypherBatchSink
 from etl_lib.data_source.SQLBatchSource import SQLBatchSource
-from sqlalchemy import text
 
 
 class ParallelSQLLoad2Neo4jTask(Task, ABC):
@@ -30,12 +31,12 @@ class ParallelSQLLoad2Neo4jTask(Task, ABC):
     """
 
     def __init__(
-            self,
-            context: ETLContext,
-            batch_size: int = 5000,
-            table_size: int = 10,
-            max_workers: Optional[int] = None,
-            prefetch: int = 4
+        self,
+        context: ETLContext,
+        batch_size: int = 5000,
+        table_size: int = 10,
+        max_workers: Optional[int] = None,
+        prefetch: int = 4,
     ):
         super().__init__(context)
         self.context = context
@@ -85,26 +86,24 @@ class ParallelSQLLoad2Neo4jTask(Task, ABC):
             task=self,
             predecessor=source,
             table_size=self.table_size,
-            id_extractor=self._id_extractor()
+            id_extractor=self._id_extractor(),
         )
 
         # parallel processor: runs CypherBatchSink on each partition concurrently
         parallel = ParallelBatchProcessor(
             context=self.context,
             task=self,
-            worker_factory=lambda: CypherBatchSink(context=self.context, task=self, predecessor=None,
-                                                   query=self._cypher_query()),
+            worker_factory=lambda: CypherBatchSink(
+                context=self.context, task=self, predecessor=None, query=self._cypher_query()
+            ),
             predecessor=splitter,
             max_workers=self.max_workers,
-            prefetch=self.prefetch
+            prefetch=self.prefetch,
         )
 
         # close loop: drives the pipeline and reports progress
         closing = ClosedLoopBatchProcessor(
-            context=self.context,
-            task=self,
-            predecessor=parallel,
-            expected_rows=total_count
+            context=self.context, task=self, predecessor=parallel, expected_rows=total_count
         )
 
         # run once to completion and return aggregated stats

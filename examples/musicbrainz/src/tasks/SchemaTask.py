@@ -2,7 +2,6 @@ from etl_lib.task.ExecuteCypherTask import ExecuteCypherTask
 
 
 class MusicBrainzSchemaTask(ExecuteCypherTask):
-
     def _query(self) -> str | list[str]:
         return [
             # Unique constraints
@@ -20,7 +19,6 @@ class MusicBrainzSchemaTask(ExecuteCypherTask):
             "CREATE CONSTRAINT cons_areatype_id IF NOT EXISTS FOR (at:AreaType) REQUIRE at.id IS UNIQUE;",
             "CREATE CONSTRAINT cons_worktype_id IF NOT EXISTS FOR (wt:WorkType) REQUIRE wt.id IS UNIQUE;",
             "CREATE CONSTRAINT cons_mediumformat_id IF NOT EXISTS FOR (mf:MediumFormat) REQUIRE mf.id IS UNIQUE;",
-
             # Indexes on common lookup or query fields
             "CREATE INDEX idx_artist_name IF NOT EXISTS FOR (a:Artist) ON (a.name);",
             "CREATE INDEX idx_artist_sortname IF NOT EXISTS FOR (a:Artist) ON (a.sortName);",
@@ -36,5 +34,5 @@ class MusicBrainzSchemaTask(ExecuteCypherTask):
             "CREATE INDEX idx_artisttype_name IF NOT EXISTS FOR (at:ArtistType) ON (at.name);",
             "CREATE INDEX idx_areatype_name IF NOT EXISTS FOR (at:AreaType) ON (at.name);",
             "CREATE INDEX idx_worktype_name IF NOT EXISTS FOR (wt:WorkType) ON (wt.name);",
-            "CREATE INDEX idx_mediumformat_name IF NOT EXISTS FOR (mf:MediumFormat) ON (mf.name);"
+            "CREATE INDEX idx_mediumformat_name IF NOT EXISTS FOR (mf:MediumFormat) ON (mf.name);",
         ]

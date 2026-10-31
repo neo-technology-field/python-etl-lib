@@ -2,7 +2,6 @@ from etl_lib.task.ExecuteCypherTask import ExecuteCypherTask
 
 
 class CreateSequenceTask(ExecuteCypherTask):
-
     def _query(self) -> str | list[str]:
         return """
         call apoc.periodic.iterate('match (t:Trip) return t',

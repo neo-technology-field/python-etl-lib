@@ -1,7 +1,7 @@
 from pathlib import Path
 from typing import Optional
 
-from pydantic import BaseModel, HttpUrl, EmailStr, Field, field_validator
+from pydantic import BaseModel, EmailStr, Field, HttpUrl, field_validator
 
 from etl_lib.core.ETLContext import ETLContext
 from etl_lib.task.data_loading.CSVLoad2Neo4jTask import CSVLoad2Neo4jTask
@@ -25,9 +25,7 @@ class LoadAgenciesTask(CSVLoad2Neo4jTask):
             return v if v is not None else "generic"
 
         class Config:
-            json_encoders = {
-                HttpUrl: lambda v: str(v)
-            }
+            json_encoders = {HttpUrl: lambda v: str(v)}
 
     def __init__(self, context: ETLContext, file: Path):
         super().__init__(context, file, model=LoadAgenciesTask.Agency)

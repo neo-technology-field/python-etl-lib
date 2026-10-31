@@ -55,7 +55,9 @@ help:
 	"Testing" \
 	"  test              Run pytest" \
 	"  test-cov          Run pytest with coverage (pytest-cov must be installed)" \
-	"  lint              Run Ruff correctness checks" \
+	"  lint              Report all configured Ruff diagnostics" \
+	"  format            Format Python files with Ruff" \
+	"  format-check      Check Python formatting without changing files" \
 	"" \
 	"Docs (Sphinx)" \
 	"  docs              Build HTML docs into $(DOCS_BUILDDIR)/html" \
@@ -88,9 +90,15 @@ test:
 test-cov:
 	@$(PYTHON) -m pytest --cov --cov-report=term-missing $(PYTESTOPTS)
 
-.PHONY: lint
+.PHONY: lint format format-check
 lint:
 	@$(PYTHON) -m ruff check .
+
+format:
+	@$(PYTHON) -m ruff format .
+
+format-check:
+	@$(PYTHON) -m ruff format --check .
 
 # ----- Docs ------------------------------------------------------------------
 

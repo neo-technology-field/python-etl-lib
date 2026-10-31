@@ -21,17 +21,19 @@ class ParquetLoad2Neo4jTask(Task):
     See :doc:`/concepts` for the conventions a load task follows.
     """
 
-    def __init__(self, 
-                 context: ETLContext, 
-                 file: Path, 
-                 model: Optional[Type[BaseModel]] = None,
-                 error_file: Optional[Path] = None,
-                 batch_size: int = 5000):
+    def __init__(
+        self,
+        context: ETLContext,
+        file: Path,
+        model: Optional[Type[BaseModel]] = None,
+        error_file: Optional[Path] = None,
+        batch_size: int = 5000,
+    ):
         super().__init__(context)
         self.file = file
         self.model = model
         if model is not None and error_file is None:
-            raise ValueError('you must provide error file if the model is specified')
+            raise ValueError("you must provide error file if the model is specified")
         self.error_file = error_file
         self.batch_size = batch_size
 
@@ -47,7 +49,7 @@ class ParquetLoad2Neo4jTask(Task):
         total_count = ParquetBatchSource.get_total_rows(self.file)
 
         source = ParquetBatchSource(self.context, self, self.file)
-        
+
         predecessor = source
         if self.model:
             predecessor = ValidationBatchProcessor(self.context, self, source, self.model, self.error_file)

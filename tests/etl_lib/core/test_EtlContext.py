@@ -3,20 +3,21 @@ import urllib.parse
 from unittest.mock import MagicMock, patch
 
 import pytest
-from etl_lib.core.ETLContext import QueryResult, append_results, _fetch_oauth2_token, Neo4jContext
-from etl_lib.test_utils.utils import MockETLContext
 from neo4j.exceptions import Neo4jError
+
+from etl_lib.core.ETLContext import Neo4jContext, QueryResult, _fetch_oauth2_token, append_results
+from etl_lib.test_utils.utils import MockETLContext
 
 
 def test_append_results_no_overlapping_keys():
     """Test appending two QueryResult objects with non-overlapping summary keys."""
-    r1 = QueryResult(data=[1, 2], summary={'nodes_created': 10, 'relationships_created': 5})
-    r2 = QueryResult(data=[3, 4], summary={'nodes_deleted': 2, 'relationships_deleted': 1})
+    r1 = QueryResult(data=[1, 2], summary={"nodes_created": 10, "relationships_created": 5})
+    r2 = QueryResult(data=[3, 4], summary={"nodes_deleted": 2, "relationships_deleted": 1})
 
     result = append_results(r1, r2)
 
     expected_data = [1, 2, 3, 4]
-    expected_summary = {'nodes_created': 10, 'relationships_created': 5, 'nodes_deleted': 2, 'relationships_deleted': 1}
+    expected_summary = {"nodes_created": 10, "relationships_created": 5, "nodes_deleted": 2, "relationships_deleted": 1}
 
     assert result.data == expected_data
     assert result.summary == expected_summary
@@ -24,13 +25,13 @@ def test_append_results_no_overlapping_keys():
 
 def test_append_results_with_overlapping_keys():
     """Test appending two QueryResult objects with overlapping summary keys."""
-    r1 = QueryResult(data=['a', 'b'], summary={'nodes_created': 10, 'nodes_deleted': 2})
-    r2 = QueryResult(data=['c', 'd'], summary={'nodes_created': 5, 'relationships_created': 3, 'nodes_deleted': 1})
+    r1 = QueryResult(data=["a", "b"], summary={"nodes_created": 10, "nodes_deleted": 2})
+    r2 = QueryResult(data=["c", "d"], summary={"nodes_created": 5, "relationships_created": 3, "nodes_deleted": 1})
 
     result = append_results(r1, r2)
 
-    expected_data = ['a', 'b', 'c', 'd']
-    expected_summary = {'nodes_created': 15, 'nodes_deleted': 3, 'relationships_created': 3}
+    expected_data = ["a", "b", "c", "d"]
+    expected_summary = {"nodes_created": 15, "nodes_deleted": 3, "relationships_created": 3}
 
     assert result.data == expected_data
     assert result.summary == expected_summary
@@ -38,13 +39,13 @@ def test_append_results_with_overlapping_keys():
 
 def test_append_results_with_empty_data():
     """Test appending QueryResult objects where one has empty data/summary."""
-    r1 = QueryResult(data=[], summary={'nodes_created': 5})
-    r2 = QueryResult(data=[1, 2, 3], summary={'relationships_created': 2})
+    r1 = QueryResult(data=[], summary={"nodes_created": 5})
+    r2 = QueryResult(data=[1, 2, 3], summary={"relationships_created": 2})
 
     result = append_results(r1, r2)
 
     expected_data = [1, 2, 3]
-    expected_summary = {'nodes_created': 5, 'relationships_created': 2}
+    expected_summary = {"nodes_created": 5, "relationships_created": 2}
 
     assert result.data == expected_data
     assert result.summary == expected_summary
@@ -70,7 +71,7 @@ def test_query_database_single_query(etl_context: MockETLContext):
 
     assert isinstance(result, QueryResult)
     assert len(result.data) == 1
-    assert result.data[0]["name"] == 'test'
+    assert result.data[0]["name"] == "test"
     assert result.summary["nodes_created"] == 1
     assert "relationships_created" in result.summary
 
@@ -80,7 +81,7 @@ def test_query_database_list_of_queries(etl_context: MockETLContext):
     queries = [
         "CREATE (n:Node1) RETURN n",
         "CREATE (n:Node2) RETURN n",
-        "MATCH (n) WHERE n.name IS NULL DETACH DELETE n"
+        "MATCH (n) WHERE n.name IS NULL DETACH DELETE n",
     ]
 
     with etl_context.neo4j.session() as session:
@@ -131,9 +132,7 @@ def test_fetch_oauth2_token_sends_correct_request():
     payload = {"expires_in": 3600, "access_token": "test-token-abc"}
 
     with patch("urllib.request.urlopen", _mock_urlopen(payload)) as mock_open:
-        expires_in, token = _fetch_oauth2_token(
-            "https://idp.example.com/token", "my-client", "my-secret", "openid"
-        )
+        expires_in, token = _fetch_oauth2_token("https://idp.example.com/token", "my-client", "my-secret", "openid")
 
     assert expires_in == 3600
     assert token == "test-token-abc"
@@ -199,8 +198,10 @@ def test_neo4j_context_token_auth_uses_auth_manager():
     mock_driver = _make_driver_mock()
     payload = {"expires_in": 3600, "access_token": "tok-xyz"}
 
-    with patch("etl_lib.core.ETLContext.GraphDatabase") as mock_gdb, \
-         patch("urllib.request.urlopen", _mock_urlopen(payload)):
+    with (
+        patch("etl_lib.core.ETLContext.GraphDatabase") as mock_gdb,
+        patch("urllib.request.urlopen", _mock_urlopen(payload)),
+    ):
         mock_gdb.driver.return_value = mock_driver
         ctx = Neo4jContext(_TOKEN_ENV)
 
@@ -221,8 +222,10 @@ def test_neo4j_context_token_auth_provider_calls_fetch_with_correct_args():
         captured_manager = kwargs.get("auth_manager")
         return mock_driver
 
-    with patch("etl_lib.core.ETLContext.GraphDatabase") as mock_gdb, \
-         patch("etl_lib.core.ETLContext._fetch_oauth2_token", return_value=(3600, "tok-abc")) as mock_fetch:
+    with (
+        patch("etl_lib.core.ETLContext.GraphDatabase") as mock_gdb,
+        patch("etl_lib.core.ETLContext._fetch_oauth2_token", return_value=(3600, "tok-abc")) as mock_fetch,
+    ):
         mock_gdb.driver.side_effect = capture_driver
         Neo4jContext(_TOKEN_ENV)
 

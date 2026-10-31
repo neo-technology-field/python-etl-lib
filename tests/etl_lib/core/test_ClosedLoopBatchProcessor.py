@@ -46,7 +46,6 @@ class TestSafeCalculateCount:
 
 
 class TestGetBatch:
-
     def test_requires_predecessor(self):
         proc = ClosedLoopBatchProcessor(DummyContext(), task=None, predecessor=None)
         with pytest.raises(ValueError):

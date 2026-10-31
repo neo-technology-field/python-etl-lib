@@ -1,30 +1,33 @@
 import logging
 import time
-from typing import Generator, Callable, Optional
+from typing import Callable, Generator, Optional
 
 from sqlalchemy import text
-from sqlalchemy.exc import OperationalError as SAOperationalError, DBAPIError
+from sqlalchemy.exc import DBAPIError
+from sqlalchemy.exc import OperationalError as SAOperationalError
 
 # Conditional import for psycopg2 to avoid crashing if not installed
 try:
     from psycopg2 import OperationalError as PsycopgOperationalError
 except ImportError:
+
     class PsycopgOperationalError(Exception):
         pass
 
-from etl_lib.core.BatchProcessor import BatchResults, BatchProcessor
+
+from etl_lib.core.BatchProcessor import BatchProcessor, BatchResults
 from etl_lib.core.ETLContext import ETLContext
 from etl_lib.core.Task import Task
 
 
 class SQLBatchSource(BatchProcessor):
     def __init__(
-            self,
-            context: ETLContext,
-            task: Task | None,
-            query: str,
-            record_transformer: Optional[Callable[[dict], dict]] = None,
-            **kwargs
+        self,
+        context: ETLContext,
+        task: Task | None,
+        query: str,
+        record_transformer: Optional[Callable[[dict], dict]] = None,
+        **kwargs,
     ):
         """
         Constructs a new SQLBatchSource that streams results instead of paging them.
@@ -45,7 +48,6 @@ class SQLBatchSource(BatchProcessor):
         """
 
         with self.context.sql.engine.connect() as conn:
-
             conn = conn.execution_options(stream_results=True)
 
             try:
@@ -66,10 +68,13 @@ class SQLBatchSource(BatchProcessor):
                     if len(chunk) >= max_batch_size:
                         dt_ms = (time.perf_counter() - t0) * 1000.0
                         chunk_len = len(chunk)
-                        self._instrument("sql_read_batch", {
-                            "rows": chunk_len,
-                            "dt_ms": round(dt_ms, 3),
-                        })
+                        self._instrument(
+                            "sql_read_batch",
+                            {
+                                "rows": chunk_len,
+                                "dt_ms": round(dt_ms, 3),
+                            },
+                        )
                         yield BatchResults(
                             chunk=chunk,
                             statistics={"sql_rows_read": chunk_len},
@@ -82,10 +87,13 @@ class SQLBatchSource(BatchProcessor):
                 if chunk:
                     dt_ms = (time.perf_counter() - t0) * 1000.0
                     chunk_len = len(chunk)
-                    self._instrument("sql_read_batch", {
-                        "rows": chunk_len,
-                        "dt_ms": round(dt_ms, 3),
-                    })
+                    self._instrument(
+                        "sql_read_batch",
+                        {
+                            "rows": chunk_len,
+                            "dt_ms": round(dt_ms, 3),
+                        },
+                    )
                     yield BatchResults(
                         chunk=chunk,
                         statistics={"sql_rows_read": chunk_len},

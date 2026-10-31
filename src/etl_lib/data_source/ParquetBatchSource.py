@@ -62,10 +62,13 @@ class ParquetBatchSource(BatchProcessor):
             batch_len = len(rows)
             row_counter += batch_len
 
-            self._instrument("parquet_read_batch", {
-                "rows": batch_len,
-                "dt_ms": round((time.perf_counter() - t0) * 1000.0, 3),
-            })
+            self._instrument(
+                "parquet_read_batch",
+                {
+                    "rows": batch_len,
+                    "dt_ms": round((time.perf_counter() - t0) * 1000.0, 3),
+                },
+            )
             t0 = time.perf_counter()
 
             yield BatchResults(

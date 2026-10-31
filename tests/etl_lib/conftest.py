@@ -5,10 +5,10 @@ from pathlib import Path
 
 import pytest
 from dotenv import load_dotenv
-from neo4j import GraphDatabase, WRITE_ACCESS
+from neo4j import WRITE_ACCESS, GraphDatabase
 
 from etl_lib.core.ETLContext import ETLContext
-from etl_lib.test_utils.utils import get_database_name, MockETLContext, MockSQLETLContext
+from etl_lib.test_utils.utils import MockETLContext, MockSQLETLContext, get_database_name
 
 test_env = Path(__file__).parent / "../../.env"
 load_dotenv(test_env)
@@ -67,24 +67,26 @@ def neo4j_driver():
     if neo4j_container is not None:
         print(f"found NEO4J_TEST_CONTAINER with {neo4j_container}, using test containers")
         from testcontainers.community.neo4j import Neo4jContainer
-        with (Neo4jContainer(
-                image=neo4j_container,
-                username="neo4j",
-                password=str(uuid.uuid4()))
-                      .with_env("NEO4J_PLUGINS", "[\"apoc\", \"graph-data-science\"],")
-                      .with_env("NEO4J_ACCEPT_LICENSE_AGREEMENT", "yes") as neo4j):
+
+        with (
+            Neo4jContainer(image=neo4j_container, username="neo4j", password=str(uuid.uuid4()))
+            .with_env("NEO4J_PLUGINS", '["apoc", "graph-data-science"],')
+            .with_env("NEO4J_ACCEPT_LICENSE_AGREEMENT", "yes") as neo4j
+        ):
             driver = neo4j.get_driver()
             yield driver
             driver.close()
             return
     else:
         print(
-            f"found NEO4J_TEST_CONTAINER not set, using instance at  {os.getenv('NEO4J_URI')} and database={os.getenv('NEO4J_TEST_DATABASE')}")
+            f"found NEO4J_TEST_CONTAINER not set, using instance at  {os.getenv('NEO4J_URI')} and database={os.getenv('NEO4J_TEST_DATABASE')}"
+        )
         # do not use test containers, but a running remote db
-        with GraphDatabase.driver(os.getenv('NEO4J_URI'),
-                                  auth=(os.getenv('NEO4J_USERNAME'),
-                                        os.getenv('NEO4J_PASSWORD')),
-                                  notifications_min_severity="OFF") as driver:
+        with GraphDatabase.driver(
+            os.getenv("NEO4J_URI"),
+            auth=(os.getenv("NEO4J_USERNAME"), os.getenv("NEO4J_PASSWORD")),
+            notifications_min_severity="OFF",
+        ) as driver:
             yield driver
             driver.close()
             return
@@ -100,7 +102,6 @@ def neo4j_driver_with_empty_db(neo4j_driver):
 @pytest.fixture
 def etl_context(neo4j_driver_with_empty_db, tmp_path) -> ETLContext:
     return MockETLContext(neo4j_driver_with_empty_db, tmp_path)
-
 
 
 @pytest.fixture(scope="session")

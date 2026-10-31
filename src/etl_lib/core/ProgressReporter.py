@@ -133,7 +133,7 @@ class ProgressReporter:
         """
         pass
 
-    def __print_tree(self, task: Task, last=True, header='') -> str:
+    def __print_tree(self, task: Task, last=True, header="") -> str:
         """Generates a tree view of the task tree."""
         elbow = "└──"
         pipe = "│  "
@@ -143,8 +143,9 @@ class ProgressReporter:
         if isinstance(task, TaskGroup):
             children = list(task.sub_tasks())
             for i, c in enumerate(children):
-                tree_string += self.__print_tree(c, header=header + (blank if last else pipe),
-                                                 last=i == len(children) - 1)
+                tree_string += self.__print_tree(
+                    c, header=header + (blank if last else pipe), last=i == len(children) - 1
+                )
         return tree_string
 
 
@@ -174,7 +175,12 @@ class Neo4jProgressReporter(ProgressReporter):
             order = 0
             session.run(
                 "CREATE (t:ETLTask:ETLRun {uuid:$id, task:$task, order:$order, name:$name, status: 'open'}) SET t +=$other",
-                id=main.uuid, order=order, task=main.__repr__(), name=main.task_name(), other=kwargs)
+                id=main.uuid,
+                order=order,
+                task=main.__repr__(),
+                name=main.task_name(),
+                other=kwargs,
+            )
             self.__persist_task(session, main, order)
 
     def __persist_task(self, session, task: Task | TaskGroup, order: int) -> int:
@@ -189,7 +195,12 @@ class Neo4jProgressReporter(ProgressReporter):
                     CREATE (t:ETLTask { uuid:$id, task:$task, order:$order, name:$name, status: 'open' })
                     CREATE (p)-[:HAS_SUB_TASK]->(t)
                     """,
-                    parent_id=task.uuid, id=child.uuid, task=child.__repr__(), order=order, name=child.task_name())
+                    parent_id=task.uuid,
+                    id=child.uuid,
+                    task=child.__repr__(),
+                    order=order,
+                    name=child.task_name(),
+                )
                 if isinstance(child, TaskGroup):
                     order = self.__persist_task(session, child, order)
         else:
@@ -199,15 +210,21 @@ class Neo4jProgressReporter(ProgressReporter):
                 MERGE (t:ETLTask { uuid: $id })
                     SET t.task=$task, t.order=$order, t.name=$name, t.status='open'
                 """,
-                id=task.uuid, task=task.__repr__(), order=order, name=task.task_name())
+                id=task.uuid,
+                task=task.__repr__(),
+                order=order,
+                name=task.task_name(),
+            )
         return order
 
     def started_task(self, task: Task) -> Task:
         super().started_task(task=task)
         with self.context.neo4j.session(self.database) as session:
-            session.run("MATCH (t:ETLTask { uuid: $id }) SET t.startTime = $start_time, t.status= 'running'",
-                        id=task.uuid,
-                        start_time=task.start_time)
+            session.run(
+                "MATCH (t:ETLTask { uuid: $id }) SET t.startTime = $start_time, t.status= 'running'",
+                id=task.uuid,
+                start_time=task.start_time,
+            )
         return task
 
     def finished_task(self, task: Task, result: TaskReturn) -> Task:
@@ -217,11 +234,18 @@ class Neo4jProgressReporter(ProgressReporter):
         else:
             status = "failure"
         with self.context.neo4j.session(self.database) as session:
-            session.run("""
+            session.run(
+                """
             MATCH (t:ETLTask {uuid:$id}) SET t.endTime = $end_time, t.status = $status, t.error = $error
             CREATE (s:ETLStats) SET s=$summary
             CREATE (t)-[:HAS_STATS]->(s)
-            """, id=task.uuid, end_time=task.end_time, summary=result.summary, status=status, error=result.error)
+            """,
+                id=task.uuid,
+                end_time=task.end_time,
+                summary=result.summary,
+                status=status,
+                error=result.error,
+            )
         return task
 
     def __create_constraints(self):
@@ -231,21 +255,27 @@ class Neo4jProgressReporter(ProgressReporter):
     def report_progress(self, task: Task, batches: int, expected_batches: int, stats: dict) -> None:
         self.logger.debug(f"{batches=}, {expected_batches=}, {stats=}")
         with self.context.neo4j.session(self.database) as session:
-            session.run("MATCH (t:ETLTask {uuid:$id}) SET t.batches =$batches, t.expected_batches =$expected_batches",
-                        id=task.uuid, batches=batches, expected_batches=expected_batches)
+            session.run(
+                "MATCH (t:ETLTask {uuid:$id}) SET t.batches =$batches, t.expected_batches =$expected_batches",
+                id=task.uuid,
+                batches=batches,
+                expected_batches=expected_batches,
+            )
 
     def _register_shutdown_handler(self):
         def shutdown_handler(signum, frame):
             self.logger.warning("SIGINT received, waiting for running tasks to abort.")
             with self.context.neo4j.session(self.database) as session:
-                cnt = session.run("""
+                cnt = session.run(
+                    """
                 MATCH path=(r:ETLRun {uuid: $runId})-[*]->() 
                 WITH [task in nodes(path) WHERE task:ETLTask AND task.status IN ['open', 'running'] | task] AS tasks
                 UNWIND tasks AS task
                 SET task.status = 'aborted'
                 RETURN count(task) AS cnt
-                """, runId=self.run_uuid
-                                  ).single()['cnt']
+                """,
+                    runId=self.run_uuid,
+                ).single()["cnt"]
             self.logger.info(f"marked {cnt} tasks as aborted.")
 
         add_sigint_handler(shutdown_handler)

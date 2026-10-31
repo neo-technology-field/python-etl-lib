@@ -20,6 +20,7 @@ class CreateReportingConstraintsTask(Task):
             raise RuntimeError("REPORTER_DATABASE needs to be set in order to run this task")
 
         with self.context.neo4j.session(database) as session:
-            result = self.context.neo4j.query_database(session=session,
-                                                       query="CREATE CONSTRAINT IF NOT EXISTS FOR (n:ETLTask) REQUIRE n.uuid IS UNIQUE")
+            result = self.context.neo4j.query_database(
+                session=session, query="CREATE CONSTRAINT IF NOT EXISTS FOR (n:ETLTask) REQUIRE n.uuid IS UNIQUE"
+            )
             return TaskReturn(True, result.summary)

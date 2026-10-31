@@ -13,6 +13,7 @@ class BatchResults:
     """
     Return object of the :py:func:`~BatchProcessor.get_batch` method, wrapping a batched data together with meta information.
     """
+
     chunk: List[Any]
     """The batch of data."""
     statistics: dict = field(default_factory=dict)
@@ -34,8 +35,7 @@ def append_result(org: BatchResults, stats: dict) -> BatchResults:
             provided parameters. Values in the dicts with the same key are added.
 
     """
-    return BatchResults(chunk=org.chunk, statistics=merge_summary(org.statistics, stats),
-                        batch_size=org.batch_size)
+    return BatchResults(chunk=org.chunk, statistics=merge_summary(org.statistics, stats), batch_size=org.batch_size)
 
 
 class BatchProcessor(abc.ABC):

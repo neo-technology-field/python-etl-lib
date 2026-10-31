@@ -8,8 +8,8 @@
 #
 # nox -s matrix → every Python version × every Neo4j image
 
-import json
 import argparse
+import json
 import sys
 
 import nox
@@ -83,8 +83,7 @@ def matrix(session: nox.Session, neo4j_image: str) -> None:
 # Tiny CLI so CI can read PY_VERSIONS without duplicating them
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--print-py-versions", action="store_true",
-                        help="Print Python versions (JSON) for CI matrix.")
+    parser.add_argument("--print-py-versions", action="store_true", help="Print Python versions (JSON) for CI matrix.")
     args = parser.parse_args()
     if args.print_py_versions:
         print(json.dumps(PY_VERSIONS))

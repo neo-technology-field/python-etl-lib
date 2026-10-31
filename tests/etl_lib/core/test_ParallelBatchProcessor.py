@@ -1,6 +1,7 @@
 from typing import List
 
 import pytest
+
 from etl_lib.core.BatchProcessor import BatchProcessor, BatchResults
 from etl_lib.core.ParallelBatchProcessor import ParallelBatchProcessor, ParallelBatchResult
 
@@ -12,7 +13,7 @@ def make_pbr(partitions: List[List[int]]) -> ParallelBatchResult:
     """
     return ParallelBatchResult(
         chunk=partitions,
-        statistics={'a': 1, 'b': 2},
+        statistics={"a": 1, "b": 2},
         batch_size=sum(len(p) for p in partitions),
     )
 
@@ -45,9 +46,7 @@ class DummyWorker(BatchProcessor):
         for br in self.predecessor.get_batch(max_batch_size):
             transformed = [x * 10 for x in br.chunk]
             yield BatchResults(
-                chunk=transformed,
-                statistics={"processed": len(transformed)},
-                batch_size=len(transformed)
+                chunk=transformed, statistics={"processed": len(transformed)}, batch_size=len(transformed)
             )
 
 
@@ -68,7 +67,7 @@ def test_single_partition_batch(etl_context):
     br = next(proc.get_batch(max_batch_size=10))
     # Flatten multipliers: each partition * 10
     assert br.chunk == [10, 20, 30]
-    assert br.statistics == {'a': 1, 'b': 2, 'processed': 3}
+    assert br.statistics == {"a": 1, "b": 2, "processed": 3}
     assert br.batch_size == 3
 
 
@@ -90,7 +89,7 @@ def test_multiple_partitions_order_and_stats(etl_context):
     # order may interleave due to concurrency; compare as sets/lists after sorting
     assert sorted(br.chunk) == sorted([10, 20, 30, 40, 50, 60])
     # statistics should sum processed counts
-    assert br.statistics == {'a': 1, 'b': 2, 'processed': 6}
+    assert br.statistics == {"a": 1, "b": 2, "processed": 6}
     assert br.batch_size == 6
 
 
@@ -115,12 +114,12 @@ def test_multiple_batches_prefetching(etl_context):
     # first batch
     br1 = batches[0]
     assert sorted(br1.chunk) == [10, 20]
-    assert br1.statistics == {'a': 1, 'b': 2, 'processed': 2}
+    assert br1.statistics == {"a": 1, "b": 2, "processed": 2}
     assert br1.batch_size == 2
     # second batch
     br2 = batches[1]
     assert sorted(br2.chunk) == [30, 40, 50]
-    assert br2.statistics == {'a': 1, 'b': 2, 'processed': 3}
+    assert br2.statistics == {"a": 1, "b": 2, "processed": 3}
     assert br2.batch_size == 3
 
 

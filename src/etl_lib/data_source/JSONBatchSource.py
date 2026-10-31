@@ -50,10 +50,13 @@ class JSONBatchSource(BatchProcessor):
     def get_batch(self, max_batch_size: int) -> Generator[BatchResults, None, None]:
         t0 = time.perf_counter()
         for batch_size, chunks_ in self._iter_batches(max_batch_size):
-            self._instrument("json_read_batch", {
-                "rows": batch_size,
-                "dt_ms": round((time.perf_counter() - t0) * 1000.0, 3),
-            })
+            self._instrument(
+                "json_read_batch",
+                {
+                    "rows": batch_size,
+                    "dt_ms": round((time.perf_counter() - t0) * 1000.0, 3),
+                },
+            )
             t0 = time.perf_counter()
             yield BatchResults(chunk=chunks_, statistics={"json_records_read": batch_size}, batch_size=batch_size)
 
@@ -70,9 +73,7 @@ class JSONBatchSource(BatchProcessor):
         batch_ = []
         for record in records:
             if not isinstance(record, dict):
-                raise ValueError(
-                    f"JSON records must be objects, got {type(record).__name__} at row {row}"
-                )
+                raise ValueError(f"JSON records must be objects, got {type(record).__name__} at row {row}")
             record["_row"] = row
             row += 1
             batch_.append(record)
@@ -87,8 +88,11 @@ class JSONBatchSource(BatchProcessor):
     def _open(self, file: Path, binary: bool = False):
         if binary:
             return gzip.open(file, "rb") if file.suffix == ".gz" else open(file, "rb")
-        return gzip.open(file, "rt", encoding="utf-8-sig") if file.suffix == ".gz" \
+        return (
+            gzip.open(file, "rt", encoding="utf-8-sig")
+            if file.suffix == ".gz"
             else open(file, "rt", encoding="utf-8-sig")
+        )
 
     def _starts_with_array(self, file: Path) -> bool:
         """Distinguishes a JSON array from JSON Lines by the first non-whitespace character."""

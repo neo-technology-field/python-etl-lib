@@ -16,32 +16,47 @@ def test_cypher_batch(etl_context):
         data.append(result.chunk)
 
     assert data == [
-        [{"val": {
-            "string": "1",
-            "float": 1.0,
-            "i": 1,
-        }},
-        {"val": {
-            "string": "2",
-            "float": 2.0,
-            "i": 2,
-        }},
-        {"val": {
-            "string": "3",
-            "float": 3.0,
-            "i": 3,
-        }}],
-        [{"val": {
-            "string": "4",
-            "float": 4.0,
-            "i": 4,
-        }},
-        {"val": {
-            "string": "5",
-            "float": 5.0,
-            "i": 5,
-        }}]
+        [
+            {
+                "val": {
+                    "string": "1",
+                    "float": 1.0,
+                    "i": 1,
+                }
+            },
+            {
+                "val": {
+                    "string": "2",
+                    "float": 2.0,
+                    "i": 2,
+                }
+            },
+            {
+                "val": {
+                    "string": "3",
+                    "float": 3.0,
+                    "i": 3,
+                }
+            },
+        ],
+        [
+            {
+                "val": {
+                    "string": "4",
+                    "float": 4.0,
+                    "i": 4,
+                }
+            },
+            {
+                "val": {
+                    "string": "5",
+                    "float": 5.0,
+                    "i": 5,
+                }
+            },
+        ],
     ]
+
 
 def test_cypher_batch_parameters(etl_context):
     query = """
@@ -57,18 +72,23 @@ def test_cypher_batch_parameters(etl_context):
 
     assert data == [
         [
-            {"val": {
-                "i": 1,
-                "param1": "foo",
-                "param2": "bar",
-            }},
-            {"val": {
-                "i": 2,
-                "param1": "foo",
-                "param2": "bar",
-            }},
+            {
+                "val": {
+                    "i": 1,
+                    "param1": "foo",
+                    "param2": "bar",
+                }
+            },
+            {
+                "val": {
+                    "i": 2,
+                    "param1": "foo",
+                    "param2": "bar",
+                }
+            },
         ]
     ]
+
 
 def test_cypher_batch_with_transformer(etl_context):
     query = """
@@ -81,7 +101,7 @@ def test_cypher_batch_with_transformer(etl_context):
         return {
             "val": {
                 **record["val"],  # Unpack existing dictionary values
-                "double_i": record["val"]["i"] * 2  # Add transformed value
+                "double_i": record["val"]["i"] * 2,  # Add transformed value
             }
         }
 
@@ -92,22 +112,32 @@ def test_cypher_batch_with_transformer(etl_context):
         data.append(result.chunk)
 
     assert data == [
-        [{"val": {
-            "string": "1",
-            "float": 1.0,
-            "i": 1,
-            "double_i": 2,
-        }},
-            {"val": {
-                "string": "2",
-                "float": 2.0,
-                "i": 2,
-                "double_i": 4,
-            }}],
-        [{"val": {
-            "string": "3",
-            "float": 3.0,
-            "i": 3,
-            "double_i": 6,
-        }}]
+        [
+            {
+                "val": {
+                    "string": "1",
+                    "float": 1.0,
+                    "i": 1,
+                    "double_i": 2,
+                }
+            },
+            {
+                "val": {
+                    "string": "2",
+                    "float": 2.0,
+                    "i": 2,
+                    "double_i": 4,
+                }
+            },
+        ],
+        [
+            {
+                "val": {
+                    "string": "3",
+                    "float": 3.0,
+                    "i": 3,
+                    "double_i": 6,
+                }
+            }
+        ],
     ]

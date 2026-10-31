@@ -2,6 +2,7 @@ import abc
 from pathlib import Path
 from typing import Type
 
+from pydantic import BaseModel
 
 from etl_lib.core.ClosedLoopBatchProcessor import ClosedLoopBatchProcessor
 from etl_lib.core.ETLContext import ETLContext
@@ -11,7 +12,7 @@ from etl_lib.core.Task import Task, TaskReturn
 from etl_lib.core.ValidationBatchProcessor import ValidationBatchProcessor
 from etl_lib.data_sink.CypherBatchSink import CypherBatchSink
 from etl_lib.data_source.CSVBatchSource import CSVBatchSource
-from pydantic import BaseModel
+
 
 class ParallelCSVLoad2Neo4jTask(Task):
     """
@@ -41,21 +42,24 @@ class ParallelCSVLoad2Neo4jTask(Task):
           :py:func:`etl_lib.core.SplittingBatchProcessor.dict_id_extractor`.
         - See the nyc-taxi example for a working subclass.
     """
-    def __init__(self,
-                 context: ETLContext,
-                 file: Path,
-                 model: Type[BaseModel] | None = None,
-                 error_file: Path | None = None,
-                 table_size: int = 10,
-                 batch_size: int = 5000,
-                 max_workers: int | None = None,
-                 prefetch: int = 4,
-                 **csv_reader_kwargs):
+
+    def __init__(
+        self,
+        context: ETLContext,
+        file: Path,
+        model: Type[BaseModel] | None = None,
+        error_file: Path | None = None,
+        table_size: int = 10,
+        batch_size: int = 5000,
+        max_workers: int | None = None,
+        prefetch: int = 4,
+        **csv_reader_kwargs,
+    ):
         super().__init__(context)
         self.file = file
         self.model = model
         if model is not None and error_file is None:
-            raise ValueError('you must provide error file if the model is specified')
+            raise ValueError("you must provide error file if the model is specified")
         self.error_file = error_file
         self.table_size = table_size
         self.batch_size = batch_size
@@ -74,7 +78,7 @@ class ParallelCSVLoad2Neo4jTask(Task):
             task=self,
             predecessor=predecessor,
             table_size=self.table_size,
-            id_extractor=self._id_extractor()
+            id_extractor=self._id_extractor(),
         )
 
         parallel = ParallelBatchProcessor(
@@ -83,7 +87,7 @@ class ParallelCSVLoad2Neo4jTask(Task):
             predecessor=splitter,
             worker_factory=lambda: CypherBatchSink(self.context, self, None, self._query()),
             max_workers=self.max_workers,
-            prefetch=self.prefetch
+            prefetch=self.prefetch,
         )
 
         closing = ClosedLoopBatchProcessor(self.context, self, parallel)
