@@ -9,7 +9,7 @@ It simplifies the process of moving data from SQL, CSV, JSON and Parquet sources
 *   **Task-Based Architecture**: Compose pipelines from reusable units of work.
 *   **Parallel Loading**: Optimized strategies for high-performance loading without locking issues.
 *   **Data Validation**: Integrated Pydantic support for ensuring data quality before loading.
-*   **Detailed Reporting**: Built-in tracking of execution time and row counts.
+*   **Detailed Reporting**: Tracking of execution time and row counts, with runs optionally persisted in a Neo4j database.
 *   **Flexible Sources**: Support for SQL (via SQLAlchemy), CSV, JSON, Neo4j and Parquet (via PyArrow).
 
 ## A Minimal Pipeline
@@ -22,6 +22,7 @@ from pathlib import Path
 
 from etl_lib.core.ETLContext import ETLContext
 from etl_lib.core.Task import TaskGroup
+from etl_lib.core.utils import setup_logging
 from etl_lib.task.data_loading.CSVLoad2Neo4jTask import CSVLoad2Neo4jTask
 
 class LoadStopsTask(CSVLoad2Neo4jTask):
@@ -36,8 +37,10 @@ class LoadStopsTask(CSVLoad2Neo4jTask):
         """
 
 context = ETLContext(env_vars=dict(os.environ))
+setup_logging()
 pipeline = TaskGroup(context=context, name="load",
                      tasks=[LoadStopsTask(context, Path("stops.txt"))])
+context.reporter.register_tasks(pipeline)
 result = pipeline.execute()
 ```
 

@@ -11,6 +11,8 @@ This configuration is backed by a dictionary passed to the context's constructor
 
 Using environment variables makes it easy to configure the ETL pipeline externally.
 
+The context reads only the dictionary it is given. Settings in a ``.env`` file are not picked up automatically and must be loaded first, for example with ``load_dotenv()`` from `python-dotenv <https://pypi.org/project/python-dotenv/>`__.
+
 The following parameters are currently recognized:
 
 .. list-table:: Configuration Parameters

@@ -67,13 +67,19 @@ The gtfs example uses separate groups: one for the node files, one for the relat
 .. code-block:: python
 
     context = ETLContext(env_vars=dict(os.environ))
+    setup_logging()
     nodes = TaskGroup(context=context, name="nodes",
                       tasks=[LoadStopsTask(context, stops_file),
                              LoadRoutesTask(context, routes_file)])
     edges = TaskGroup(context=context, name="relationships",
                       tasks=[LoadStopTimesTask(context, stop_times_file)])
     pipeline = TaskGroup(context=context, name="import", tasks=[nodes, edges])
+    context.reporter.register_tasks(pipeline)
     result = pipeline.execute()
+
+Two calls precede ``execute()``. :func:`~etl_lib.core.utils.setup_logging` configures logging to the console and an optional file. :func:`~etl_lib.core.ProgressReporter.ProgressReporter.register_tasks` registers the task tree with the reporter. Without them the pipeline still runs, but there is no run record and no logging beyond the defaults, see :doc:`reporting`.
+
+Reporting goes to the log by default. When ``REPORTER_DATABASE`` is set, each run is additionally persisted in a Neo4j database, see :doc:`reporting`.
 
 A complete example of this shape, including the click based CLI around it, is the `gtfs example <https://github.com/neo-technology-field/python-etl-lib/tree/main/examples/gtfs>`__.
 

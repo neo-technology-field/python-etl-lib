@@ -3,6 +3,8 @@ Data Sources
 
 Data sources are implementations of :class:`~etl_lib.core.BatchProcessor.BatchProcessor` and serve as the starting point in a chain of processors from source to sink. See :doc:`batching` for more details.
 
+A source not listed here can be added by implementing :class:`~etl_lib.core.BatchProcessor.BatchProcessor`, see :doc:`batching` for how the chain works.
+
 CSV
 ---
 
