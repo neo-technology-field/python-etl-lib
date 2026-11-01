@@ -1,0 +1,7 @@
+etl\_lib.task.SchemaTask module
+===============================
+
+.. automodule:: etl_lib.task.SchemaTask
+   :members:
+   :show-inheritance:
+   :undoc-members:

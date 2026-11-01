@@ -1,0 +1,7 @@
+etl\_lib.core.BatchProcessor module
+===================================
+
+.. automodule:: etl_lib.core.BatchProcessor
+   :members:
+   :show-inheritance:
+   :undoc-members:

@@ -1,0 +1,7 @@
+etl\_lib.data\_sink.JSONBatchSink module
+========================================
+
+.. automodule:: etl_lib.data_sink.JSONBatchSink
+   :members:
+   :show-inheritance:
+   :undoc-members:

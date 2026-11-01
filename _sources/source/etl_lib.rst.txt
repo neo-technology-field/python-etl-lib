@@ -1,0 +1,22 @@
+etl\_lib package
+================
+
+Subpackages
+-----------
+
+.. toctree::
+   :maxdepth: 4
+
+   etl_lib.cli
+   etl_lib.core
+   etl_lib.data_sink
+   etl_lib.data_source
+   etl_lib.task
+
+Module contents
+---------------
+
+.. automodule:: etl_lib
+   :members:
+   :show-inheritance:
+   :undoc-members:

@@ -1,0 +1,7 @@
+etl\_lib.data\_source.CSVBatchSource module
+===========================================
+
+.. automodule:: etl_lib.data_source.CSVBatchSource
+   :members:
+   :show-inheritance:
+   :undoc-members:
