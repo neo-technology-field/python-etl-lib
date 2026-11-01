@@ -91,3 +91,6 @@
 
 ## [0.6.3]
 - introduced ruff and reformatted sources with it
+
+## [0.6.4]
+- fixed a bug that would lead to ignoring the specified database name

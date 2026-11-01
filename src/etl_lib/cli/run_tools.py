@@ -72,9 +72,22 @@ def __driver(ctx):
 @click.option("--neo4j-user", envvar="NEO4J_USERNAME", help="Neo4j username")
 @click.option("--neo4j-password", envvar="NEO4J_PASSWORD", help="Neo4j password")
 @click.option("--log-file", envvar="LOG_FILE", help="Path to the log file", default=None)
-@click.option("--database-name", envvar="DATABASE_NAME", default="neo4j", help="Neo4j database name (default: neo4j)")
+@click.option(
+    "--database",
+    "-d",
+    "database_name",
+    envvar="NEO4J_DATABASE",
+    default="neo4j",
+    help="Neo4j database name (default: neo4j)",
+)
+@click.option(
+    "--reporter-database",
+    envvar="REPORTER_DATABASE",
+    default=None,
+    help="Database for ETL reporting metadata (unset by default)",
+)
 @click.pass_context
-def cli(ctx, neo4j_uri, neo4j_user, neo4j_password, log_file, database_name):
+def cli(ctx, neo4j_uri, neo4j_user, neo4j_password, log_file, database_name, reporter_database):
     # Keep the authored help indentation and \b escape; the formatter would change the docstring value.
     # fmt: off
     """
@@ -87,7 +100,8 @@ def cli(ctx, neo4j_uri, neo4j_user, neo4j_password, log_file, database_name):
         - NEO4J_USERNAME: Neo4j username
         - NEO4J_PASSWORD: Neo4j password
         - LOG_FILE: Path to the log file
-        - DATABASE_NAME: Neo4j database name (default: neo4j)
+        - NEO4J_DATABASE: Neo4j database name (default: neo4j)
+        - REPORTER_DATABASE: Database for ETL reporting metadata (unset by default)
         """
     # fmt: on
 
@@ -101,6 +115,7 @@ def cli(ctx, neo4j_uri, neo4j_user, neo4j_password, log_file, database_name):
     ctx.obj["neo4j_user"] = neo4j_user
     ctx.obj["neo4j_password"] = neo4j_password
     ctx.obj["database_name"] = database_name
+    ctx.obj["reporter_database"] = reporter_database
     ctx.obj["log_file"] = log_file
 
 

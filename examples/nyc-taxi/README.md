@@ -37,7 +37,7 @@ Yes, normally one would model the vendor as it own node, but since there are ver
    NEO4J_URI=bolt://localhost:7687
    NEO4J_USERNAME=neo4j
    NEO4J_PASSWORD=your_password
-   DATABASE_NAME=neo4j
+   NEO4J_DATABASE=neo4j
    ```
 
 2. **Install dependencies**  

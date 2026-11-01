@@ -141,15 +141,18 @@ Usage: musicbrainz.py [OPTIONS] COMMAND [ARGS]...
   - NEO4J_USERNAME: Neo4j username
   - NEO4J_PASSWORD: Neo4j password
   - LOG_FILE: Path to the log file
-  - DATABASE_NAME: Neo4j database name (default: neo4j)
+  - NEO4J_DATABASE: Neo4j database name (default: neo4j)
+  - REPORTER_DATABASE: Database for ETL reporting metadata (unset by default)
 
 Options:
-  --neo4j-uri TEXT       Neo4j database URI
-  --neo4j-user TEXT      Neo4j username
-  --neo4j-password TEXT  Neo4j password
-  --log-file TEXT        Path to the log file
-  --database-name TEXT   Neo4j database name (default: neo4j)
-  --help                 Show this message and exit.
+  --neo4j-uri TEXT          Neo4j database URI
+  --neo4j-user TEXT         Neo4j username
+  --neo4j-password TEXT     Neo4j password
+  --log-file TEXT           Path to the log file
+  -d, --database TEXT       Neo4j database name (default: neo4j)
+  --reporter-database TEXT  Database for ETL reporting metadata (unset by
+                            default)
+  --help                    Show this message and exit.
 
 Commands:
   delete  Delete runs based on run ID, date, or age.
