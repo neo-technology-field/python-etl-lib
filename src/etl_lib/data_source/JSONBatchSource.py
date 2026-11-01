@@ -1,8 +1,8 @@
 import gzip
 import json
 import time
+from collections.abc import Generator
 from pathlib import Path
-from typing import Generator
 
 try:
     import ijson
@@ -88,11 +88,7 @@ class JSONBatchSource(BatchProcessor):
     def _open(self, file: Path, binary: bool = False):
         if binary:
             return gzip.open(file, "rb") if file.suffix == ".gz" else open(file, "rb")
-        return (
-            gzip.open(file, "rt", encoding="utf-8-sig")
-            if file.suffix == ".gz"
-            else open(file, "rt", encoding="utf-8-sig")
-        )
+        return gzip.open(file, "rt", encoding="utf-8-sig") if file.suffix == ".gz" else open(file, encoding="utf-8-sig")
 
     def _starts_with_array(self, file: Path) -> bool:
         """Distinguishes a JSON array from JSON Lines by the first non-whitespace character."""

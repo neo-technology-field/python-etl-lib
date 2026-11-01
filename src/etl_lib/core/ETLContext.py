@@ -3,7 +3,7 @@ import logging
 import time
 import urllib.parse
 import urllib.request
-from typing import Any, Dict, List, NamedTuple, Optional
+from typing import Any, NamedTuple
 
 from neo4j.exceptions import Neo4jError
 
@@ -34,7 +34,7 @@ from etl_lib.core.InstrumentationWriter import create_instrumentation_writer
 from etl_lib.core.ProgressReporter import get_reporter
 
 
-def _fetch_oauth2_token(token_url: str, client_id: str, client_secret: str, scope: Optional[str]) -> tuple[int, str]:
+def _fetch_oauth2_token(token_url: str, client_id: str, client_secret: str, scope: str | None) -> tuple[int, str]:
     """
     Fetch a bearer token via the OAuth2 client credentials flow.
 
@@ -68,9 +68,9 @@ def _fetch_oauth2_token(token_url: str, client_id: str, client_secret: str, scop
 class QueryResult(NamedTuple):
     """Result of a query against the neo4j database."""
 
-    data: List[Any]
+    data: list[Any]
     """Data as returned from the query."""
-    summary: Dict[str, int]
+    summary: dict[str, int]
     """Counters as reported by neo4j. Contains entries such as `nodes_created`, `nodes_deleted`, etc."""
 
 
@@ -201,9 +201,7 @@ class Neo4jContext:
             return self.driver.session(database=database, default_access_mode=WRITE_ACCESS)
 
     @staticmethod
-    def __make_token_auth_manager(
-        token_url: str, client_id: str, client_secret: str, scope: Optional[str]
-    ) -> AuthManager:
+    def __make_token_auth_manager(token_url: str, client_id: str, client_secret: str, scope: str | None) -> AuthManager:
         """Build an AuthManagers.bearer that fetches and auto-refreshes tokens."""
 
         def provider() -> ExpiringAuth:
@@ -229,7 +227,7 @@ class Neo4jContext:
         self.driver.verify_connectivity()
 
     @classmethod
-    def __driver_options_from_env(cls, env_vars: dict) -> Dict[str, Any]:
+    def __driver_options_from_env(cls, env_vars: dict) -> dict[str, Any]:
         prefix = "NEO4J_DRIVER_"
 
         parsers = {
@@ -250,7 +248,7 @@ class Neo4jContext:
             "telemetry_disabled": cls.__parse_bool,
         }
 
-        out: Dict[str, Any] = {}
+        out: dict[str, Any] = {}
         for k, v in env_vars.items():
             if not isinstance(k, str) or not k.startswith(prefix):
                 continue
@@ -285,7 +283,7 @@ class Neo4jContext:
             raise ValueError(f"invalid float for {env_key}: {value!r}") from e
 
     @staticmethod
-    def __parse_float_or_none(env_key: str, value: Any) -> Optional[float]:
+    def __parse_float_or_none(env_key: str, value: Any) -> float | None:
         s = str(value).strip()
         if s == "" or s.lower() == "none":
             return None

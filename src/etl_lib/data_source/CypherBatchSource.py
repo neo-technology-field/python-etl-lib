@@ -1,5 +1,5 @@
 import time
-from typing import Callable, Generator, Optional
+from collections.abc import Callable, Generator
 
 from neo4j import Record
 
@@ -14,7 +14,7 @@ class CypherBatchSource(BatchProcessor):
         context: ETLContext,
         task: Task | None,
         query: str,
-        record_transformer: Optional[Callable[[Record], dict]] = None,
+        record_transformer: Callable[[Record], dict] | None = None,
         **kwargs,
     ):
         # Keep the authored docstring indentation; the formatter would change the docstring value.

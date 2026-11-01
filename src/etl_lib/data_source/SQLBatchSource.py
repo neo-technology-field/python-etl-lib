@@ -1,6 +1,6 @@
 import logging
 import time
-from typing import Callable, Generator, Optional
+from collections.abc import Callable, Generator
 
 from sqlalchemy import text
 from sqlalchemy.exc import DBAPIError
@@ -26,7 +26,7 @@ class SQLBatchSource(BatchProcessor):
         context: ETLContext,
         task: Task | None,
         query: str,
-        record_transformer: Optional[Callable[[dict], dict]] = None,
+        record_transformer: Callable[[dict], dict] | None = None,
         **kwargs,
     ):
         """

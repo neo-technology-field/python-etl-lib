@@ -1,5 +1,5 @@
 import logging
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from tabulate import tabulate
 
@@ -64,7 +64,7 @@ class ProgressReporter:
             self.run_uuid = task.uuid
 
         event = {
-            "ts": datetime.now(timezone.utc).isoformat(),
+            "ts": datetime.now(UTC).isoformat(),
             "run_id": self.run_uuid,
             "event_type": event_type,
             "task_uuid": task.uuid if task is not None else None,

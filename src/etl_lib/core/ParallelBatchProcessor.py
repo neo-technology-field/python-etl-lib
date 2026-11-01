@@ -1,8 +1,9 @@
 import queue
 import threading
 import time
+from collections.abc import Callable, Generator
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from typing import Any, Callable, Generator, List, cast
+from typing import Any, cast
 
 from etl_lib.core.BatchProcessor import BatchProcessor, BatchResults
 from etl_lib.core.ETLContext import ETLContext
@@ -143,7 +144,7 @@ class ParallelBatchProcessor(BatchProcessor):
         Used as predecessor for the per-bucket worker.
         """
 
-        def __init__(self, context, batch: List[Any]):
+        def __init__(self, context, batch: list[Any]):
             super().__init__(context=context, predecessor=None)
             self._batch = batch
 

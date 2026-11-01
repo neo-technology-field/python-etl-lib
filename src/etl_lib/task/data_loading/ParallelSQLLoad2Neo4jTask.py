@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Callable, Optional, Union
+from collections.abc import Callable
 
 from sqlalchemy import text
 
@@ -35,7 +35,7 @@ class ParallelSQLLoad2Neo4jTask(Task, ABC):
         context: ETLContext,
         batch_size: int = 5000,
         table_size: int = 10,
-        max_workers: Optional[int] = None,
+        max_workers: int | None = None,
         prefetch: int = 4,
     ):
         super().__init__(context)
@@ -60,7 +60,7 @@ class ParallelSQLLoad2Neo4jTask(Task, ABC):
         """
         pass
 
-    def _count_query(self) -> Union[str, None]:
+    def _count_query(self) -> str | None:
         """
         Optional SQL to count source rows for progress reporting.
         """
@@ -110,7 +110,7 @@ class ParallelSQLLoad2Neo4jTask(Task, ABC):
         result = next(closing.get_batch(self.batch_size))
         return TaskReturn(True, result.statistics)
 
-    def __get_source_count(self) -> Optional[int]:
+    def __get_source_count(self) -> int | None:
         count_query = self._count_query()
         if count_query is None:
             return None

@@ -1,6 +1,5 @@
 from abc import abstractmethod
 from pathlib import Path
-from typing import Optional, Type
 
 from pydantic import BaseModel
 
@@ -25,8 +24,8 @@ class ParquetLoad2Neo4jTask(Task):
         self,
         context: ETLContext,
         file: Path,
-        model: Optional[Type[BaseModel]] = None,
-        error_file: Optional[Path] = None,
+        model: type[BaseModel] | None = None,
+        error_file: Path | None = None,
         batch_size: int = 5000,
     ):
         super().__init__(context)

@@ -1,12 +1,10 @@
-from typing import List
-
 import pytest
 
 from etl_lib.core.BatchProcessor import BatchProcessor, BatchResults
 from etl_lib.core.ParallelBatchProcessor import ParallelBatchProcessor, ParallelBatchResult
 
 
-def make_pbr(partitions: List[List[int]]) -> ParallelBatchResult:
+def make_pbr(partitions: list[list[int]]) -> ParallelBatchResult:
     """
     Helper to build a ParallelBatchResult where each sub-list is a partition.
     Statistics will be empty.
@@ -23,13 +21,51 @@ class DummyPredecessor:
     Yields a fixed sequence of ParallelBatchResult batches.
     """
 
-    def __init__(self, pbrs: List[ParallelBatchResult]):
+    def __init__(self, pbrs: list[ParallelBatchResult]):
         self._pbrs = pbrs
 
     def get_batch(self, max_batch_size: int):
         # ignore max_batch_size for simplicity
-        for pbr in self._pbrs:
-            yield pbr
+        yield from self._pbrs
+
+
+@pytest.mark.parametrize("batch_count", [0, 1, 3])
+@pytest.mark.parametrize("max_batch_size", [1, 10])
+def test_dummy_predecessor_preserves_batch_identity_and_order(batch_count: int, max_batch_size: int) -> None:
+    batches = [make_pbr([[index]]) for index in range(batch_count)]
+    predecessor = DummyPredecessor(batches)
+
+    for _ in range(2):
+        emitted = list(predecessor.get_batch(max_batch_size))
+        assert len(emitted) == len(batches)
+        assert all(actual is expected for actual, expected in zip(emitted, batches, strict=True))
+
+
+def test_dummy_predecessor_send_none_and_exhaustion() -> None:
+    batches = [make_pbr([[1]]), make_pbr([[2]])]
+    iterator = DummyPredecessor(batches).get_batch(10)
+
+    assert next(iterator) is batches[0]
+    assert iterator.send(None) is batches[1]
+    with pytest.raises(StopIteration):
+        next(iterator)
+
+
+def test_dummy_predecessor_close_and_throw() -> None:
+    batches = [make_pbr([[1]]), make_pbr([[2]])]
+    predecessor = DummyPredecessor(batches)
+    closed = predecessor.get_batch(10)
+    assert next(closed) is batches[0]
+    closed.close()
+    with pytest.raises(StopIteration):
+        next(closed)
+
+    thrown = predecessor.get_batch(10)
+    assert next(thrown) is batches[0]
+    with pytest.raises(ValueError, match="stop iteration"):
+        thrown.throw(ValueError("stop iteration"))
+    with pytest.raises(StopIteration):
+        next(thrown)
 
 
 class DummyWorker(BatchProcessor):

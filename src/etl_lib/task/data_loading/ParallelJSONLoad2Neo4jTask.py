@@ -1,7 +1,6 @@
 import abc
 import logging
 from pathlib import Path
-from typing import Type
 
 from pydantic import BaseModel
 
@@ -50,7 +49,7 @@ class ParallelJSONLoad2Neo4jTask(Task):
         self,
         context: ETLContext,
         file: Path,
-        model: Type[BaseModel] | None = None,
+        model: type[BaseModel] | None = None,
         error_file: Path | None = None,
         table_size: int = 10,
         batch_size: int = 5000,

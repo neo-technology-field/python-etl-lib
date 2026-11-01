@@ -1,6 +1,6 @@
 import random
 from collections import Counter
-from typing import Any, Dict, List, Tuple
+from typing import Any
 
 import pytest
 
@@ -45,7 +45,7 @@ class MultiBatchPredecessor(BatchProcessor):
 
 
 class DummyPredecessor:
-    def __init__(self, items: List[Any]):
+    def __init__(self, items: list[Any]):
         self._items = items
 
     def get_batch(self, batch_size: int):
@@ -59,7 +59,7 @@ class DummyPredecessor:
 
 
 def _assert_wave_non_overlap_bipartite(br: BatchResults, id_extractor) -> None:
-    bucket_ids: List[Tuple[int, int]] = []
+    bucket_ids: list[tuple[int, int]] = []
     for bucket_batch in br.chunk:
         assert bucket_batch, "Empty bucket batch emitted"
         r0, c0 = id_extractor(bucket_batch[0])
@@ -74,7 +74,7 @@ def _assert_wave_non_overlap_bipartite(br: BatchResults, id_extractor) -> None:
 
 
 def _assert_wave_non_overlap_monopartite(br: BatchResults, id_extractor) -> None:
-    bucket_ids: List[Tuple[int, int]] = []
+    bucket_ids: list[tuple[int, int]] = []
     for bucket_batch in br.chunk:
         assert bucket_batch, "Empty bucket batch emitted"
         r0, c0 = id_extractor(bucket_batch[0])
@@ -82,7 +82,7 @@ def _assert_wave_non_overlap_monopartite(br: BatchResults, id_extractor) -> None
             assert id_extractor(item) == (r0, c0), "Bucket batch contains mixed bucket ids"
         bucket_ids.append((r0, c0))
 
-    claims: List[int] = []
+    claims: list[int] = []
     for r, c in bucket_ids:
         if r == c:
             claims.append(r)
@@ -221,7 +221,7 @@ def test_get_batch_with_batch_size_2_and_shuffled_input_non_overlap_per_wave():
     batches = list(proc.get_batch(batch_size))
     assert batches, "No batches emitted"
 
-    all_emitted: List[Tuple[str, str]] = []
+    all_emitted: list[tuple[str, str]] = []
     for br in batches:
         assert isinstance(br, BatchResults)
         for bucket_batch in br.chunk:
@@ -270,7 +270,7 @@ def test_monopartite_extractor_enforces_single_node_index_claims_per_wave():
     table_size = 5
     extractor = canonical_integer_id_extractor(table_size=table_size, start_key="start", end_key="end")
 
-    items: List[Dict[str, int]] = []
+    items: list[dict[str, int]] = []
     for a in range(200):
         items.append({"start": a, "end": a})
         items.append({"start": a, "end": a + 1})
@@ -379,7 +379,7 @@ def test_skewed_hotspot_single_bucket_emits_multiple_batches_and_never_includes_
 
     id_ex = tuple_id_extractor(table_size)
 
-    all_emitted: List[Tuple[str, str]] = []
+    all_emitted: list[tuple[str, str]] = []
     for br in outs:
         assert len(br.chunk) == 1
         bucket_batch = br.chunk[0]
@@ -396,7 +396,7 @@ def test_many_full_buckets_more_than_table_size_emits_multiple_waves_and_maintai
     max_batch_size = 2
 
     buckets = [(0, 0), (0, 1), (1, 2), (2, 0), (2, 2)]
-    items: List[Tuple[str, str]] = []
+    items: list[tuple[str, str]] = []
     for r, c in buckets:
         for i in range(max_batch_size):
             items.append((f"r{r}_{i}{r}", f"c{c}_{i}{c}"))
@@ -421,7 +421,7 @@ def test_many_full_buckets_more_than_table_size_emits_multiple_waves_and_maintai
 
     id_ex = tuple_id_extractor(table_size)
 
-    all_emitted: List[Tuple[str, str]] = []
+    all_emitted: list[tuple[str, str]] = []
     for br in outs:
         _assert_wave_non_overlap_bipartite(br, id_ex)
         for bucket_batch in br.chunk:
@@ -441,7 +441,7 @@ def test_order_agnostic_correctness_randomized_inputs_multiset_preserved_and_non
     for seed in seeds:
         rng = random.Random(seed)
 
-        items: List[Tuple[str, str]] = []
+        items: list[tuple[str, str]] = []
         for i in range(200):
             r = rng.randrange(table_size)
             c = rng.randrange(table_size)
@@ -461,7 +461,7 @@ def test_order_agnostic_correctness_randomized_inputs_multiset_preserved_and_non
         outs = list(splitter.get_batch(max_batch_size))
         assert outs
 
-        all_emitted: List[Tuple[str, str]] = []
+        all_emitted: list[tuple[str, str]] = []
         for br in outs:
             _assert_wave_non_overlap_bipartite(br, id_ex)
             for bucket_batch in br.chunk:

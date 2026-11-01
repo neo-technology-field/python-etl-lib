@@ -1,4 +1,4 @@
-from typing import Generator
+from collections.abc import Generator
 
 from etl_lib.core.BatchProcessor import BatchProcessor, BatchResults, append_result
 from etl_lib.core.ETLContext import ETLContext

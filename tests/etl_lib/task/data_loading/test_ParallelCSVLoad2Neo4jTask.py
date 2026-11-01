@@ -1,5 +1,4 @@
 from pathlib import Path
-from typing import Type
 
 from pydantic import BaseModel
 
@@ -18,7 +17,7 @@ class _CSVRelTask(ParallelCSVLoad2Neo4jTask):
         context,
         *,
         file: Path,
-        model: Type[BaseModel] | None,
+        model: type[BaseModel] | None,
         error_file: Path | None,
         table_size: int,
         batch_size: int,

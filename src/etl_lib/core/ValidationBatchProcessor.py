@@ -1,6 +1,6 @@
 import json
+from collections.abc import Generator
 from pathlib import Path
-from typing import Generator, Type
 
 from pydantic import BaseModel, ValidationError
 
@@ -20,7 +20,7 @@ class ValidationBatchProcessor(BatchProcessor):
         context: ETLContext,
         task: Task | None,
         predecessor,
-        model: Type[BaseModel] | None,
+        model: type[BaseModel] | None,
         error_file: Path | None,
     ):
         """

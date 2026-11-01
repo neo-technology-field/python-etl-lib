@@ -94,3 +94,4 @@
 
 ## [0.6.4]
 - fixed a bug that would lead to ignoring the specified database name
+- modernised annotations

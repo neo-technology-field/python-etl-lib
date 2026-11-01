@@ -1,7 +1,7 @@
 import logging
 import time
+from collections.abc import Generator
 from pathlib import Path
-from typing import Generator
 
 try:
     import pyarrow.parquet as pq

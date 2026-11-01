@@ -1,7 +1,7 @@
 import json
 import time
+from collections.abc import Generator
 from pathlib import Path
-from typing import Generator
 
 from etl_lib.core.BatchProcessor import BatchProcessor, BatchResults, append_result
 from etl_lib.core.ETLContext import ETLContext

@@ -1,6 +1,5 @@
 import abc
 from pathlib import Path
-from typing import Optional, Type
 
 from pydantic import BaseModel
 
@@ -23,11 +22,11 @@ class ParallelParquetLoad2Neo4jTask(Task):
         self,
         context: ETLContext,
         file: Path,
-        model: Optional[Type[BaseModel]] = None,
-        error_file: Optional[Path] = None,
+        model: type[BaseModel] | None = None,
+        error_file: Path | None = None,
         table_size: int = 10,
         batch_size: int = 5000,
-        max_workers: Optional[int] = None,
+        max_workers: int | None = None,
         prefetch: int = 4,
         **parquet_reader_kwargs,
     ):

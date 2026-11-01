@@ -1,5 +1,4 @@
 from pathlib import Path
-from typing import Optional
 
 from pydantic import BaseModel, Field
 
@@ -14,10 +13,10 @@ class LoadTripsTask(CSVLoad2Neo4jTask):
         serviceId: str = Field(alias="service_id")
         headsign: str = Field(alias="trip_headsign")
         direction: int = Field(alias="direction_id")
-        shortName: Optional[str] = Field(alias="trip_short_name", default=None)
-        blockId: Optional[str] = Field(alias="block_id", default=None)
-        wheelchairAccessible: Optional[bool] = Field(alias="wheelchair_accessible", default=None)
-        bikesAllowed: Optional[bool] = Field(alias="bikes_allowed", default=None)
+        shortName: str | None = Field(alias="trip_short_name", default=None)
+        blockId: str | None = Field(alias="block_id", default=None)
+        wheelchairAccessible: bool | None = Field(alias="wheelchair_accessible", default=None)
+        bikesAllowed: bool | None = Field(alias="bikes_allowed", default=None)
         shapeId: str = Field(alias="shape_id")
 
     def __init__(self, context: ETLContext, file: Path):

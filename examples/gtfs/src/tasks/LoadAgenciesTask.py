@@ -1,5 +1,4 @@
 from pathlib import Path
-from typing import Optional
 
 from pydantic import BaseModel, EmailStr, Field, HttpUrl, field_validator
 
@@ -9,14 +8,14 @@ from etl_lib.task.data_loading.CSVLoad2Neo4jTask import CSVLoad2Neo4jTask
 
 class LoadAgenciesTask(CSVLoad2Neo4jTask):
     class Agency(BaseModel):
-        id: Optional[str] = Field(alias="agency_id", default="generic")
+        id: str | None = Field(alias="agency_id", default="generic")
         name: str = Field(..., alias="agency_name")
         url: HttpUrl = Field(..., alias="agency_url")
         timezone: str = Field(..., alias="agency_timezone")
-        lang: Optional[str] = Field(None, alias="agency_lang")
-        phone: Optional[str] = Field(None, alias="agency_phone")
-        fare_url: Optional[HttpUrl] = Field(None, alias="agency_fare_url")
-        email: Optional[EmailStr] = Field(None, alias="agency_email")
+        lang: str | None = Field(None, alias="agency_lang")
+        phone: str | None = Field(None, alias="agency_phone")
+        fare_url: HttpUrl | None = Field(None, alias="agency_fare_url")
+        email: EmailStr | None = Field(None, alias="agency_email")
 
         @field_validator("id", mode="before")
         @classmethod

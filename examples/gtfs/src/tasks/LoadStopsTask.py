@@ -1,5 +1,4 @@
 from pathlib import Path
-from typing import Optional
 
 from pydantic import BaseModel, Field
 
@@ -13,11 +12,11 @@ class LoadStopsTask(CSVLoad2Neo4jTask):
         name: str = Field(alias="stop_name")
         latitude: float = Field(alias="stop_lat")
         longitude: float = Field(alias="stop_lon")
-        platform_code: Optional[str] = None
-        parent_station: Optional[str] = None
-        type: Optional[str] = Field(alias="location_type", default=None)
-        timezone: Optional[str] = Field(alias="stop_timezone", default=None)
-        code: Optional[str] = Field(alias="stop_code", default=None)
+        platform_code: str | None = None
+        parent_station: str | None = None
+        type: str | None = Field(alias="location_type", default=None)
+        timezone: str | None = Field(alias="stop_timezone", default=None)
+        code: str | None = Field(alias="stop_code", default=None)
 
     def __init__(self, context: ETLContext, file: Path):
         super().__init__(context, file, model=LoadStopsTask.Stop)

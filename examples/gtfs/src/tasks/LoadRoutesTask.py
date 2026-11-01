@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Optional, Self
+from typing import Self
 
 from pydantic import BaseModel, Field, field_validator, model_validator
 
@@ -10,14 +10,14 @@ from etl_lib.task.data_loading.CSVLoad2Neo4jTask import CSVLoad2Neo4jTask
 class LoadRoutesTask(CSVLoad2Neo4jTask):
     class Route(BaseModel):
         id: str = Field(alias="route_id")
-        short_name: Optional[str] = Field(None, alias="route_short_name")
-        long_name: Optional[str] = Field(None, alias="route_long_name")
+        short_name: str | None = Field(None, alias="route_short_name")
+        long_name: str | None = Field(None, alias="route_long_name")
         type: int = Field(alias="route_type")
         agency_id: str = Field(alias="agency_id")
 
         @field_validator("agency_id", mode="before")
         @classmethod
-        def handle_null_agency_id(cls, value: Optional[str]) -> str:
+        def handle_null_agency_id(cls, value: str | None) -> str:
             return value or "generic"
 
         @field_validator("type", mode="before")

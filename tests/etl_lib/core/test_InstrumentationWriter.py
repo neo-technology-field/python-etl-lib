@@ -1,4 +1,5 @@
 import csv
+from datetime import UTC, datetime
 from pathlib import Path
 
 from etl_lib.core.InstrumentationWriter import create_instrumentation_writer
@@ -90,6 +91,8 @@ def test_csv_instrumentation_contains_task_name_and_run_id(tmp_path):
     assert rows[0]["task_uuid"] == task.uuid
     assert rows[0]["run_id"] == task.uuid
     assert rows[0]["rows"] == "42"
+    timestamp = datetime.fromisoformat(rows[0]["ts"])
+    assert timestamp.tzinfo is UTC
 
 
 def test_csv_instrumentation_sets_run_id_without_register_tasks(tmp_path):

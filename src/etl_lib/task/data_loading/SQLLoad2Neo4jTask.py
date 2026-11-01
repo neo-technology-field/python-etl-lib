@@ -1,5 +1,4 @@
 from abc import abstractmethod
-from typing import Optional
 
 from sqlalchemy import text
 
@@ -81,7 +80,7 @@ class SQLLoad2Neo4jTask(Task):
         result = next(end.get_batch(self.batch_size))
         return TaskReturn(True, result.statistics)
 
-    def __get_source_count(self) -> Optional[int]:
+    def __get_source_count(self) -> int | None:
         count_query = self._count_query()
         if count_query is None:
             return None

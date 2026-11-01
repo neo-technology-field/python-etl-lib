@@ -1,7 +1,6 @@
 import abc
 import logging
 from pathlib import Path
-from typing import Type
 
 from pydantic import BaseModel
 
@@ -66,7 +65,7 @@ class CSVLoad2Neo4jTask(Task):
 
     '''
 
-    def __init__(self, context: ETLContext, file: Path, model: Type[BaseModel] | None = None, batch_size: int = 5000):
+    def __init__(self, context: ETLContext, file: Path, model: type[BaseModel] | None = None, batch_size: int = 5000):
         super().__init__(context)
         self.batch_size = batch_size
         self.model = model

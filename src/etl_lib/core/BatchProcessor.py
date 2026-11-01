@@ -1,8 +1,9 @@
 import abc
 import logging
 import sys
+from collections.abc import Generator
 from dataclasses import dataclass, field
-from typing import Any, Generator, List
+from typing import Any
 
 from etl_lib.core.Task import Task
 from etl_lib.core.utils import merge_summary
@@ -14,7 +15,7 @@ class BatchResults:
     Return object of the :py:func:`~BatchProcessor.get_batch` method, wrapping a batched data together with meta information.
     """
 
-    chunk: List[Any]
+    chunk: list[Any]
     """The batch of data."""
     statistics: dict = field(default_factory=dict)
     """`dict` of statistic information, such as row processed, nodes writen, .."""

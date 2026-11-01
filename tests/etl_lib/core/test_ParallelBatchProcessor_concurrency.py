@@ -1,6 +1,6 @@
 import threading
 import time
-from typing import Generator, List
+from collections.abc import Generator
 
 import pytest
 
@@ -119,7 +119,7 @@ def test_parallel_batch_processor_is_fail_fast():
 
 
 class ListSource(BatchProcessor):
-    def __init__(self, items: List[dict], chunk_size: int):
+    def __init__(self, items: list[dict], chunk_size: int):
         super().__init__(context=None, task=None, predecessor=None)
         self._items = list(items)
         self._chunk_size = chunk_size
@@ -155,7 +155,7 @@ def test_splitter_and_parallel_processor_end_to_end_without_neo4j():
 
     tracker = ConcurrencyTracker()
     lock = threading.Lock()
-    processed: List[int] = []
+    processed: list[int] = []
 
     class CollectingWorker(BatchProcessor):
         def __init__(self):

@@ -1,7 +1,8 @@
 import hashlib
 import logging
 import time
-from typing import Any, Callable, Dict, Generator, List, Tuple
+from collections.abc import Callable, Generator
+from typing import Any
 
 from tabulate import tabulate
 
@@ -11,7 +12,7 @@ from etl_lib.core.Task import Task
 from etl_lib.core.utils import merge_summary
 
 
-def tuple_id_extractor(table_size: int = 10) -> Callable[[Tuple[str | int, str | int]], Tuple[int, int]]:
+def tuple_id_extractor(table_size: int = 10) -> Callable[[tuple[str | int, str | int]], tuple[int, int]]:
     """
     Create an ID extractor function for tuple items, using the last decimal digit of each element.
     The output is a `(row, col)` tuple within a `table_size x table_size` grid (default 10x10).
@@ -27,7 +28,7 @@ def tuple_id_extractor(table_size: int = 10) -> Callable[[Tuple[str | int, str |
         :class:`~etl_lib.core.SplittingBatchProcessor.SplittingBatchProcessor`.
     """
 
-    def extractor(item: Tuple[Any, Any]) -> Tuple[int, int]:
+    def extractor(item: tuple[Any, Any]) -> tuple[int, int]:
         a, b = item
         try:
             row = int(str(a)[-1])
@@ -44,7 +45,7 @@ def dict_id_extractor(
     table_size: int = 10,
     start_key: str = "start",
     end_key: str = "end",
-) -> Callable[[Dict[str, Any]], Tuple[int, int]]:
+) -> Callable[[dict[str, Any]], tuple[int, int]]:
     """
     Build an ID extractor for dict rows. The extractor reads two fields (configurable via
     `start_key` and `end_key`) and returns (row, col) based on the last decimal digit of each.
@@ -58,7 +59,7 @@ def dict_id_extractor(
         Callable that maps {start_key, end_key} → (row, col).
     """
 
-    def extractor(item: Dict[str, Any]) -> Tuple[int, int]:
+    def extractor(item: dict[str, Any]) -> tuple[int, int]:
         missing = [k for k in (start_key, end_key) if k not in item]
         if missing:
             raise KeyError(f"Item missing required keys: {', '.join(missing)}")
@@ -78,7 +79,7 @@ def canonical_integer_id_extractor(
     start_key: str = "start",
     end_key: str = "end",
     monopartite: bool = True,
-) -> Callable[[Dict[str, Any]], Tuple[int, int]]:
+) -> Callable[[dict[str, Any]], tuple[int, int]]:
     """
     ID extractor for integer IDs with optional canonical folding.
 
@@ -90,7 +91,7 @@ def canonical_integer_id_extractor(
     """
     MAGIC = 2654435761
 
-    def extractor(item: Dict[str, Any]) -> Tuple[int, int]:
+    def extractor(item: dict[str, Any]) -> tuple[int, int]:
         try:
             s_val = item[start_key]
             e_val = item[end_key]
@@ -117,7 +118,7 @@ def canonical_int_or_str_id_extractor(
     start_key: str = "start",
     end_key: str = "end",
     monopartite: bool = True,
-) -> Callable[[Dict[str, Any]], Tuple[int, int]]:
+) -> Callable[[dict[str, Any]], tuple[int, int]]:
     """
     ID extractor for integer IDs and string IDs with optional canonical folding (row <= col).
 
@@ -157,7 +158,7 @@ def canonical_int_or_str_id_extractor(
             return int.from_bytes(digest[:8], byteorder="big", signed=False)
         raise TypeError(f"Expected int or str, got {type(v).__name__}")
 
-    def extractor(item: Dict[str, Any]) -> Tuple[int, int]:
+    def extractor(item: dict[str, Any]) -> tuple[int, int]:
         s_u64 = _to_u64(item[start_key])
         e_u64 = _to_u64(item[end_key])
 
@@ -205,7 +206,7 @@ class SplittingBatchProcessor(BatchProcessor):
         task: Task | None,
         predecessor: BatchProcessor,
         table_size: int | None,
-        id_extractor: Callable[[Any], Tuple[int, int]],
+        id_extractor: Callable[[Any], tuple[int, int]],
         near_full_ratio: float = 0.85,
         burst_multiplier: int = 25,
     ):
@@ -234,12 +235,12 @@ class SplittingBatchProcessor(BatchProcessor):
         self.near_full_ratio = float(near_full_ratio)
         self.burst_multiplier = int(burst_multiplier)
 
-        self.buffer: Dict[int, Dict[int, List[Any]]] = {
+        self.buffer: dict[int, dict[int, list[Any]]] = {
             r: {c: [] for c in range(self.table_size)} for r in range(self.table_size)
         }
         self.logger = logging.getLogger(f"{self.__class__.__module__}.{self.__class__.__name__}")
 
-    def _bucket_claims(self, row: int, col: int) -> Tuple[Any, ...]:
+    def _bucket_claims(self, row: int, col: int) -> tuple[Any, ...]:
         """
         Return the resource claims a bucket consumes within a wave.
 
@@ -250,11 +251,11 @@ class SplittingBatchProcessor(BatchProcessor):
             return (row,) if row == col else (row, col)
         return ("row", row), ("col", col)
 
-    def _all_bucket_sizes(self) -> List[Tuple[int, int, int]]:
+    def _all_bucket_sizes(self) -> list[tuple[int, int, int]]:
         """
         Return all non-empty buckets as (size, row, col).
         """
-        out: List[Tuple[int, int, int]] = []
+        out: list[tuple[int, int, int]] = []
         for r in range(self.table_size):
             for c in range(self.table_size):
                 n = len(self.buffer[r][c])
@@ -262,13 +263,13 @@ class SplittingBatchProcessor(BatchProcessor):
                     out.append((n, r, c))
         return out
 
-    def _select_wave(self, *, min_bucket_len: int, seed: List[Tuple[int, int]] | None = None) -> List[Tuple[int, int]]:
+    def _select_wave(self, *, min_bucket_len: int, seed: list[tuple[int, int]] | None = None) -> list[tuple[int, int]]:
         """
         Greedy wave scheduler: pick a non-overlapping set of buckets with len >= min_bucket_len.
 
         If `seed` is provided, it is taken as fixed and the wave is extended greedily.
         """
-        candidates: List[Tuple[int, int, int]] = []
+        candidates: list[tuple[int, int, int]] = []
         for r in range(self.table_size):
             for c in range(self.table_size):
                 n = len(self.buffer[r][c])
@@ -281,7 +282,7 @@ class SplittingBatchProcessor(BatchProcessor):
         candidates.sort(key=lambda x: (-x[0], x[1], x[2]))
 
         used: set[Any] = set()
-        wave: List[Tuple[int, int]] = []
+        wave: list[tuple[int, int]] = []
 
         if seed:
             for r, c in seed:
@@ -302,12 +303,12 @@ class SplittingBatchProcessor(BatchProcessor):
 
         return wave
 
-    def _find_hottest_bucket(self, *, threshold: int) -> Tuple[int, int, int] | None:
+    def _find_hottest_bucket(self, *, threshold: int) -> tuple[int, int, int] | None:
         """
         Find the single hottest bucket (largest backlog) whose size is >= threshold.
         Returns (row, col, size) or None.
         """
-        best: Tuple[int, int, int] | None = None
+        best: tuple[int, int, int] | None = None
         for r in range(self.table_size):
             for c in range(self.table_size):
                 n = len(self.buffer[r][c])
@@ -319,9 +320,9 @@ class SplittingBatchProcessor(BatchProcessor):
 
     def _flush_wave(
         self,
-        wave: List[Tuple[int, int]],
+        wave: list[tuple[int, int]],
         max_batch_size: int,
-        statistics: Dict[str, Any] | None = None,
+        statistics: dict[str, Any] | None = None,
     ) -> BatchResults:
         """
         Extract up to `max_batch_size` items from each bucket in `wave`, remove them from the buffer,
@@ -330,7 +331,7 @@ class SplittingBatchProcessor(BatchProcessor):
         self._log_buffer_matrix(wave=wave)
 
         t0 = time.perf_counter()
-        bucket_batches: List[List[Any]] = []
+        bucket_batches: list[list[Any]] = []
         sizes = []
         buffered_before = sum(len(self.buffer[r][c]) for r in range(self.table_size) for c in range(self.table_size))
         for r, c in wave:
@@ -360,7 +361,7 @@ class SplittingBatchProcessor(BatchProcessor):
             batch_size=(sum(len(b) for b in bucket_batches)),
         )
 
-    def _log_buffer_matrix(self, *, wave: List[Tuple[int, int]]) -> None:
+    def _log_buffer_matrix(self, *, wave: list[tuple[int, int]]) -> None:
         """
         Dumps a compact 2D matrix of per-bucket sizes (len of each buffer) when DEBUG is enabled.
         """
@@ -408,7 +409,7 @@ class SplittingBatchProcessor(BatchProcessor):
         if self.predecessor is None:
             return
 
-        accumulated_stats: Dict[str, Any] = {}
+        accumulated_stats: dict[str, Any] = {}
         pending: BatchResults | None = None
 
         near_full_threshold = max(1, int(max_batch_size * self.near_full_ratio))

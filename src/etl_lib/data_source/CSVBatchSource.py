@@ -1,8 +1,8 @@
 import csv
 import gzip
 import time
+from collections.abc import Generator
 from pathlib import Path
-from typing import Generator
 
 from etl_lib.core.BatchProcessor import BatchProcessor, BatchResults
 from etl_lib.core.Task import Task
@@ -51,7 +51,7 @@ class CSVBatchSource(BatchProcessor):
             with gzip.open(file, "rt", encoding="utf-8-sig") as f:
                 yield from self.__parse_csv(batch_size, file=f, **kwargs)
         else:
-            with open(file, "rt", encoding="utf-8-sig") as f:
+            with open(file, encoding="utf-8-sig") as f:
                 yield from self.__parse_csv(batch_size, file=f, **kwargs)
 
     def __parse_csv(self, batch_size, file, **kwargs):
